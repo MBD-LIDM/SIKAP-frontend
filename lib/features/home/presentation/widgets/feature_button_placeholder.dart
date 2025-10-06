@@ -1,0 +1,98 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/theme/app_theme.dart';
+
+class FeatureButtonPlaceholder extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isSettings;
+  final String? svgAsset;
+
+  const FeatureButtonPlaceholder({
+    Key? key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    this.isSettings = false,
+    this.svgAsset,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.creamBackground,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon/SVG container
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.grey.withOpacity(0.3),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Center(
+                child: svgAsset != null
+                    ? SvgPicture.asset(
+                        svgAsset!,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                      )
+                    : Icon(
+                        icon,
+                        size: 24,
+                        color: isSettings ? AppTheme.primaryPurple : Colors.grey[600],
+                      ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Text content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: isSettings 
+                        ? AppTheme.buttonTextPurple
+                        : AppTheme.buttonText,
+                  ),
+                  if (!isSettings) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTheme.subtitle,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

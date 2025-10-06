@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
+import '../widgets/feature_button_placeholder.dart';
+import '../../../../core/theme/app_theme.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF7F55B1), // Purple at 76%
+              Color(0xFFFFDBB6), // Light peach/orange at 100%
+            ],
+            stops: [0.76, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  // Title
+                  Text(
+                    'Tempat untuk Didengar',
+                    style: AppTheme.headingLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  // Subtitle
+                  Text(
+                    'Aksi kecilmu dapat berdampak besar bagi dirimu sendiri maupun orang lain.',
+                    style: AppTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 20),
+                  // Illustration SVG
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: SvgPicture.asset(
+                        'assets/images/home_illustration_round.svg',
+                        fit: BoxFit.contain,
+                        allowDrawingOutsideViewBox: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Buttons Section
+                  Column(
+                    children: [
+                      // Lapor Bullying Button - Full SVG
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BullyingReportWizardPage(),
+                            ),
+                          );
+                        },
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: AspectRatio(
+                            aspectRatio: 365 / 83,
+                            child: SvgPicture.asset(
+                              'assets/images/lapor_bullying.svg',
+                              fit: BoxFit.contain,
+                              allowDrawingOutsideViewBox: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Pojok Tenang Button - Full SVG
+                      GestureDetector(
+                        onTap: () {
+                          // TODO: Navigate to quiet corner page
+                          _showComingSoonDialog('Pojok Tenang');
+                        },
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: AspectRatio(
+                            aspectRatio: 365 / 83,
+                            child: SvgPicture.asset(
+                              'assets/images/pojok_tenang_button.svg',
+                              fit: BoxFit.contain,
+                              allowDrawingOutsideViewBox: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Jejak Intervensi Button - Full SVG
+                      GestureDetector(
+                        onTap: () {
+                          // TODO: Navigate to intervention trail page
+                          _showComingSoonDialog('Jejak Intervensi');
+                        },
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: AspectRatio(
+                            aspectRatio: 365 / 83,
+                            child: SvgPicture.asset(
+                              'assets/images/jejak_intervensi_button.svg',
+                              fit: BoxFit.contain,
+                              allowDrawingOutsideViewBox: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Pengaturan Button
+                      FeatureButtonPlaceholder(
+                        title: 'Pengaturan',
+                        subtitle: '', // Empty for settings
+                        icon: Icons.settings,
+                        isSettings: true,
+                        onTap: () {
+                          // TODO: Navigate to settings page
+                          _showComingSoonDialog('Pengaturan');
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Bottom Section - Copyright
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 20),
+                    child: Center(
+                      child: Text(
+                        '© 2025 SIKAP. All rights reserved.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  void _showComingSoonDialog(String feature) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('$feature'),
+          content: const Text('Fitur ini akan segera hadir!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
