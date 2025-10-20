@@ -39,6 +39,9 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       setState(() {
         currentStep -= 1;
       });
+    } else {
+      // Jika di step pertama, kembali ke halaman sebelumnya
+      Navigator.of(context).pop();
     }
   }
 
@@ -243,9 +246,20 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF7F55B1),
-      body: SafeArea(
+    return WillPopScope(
+      onWillPop: () async {
+        // Jika di step pertama, izinkan kembali ke halaman sebelumnya
+        if (currentStep == 1) {
+          return true;
+        } else {
+          // Jika tidak di step pertama, kembali ke step sebelumnya
+          previous();
+          return false;
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF7F55B1),
+        body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
           child: Column(
@@ -291,8 +305,10 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
           ),
         ),
       ),
+      ),
     );
   }
 }
+
 
 
