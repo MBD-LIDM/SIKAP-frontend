@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sikap_frontend/main.dart';
+import 'package:sikap/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
@@ -15,12 +15,12 @@ void main() {
   testWidgets('App has correct theme', (WidgetTester tester) async {
     await tester.pumpWidget(const MainApp());
 
-    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
     
     // Verify app title
-    expect(app.title, 'SIKAP');
+    expect(materialApp.title, 'SIKAP');
     
     // Verify debug banner is off
-    expect(app.debugShowCheckedModeBanner, false);
+    expect(materialApp.debugShowCheckedModeBanner, false);
   });
 }
