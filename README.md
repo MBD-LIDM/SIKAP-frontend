@@ -334,7 +334,7 @@ For questions, suggestions, or support, please [open an issue](https://github.co
 
 <div align="center">
 
-**Made with ❤️ for student wellbeing**
+**Made with ❤️ for student wellbeing in Indonesia**
 
 ⭐ Star this repo if you find it helpful!
 
