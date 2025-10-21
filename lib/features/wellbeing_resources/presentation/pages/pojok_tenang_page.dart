@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'artikel_info_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
-import 'package:sikap/features/wellbeing_resources/presentation/pages/pojok_tenang_page.dart';
-import '../widgets/feature_button_placeholder.dart';
+import 'package:sikap/features/mood_check/presentation/pages/mood_check_page.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class PojokTenangPage extends StatefulWidget {
+  const PojokTenangPage({Key? key}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<PojokTenangPage> createState() => _PojokTenangPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _PojokTenangPageState extends State<PojokTenangPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,35 +28,55 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 60), // Space for back button
                   // Title
                   Text(
-                    'Tempat untuk Didengar',
+                    'Pojok Tenang',
                     style: AppTheme.headingLarge,
                   ),
                   const SizedBox(height: 16),
                   // Subtitle
                   Text(
-                    'Aksi kecilmu dapat berdampak besar bagi dirimu sendiri maupun orang lain.',
+                    'Temukan Ketenangan. Temukan Kekuatan.',
                     style: AppTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 40),
                   // Buttons Section
                   Column(
                     children: [
-                      // Lapor Bullying Button - Full SVG
+                      // Hubungi Bantuan Button - Full SVG
+                      GestureDetector(
+                        onTap: () {
+                          _showComingSoonDialog('Hubungi Bantuan');
+                        },
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: AspectRatio(
+                            aspectRatio: 365 / 83,
+                            child: SvgPicture.asset(
+                              'assets/images/hubungi_bantuan_button.svg',
+                              fit: BoxFit.contain,
+                              allowDrawingOutsideViewBox: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Mood Check Button - Full SVG
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const BullyingReportWizardPage(),
+                              builder: (context) => const MoodCheckPage(),
                             ),
                           );
                         },
@@ -67,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                           child: AspectRatio(
                             aspectRatio: 365 / 83,
                             child: SvgPicture.asset(
-                              'assets/images/lapor_bullying.svg',
+                              'assets/images/mood_check_button.svg',
                               fit: BoxFit.contain,
                               allowDrawingOutsideViewBox: true,
                             ),
@@ -75,13 +93,13 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Pojok Tenang Button - Full SVG
+                      // Artikel Info Button - Full SVG
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PojokTenangPage(),
+                              builder: (context) => const ArtikelInfoPage(),
                             ),
                           );
                         },
@@ -90,47 +108,16 @@ class _HomePageState extends State<HomePage> {
                           child: AspectRatio(
                             aspectRatio: 365 / 83,
                             child: SvgPicture.asset(
-                              'assets/images/pojok_tenang_button.svg',
+                              'assets/images/artikel_info_button.svg',
                               fit: BoxFit.contain,
                               allowDrawingOutsideViewBox: true,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Jejak Intervensi Button - Full SVG
-                      GestureDetector(
-                        onTap: () {
-                          // TODO: Navigate to intervention trail page
-                          _showComingSoonDialog('Jejak Intervensi');
-                        },
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: AspectRatio(
-                            aspectRatio: 365 / 83,
-                            child: SvgPicture.asset(
-                              'assets/images/jejak_intervensi_button.svg',
-                              fit: BoxFit.contain,
-                              allowDrawingOutsideViewBox: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Pengaturan Button
-                      FeatureButtonPlaceholder(
-                        title: 'Pengaturan',
-                        subtitle: '', // Empty for settings
-                        icon: Icons.settings,
-                        isSettings: true,
-                        onTap: () {
-                          // TODO: Navigate to settings page
-                          _showComingSoonDialog('Pengaturan');
-                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
                   // Bottom Section - Copyright
                   const Padding(
                     padding: EdgeInsets.only(bottom: 20),
@@ -145,15 +132,44 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
+                  // Additional space to ensure scrolling
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
+          ),
+              // Custom Back Button
+              Positioned(
+                top: 0,
+                left: 0,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-
 
   void _showComingSoonDialog(String feature) {
     showDialog(

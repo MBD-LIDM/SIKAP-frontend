@@ -75,13 +75,144 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
     );
   }
 
+  Widget _bullyingTypeButton({
+    required String key,
+    required String title,
+    required String description,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFE6D7FF) : const Color(0xFFF5F5DC), // Purple tint when selected, beige when not
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF7F55B1) : const Color(0xFF7F55B1).withOpacity(0.3),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected 
+                  ? const Color(0xFF7F55B1).withOpacity(0.2)
+                  : Colors.black.withOpacity(0.1),
+                blurRadius: isSelected ? 12 : 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Left section - Icon
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF7F55B1) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected 
+                        ? const Color(0xFF7F55B1).withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected ? Colors.white : const Color(0xFF7F55B1),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Right section - Title and Description
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top right - Bullying type title
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        color: Color(0xFF8B4513), // Brownish color
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Bottom right - Type description
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE4B5), // Light orange/peach background
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        description,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _step1() {
-    final items = <Map<String, String>>[
-      {'key': 'fisik', 'title': 'Secara fisik', 'hint': 'misalnya mendorong, memukul'},
-      {'key': 'verbal', 'title': 'Secara verbal', 'hint': 'misalnya mengejek, menghina'},
-      {'key': 'cyber', 'title': 'Cyberbullying', 'hint': 'di media sosial, pesan teks'},
-      {'key': 'sosial', 'title': 'Pengucilan', 'hint': 'menyebarkan rumor, mengabaikan'},
-      {'key': 'lainnya', 'title': 'Lainnya', 'hint': 'tipe lain'},
+    final items = <Map<String, dynamic>>[
+      {
+        'key': 'fisik',
+        'title': 'Secara fisik',
+        'description': 'misalnya mendorong, memukul',
+        'icon': Icons.pan_tool, // Fist icon
+      },
+      {
+        'key': 'verbal',
+        'title': 'Secara verbal',
+        'description': 'misalnya mengejek, menghina',
+        'icon': Icons.record_voice_over,
+      },
+      {
+        'key': 'cyber',
+        'title': 'Cyberbullying',
+        'description': 'di media sosial, pesan teks',
+        'icon': Icons.computer,
+      },
+      {
+        'key': 'sosial',
+        'title': 'Pengucilan',
+        'description': 'menyebarkan rumor, mengabaikan',
+        'icon': Icons.group_off,
+      },
+      {
+        'key': 'lainnya',
+        'title': 'Lainnya',
+        'description': 'tipe lain',
+        'icon': Icons.more_horiz,
+      },
     ];
 
     return Column(
@@ -93,36 +224,13 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         const SizedBox(height: 16),
         ...items.map((item) {
           final isSelected = selectedCategory == item['key'];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: InkWell(
-              onTap: () => setState(() => selectedCategory = item['key']),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)],
-                  border: isSelected ? Border.all(color: const Color(0xFF7F55B1), width: 2) : null,
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: isSelected ? const Color(0xFF7F55B1) : Colors.grey.shade300),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-                          const SizedBox(height: 4),
-                          Text(item['hint']!, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          return _bullyingTypeButton(
+            key: item['key'],
+            title: item['title'],
+            description: item['description'],
+            icon: item['icon'],
+            isSelected: isSelected,
+            onTap: () => setState(() => selectedCategory = item['key']),
           );
         }),
       ],
@@ -148,7 +256,17 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
           child: TextField(
             controller: descriptionController,
             maxLines: 10,
-            decoration: const InputDecoration.collapsed(hintText: 'Tulis kronologi kejadian...'),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+            ),
+            decoration: const InputDecoration.collapsed(
+              hintText: 'Tulis kronologi kejadian...',
+              hintStyle: TextStyle(
+                color: Colors.black54,
+                fontSize: 16,
+              ),
+            ),
           ),
         ),
       ],
