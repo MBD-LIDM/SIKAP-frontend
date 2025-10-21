@@ -5,7 +5,7 @@ import 'package:sikap/features/mood_check/presentation/pages/mood_check_page.dar
 import '../../../../core/theme/app_theme.dart';
 
 class PojokTenangPage extends StatefulWidget {
-  const PojokTenangPage({Key? key}) : super(key: key);
+  const PojokTenangPage({super.key});
 
   @override
   State<PojokTenangPage> createState() => _PojokTenangPageState();
@@ -147,7 +147,7 @@ class _PojokTenangPageState extends State<PojokTenangPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
@@ -176,7 +176,7 @@ class _PojokTenangPageState extends State<PojokTenangPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('$feature'),
+          title: Text(feature),
           content: const Text('Fitur ini akan segera hadir!'),
           actions: [
             TextButton(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
 import 'package:sikap/features/wellbeing_resources/presentation/pages/pojok_tenang_page.dart';
@@ -7,7 +6,7 @@ import '../widgets/feature_button_placeholder.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -160,7 +159,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('$feature'),
+          title: Text(feature),
           content: const Text('Fitur ini akan segera hadir!'),
           actions: [
             TextButton(

@@ -4,9 +4,9 @@ class BullyingDetailPage extends StatefulWidget {
   final String bullyingId;
 
   const BullyingDetailPage({
-    Key? key,
+    super.key,
     required this.bullyingId,
-  }) : super(key: key);
+  });
 
   @override
   State<BullyingDetailPage> createState() => _BullyingDetailPageState();

@@ -4,7 +4,7 @@ import 'mood_check_recording_page.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class MoodCheckPage extends StatefulWidget {
-  const MoodCheckPage({Key? key}) : super(key: key);
+  const MoodCheckPage({super.key});
 
   @override
   State<MoodCheckPage> createState() => _MoodCheckPageState();
@@ -147,7 +147,7 @@ class _MoodCheckPageState extends State<MoodCheckPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(

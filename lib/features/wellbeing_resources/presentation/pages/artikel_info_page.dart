@@ -106,7 +106,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                                   border: Border.all(
                                     color: isSelected 
                                       ? const Color(0xFF7F55B1)
-                                      : const Color(0xFF7F55B1).withOpacity(0.7),
+                                      : const Color(0xFF7F55B1).withValues(alpha: 0.7),
                                     width: 1,
                                   ),
                                 ),
@@ -177,7 +177,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.18),
+            color: Colors.black.withValues(alpha: 0.18),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -258,7 +258,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
@@ -274,7 +274,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
@@ -290,7 +290,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(

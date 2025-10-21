@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class MoodCheckRecordingPage extends StatefulWidget {
-  const MoodCheckRecordingPage({Key? key}) : super(key: key);
+  const MoodCheckRecordingPage({super.key});
 
   @override
   State<MoodCheckRecordingPage> createState() => _MoodCheckRecordingPageState();
@@ -124,7 +124,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
@@ -181,7 +181,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('$feature'),
+          title: Text(feature),
           content: const Text('Fitur ini akan segera hadir!'),
           actions: [
             TextButton(

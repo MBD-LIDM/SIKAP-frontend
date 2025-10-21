@@ -4,9 +4,9 @@ class AccountsRequestStatusPage extends StatefulWidget {
   final String requestId;
 
   const AccountsRequestStatusPage({
-    Key? key,
+    super.key,
     required this.requestId,
-  }) : super(key: key);
+  });
 
   @override
   State<AccountsRequestStatusPage> createState() => _AccountsRequestStatusPageState();

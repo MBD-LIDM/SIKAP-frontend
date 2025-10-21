@@ -4,9 +4,9 @@ class WellbeingResourcesFormPage extends StatefulWidget {
   final String? resourceId; // null for create, not null for edit
 
   const WellbeingResourcesFormPage({
-    Key? key,
+    super.key,
     this.resourceId,
-  }) : super(key: key);
+  });
 
   @override
   State<WellbeingResourcesFormPage> createState() => _WellbeingResourcesFormPageState();
@@ -73,7 +73,7 @@ class _WellbeingResourcesFormPageState extends State<WellbeingResourcesFormPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Jenis Sumber Daya',
                     border: OutlineInputBorder(),
@@ -96,7 +96,7 @@ class _WellbeingResourcesFormPageState extends State<WellbeingResourcesFormPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Kategori',
                     border: OutlineInputBorder(),
