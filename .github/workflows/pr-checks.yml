@@ -8,6 +8,7 @@ on:
 
 env:
   FLUTTER_VERSION: '3.27.1'
+  JAVA_VERSION: '25'
 
 jobs:
   validate:
@@ -16,6 +17,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2

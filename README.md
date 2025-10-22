@@ -114,6 +114,17 @@ Before you begin, ensure you have the following installed:
   flutter --version
   ```
 - **Dart SDK** (3.6.2 or higher)
+- **Java JDK** 17, 21, or 25 (**Required for Android builds**)
+  ```bash
+  java -version
+  ```
+  > ⚠️ **Important**: This project requires Java 17 or newer. **Java 21 LTS or Java 25 is recommended** for best performance.
+  > 
+  > - **Java 25** (Latest) - Best performance, full Gradle 9.1.0 support - [Download](https://adoptium.net/)
+  > - **Java 21 LTS** (Recommended) - Long-term support, stable - [Download](https://adoptium.net/)
+  > - **Java 17 LTS** (Minimum) - Minimum requirement - [Download](https://adoptium.net/)
+  > 
+  > See [GRADLE_UPGRADE.md](./GRADLE_UPGRADE.md) for detailed compatibility information.
 - **Android Studio** / **Xcode** (for iOS development)
 - **VS Code** or **Android Studio** with Flutter plugins
 - **Git**
@@ -275,6 +286,7 @@ flutter build web --release
 
 - [Flutter Documentation](https://docs.flutter.dev/)
 - [Dart Documentation](https://dart.dev/guides)
+- [Gradle Upgrade Guide](./GRADLE_UPGRADE.md) - **Build configuration and Java requirements**
 - [API Documentation](./docs/API.md) *(coming soon)*
 - [User Guide](./docs/USER_GUIDE.md) *(coming soon)*
 
