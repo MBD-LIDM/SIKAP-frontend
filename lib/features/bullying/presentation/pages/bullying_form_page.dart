@@ -4,9 +4,9 @@ class BullyingFormPage extends StatefulWidget {
   final String? bullyingId; // null for create, not null for edit
 
   const BullyingFormPage({
-    Key? key,
+    super.key,
     this.bullyingId,
-  }) : super(key: key);
+  });
 
   @override
   State<BullyingFormPage> createState() => _BullyingFormPageState();
@@ -80,7 +80,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Jenis Bullying',
                   border: OutlineInputBorder(),
@@ -101,7 +101,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedSeverity,
+                initialValue: _selectedSeverity,
                 decoration: const InputDecoration(
                   labelText: 'Tingkat Keparahan',
                   border: OutlineInputBorder(),

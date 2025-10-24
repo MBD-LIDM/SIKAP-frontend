@@ -105,13 +105,13 @@ class AppTheme {
           color: lightGrey,
         ),
         hintStyle: GoogleFonts.roboto(
-          color: lightGrey.withOpacity(0.7),
+          color: lightGrey.withValues(alpha: 0.7),
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: creamBackground,
         elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),

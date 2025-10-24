@@ -4,9 +4,9 @@ class WellbeingResourcesDetailPage extends StatefulWidget {
   final String resourceId;
 
   const WellbeingResourcesDetailPage({
-    Key? key,
+    super.key,
     required this.resourceId,
-  }) : super(key: key);
+  });
 
   @override
   State<WellbeingResourcesDetailPage> createState() => _WellbeingResourcesDetailPageState();

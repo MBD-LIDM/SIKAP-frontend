@@ -5,9 +5,9 @@ class AccountsFormPage extends StatefulWidget {
   final String? accountId; // null for create, not null for edit
 
   const AccountsFormPage({
-    Key? key,
+    super.key,
     this.accountId,
-  }) : super(key: key);
+  });
 
   @override
   State<AccountsFormPage> createState() => _AccountsFormPageState();

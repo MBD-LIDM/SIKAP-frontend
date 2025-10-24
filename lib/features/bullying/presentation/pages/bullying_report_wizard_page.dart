@@ -95,14 +95,14 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
             color: isSelected ? const Color(0xFFE6D7FF) : const Color(0xFFF5F5DC), // Purple tint when selected, beige when not
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? const Color(0xFF7F55B1) : const Color(0xFF7F55B1).withOpacity(0.3),
+              color: isSelected ? const Color(0xFF7F55B1) : const Color(0xFF7F55B1).withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected 
-                  ? const Color(0xFF7F55B1).withOpacity(0.2)
-                  : Colors.black.withOpacity(0.1),
+                  ? const Color(0xFF7F55B1).withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.1),
                 blurRadius: isSelected ? 12 : 8,
                 offset: const Offset(0, 2),
               ),
@@ -120,8 +120,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                   boxShadow: [
                     BoxShadow(
                       color: isSelected 
-                        ? const Color(0xFF7F55B1).withOpacity(0.3)
-                        : Colors.black.withOpacity(0.1),
+                        ? const Color(0xFF7F55B1).withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -157,7 +157,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),
@@ -252,7 +252,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8),
           ]),
           child: TextField(
             controller: descriptionController,
@@ -365,15 +365,12 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Jika di step pertama, izinkan kembali ke halaman sebelumnya
-        if (currentStep == 1) {
-          return true;
-        } else {
+    return PopScope(
+      canPop: currentStep == 1,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (!didPop && currentStep > 1) {
           // Jika tidak di step pertama, kembali ke step sebelumnya
           previous();
-          return false;
         }
       },
       child: Scaffold(

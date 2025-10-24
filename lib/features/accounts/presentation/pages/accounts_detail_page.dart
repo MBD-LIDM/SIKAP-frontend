@@ -4,9 +4,9 @@ class AccountsDetailPage extends StatefulWidget {
   final String accountId;
 
   const AccountsDetailPage({
-    Key? key,
+    super.key,
     required this.accountId,
-  }) : super(key: key);
+  });
 
   @override
   State<AccountsDetailPage> createState() => _AccountsDetailPageState();

@@ -4,9 +4,9 @@ class BullyingRequestStatusPage extends StatefulWidget {
   final String requestId;
 
   const BullyingRequestStatusPage({
-    Key? key,
+    super.key,
     required this.requestId,
-  }) : super(key: key);
+  });
 
   @override
   State<BullyingRequestStatusPage> createState() => _BullyingRequestStatusPageState();
