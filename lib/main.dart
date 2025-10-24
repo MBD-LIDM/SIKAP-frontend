@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/home/presentation/pages/home_page.dart';
+import 'features/authentication/authentication.dart';
 import 'core/theme/app_theme.dart';
 
 void main() {
@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'SIKAP',
       theme: AppTheme.lightTheme,
-      home: const HomePage(),
+      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
