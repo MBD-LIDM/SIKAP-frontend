@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'artikel_info_page.dart';
+import 'hubungi_bantuan_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/mood_check/presentation/pages/mood_check_page.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -55,7 +56,12 @@ class _PojokTenangPageState extends State<PojokTenangPage> {
                       // Hubungi Bantuan Button - Full SVG
                       GestureDetector(
                         onTap: () {
-                          _showComingSoonDialog('Hubungi Bantuan');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HubungiBantuanPage(),
+                            ),
+                          );
                         },
                         child: SizedBox(
                           width: double.infinity,
@@ -168,26 +174,6 @@ class _PojokTenangPageState extends State<PojokTenangPage> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(feature),
-          content: const Text('Fitur ini akan segera hadir!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
