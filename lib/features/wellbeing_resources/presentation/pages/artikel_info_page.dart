@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'artikel_bullying_detail_page.dart';
 
 class ArtikelInfoPage extends StatefulWidget {
   const ArtikelInfoPage({super.key});
@@ -134,18 +135,26 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                 child: ListView(
                   children: [
                     _buildArticleCard(
-                      title: '10 Cara Mengendalikan Stres Saat Sekolah Terasa Berat',
-                      category: 'Kesehatan Mental dan Kesejahteraan',
-                      date: 'Diposting pada 15 Agustus 2025',
-                      illustration: _buildStressIllustration(),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildArticleCard(
                       title: 'Bukan Salahmu: Memahami Apa Itu Bullying dan Mengapa Itu Terjadi',
                       category: 'Memahami Bullying',
                       date: 'Diposting pada 6 Agustus 2025',
                       illustration: _buildBullyingIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelBullyingDetailPage(),
+                          ),
+                        );
+                      },
                     ),
+                    const SizedBox(height: 16),                    
+                    _buildArticleCard(
+                      title: '10 Cara Mengendalikan Stres Saat Sekolah Terasa Berat',
+                      category: 'Kesehatan Mental dan Kesejahteraan',
+                      date: 'Diposting pada 15 Agustus 2025',
+                      illustration: _buildStressIllustration(),
+                    ),                    
                     const SizedBox(height: 16),
                     _buildArticleCard(
                       title: 'Kapan dan Bagaimana Mencari Bantuan Profesional',
@@ -170,8 +179,11 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
     required String category,
     required String date,
     required Widget illustration,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -250,6 +262,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
         ],
       ),
       ),
+    ),
     );
   }
 
