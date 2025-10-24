@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'mood_check_result_page.dart';
 
 class MoodCheckRecordingPage extends StatefulWidget {
   const MoodCheckRecordingPage({super.key});
@@ -165,8 +166,13 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // TODO: Implement stop recording logic
-                _showComingSoonDialog('Analisis Selesai');
+                // Navigasi ke halaman hasil dummy
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MoodCheckResultPage(),
+                  ),
+                );
               },
               child: const Text('Hentikan'),
             ),
@@ -176,23 +182,5 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
     );
   }
 
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(feature),
-          content: const Text('Fitur ini akan segera hadir!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Coming soon dialog dihapus karena tidak digunakan lagi.
 }
