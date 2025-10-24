@@ -182,7 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: DropdownButtonFormField<String>(
-                              value: _selectedKelas,
+                              initialValue: _selectedKelas,
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,

@@ -73,7 +73,7 @@ class _WellbeingResourcesFormPageState extends State<WellbeingResourcesFormPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Jenis Sumber Daya',
                     border: OutlineInputBorder(),
@@ -96,7 +96,7 @@ class _WellbeingResourcesFormPageState extends State<WellbeingResourcesFormPage>
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Kategori',
                     border: OutlineInputBorder(),

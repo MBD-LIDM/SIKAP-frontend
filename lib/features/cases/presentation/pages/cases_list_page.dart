@@ -103,16 +103,25 @@ class _CasesListPageState extends State<CasesListPage> {
         return SimpleDialog(
           title: const Text('Filter status'),
           children: [
-            ...['Semua', 'Baru', 'Diproses', 'Selesai'].map((s) => RadioListTile<String>(
-                  title: Text(s),
-                  value: s,
-                  groupValue: _filter,
-                  onChanged: (val) {
-                    if (val == null) return;
-                    setState(() => _filter = val);
-                    Navigator.pop(context);
-                  },
-                )),
+            RadioGroup<String>(
+              groupValue: _filter,
+              onChanged: (val) {
+                if (val == null) return;
+                setState(() => _filter = val);
+                Navigator.pop(context);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...['Semua', 'Baru', 'Diproses', 'Selesai'].map(
+                    (s) => RadioListTile<String>(
+                      title: Text(s),
+                      value: s,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },
@@ -126,16 +135,25 @@ class _CasesListPageState extends State<CasesListPage> {
         return SimpleDialog(
           title: const Text('Urutkan'),
           children: [
-            ...['Terbaru', 'Terlama'].map((s) => RadioListTile<String>(
-                  title: Text(s),
-                  value: s,
-                  groupValue: _sort,
-                  onChanged: (val) {
-                    if (val == null) return;
-                    setState(() => _sort = val);
-                    Navigator.pop(context);
-                  },
-                )),
+            RadioGroup<String>(
+              groupValue: _sort,
+              onChanged: (val) {
+                if (val == null) return;
+                setState(() => _sort = val);
+                Navigator.pop(context);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...['Terbaru', 'Terlama'].map(
+                    (s) => RadioListTile<String>(
+                      title: Text(s),
+                      value: s,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },

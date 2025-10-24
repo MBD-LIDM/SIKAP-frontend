@@ -80,7 +80,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Jenis Bullying',
                   border: OutlineInputBorder(),
@@ -101,7 +101,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedSeverity,
+                initialValue: _selectedSeverity,
                 decoration: const InputDecoration(
                   labelText: 'Tingkat Keparahan',
                   border: OutlineInputBorder(),
