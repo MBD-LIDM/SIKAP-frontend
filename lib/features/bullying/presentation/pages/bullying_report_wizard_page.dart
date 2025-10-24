@@ -464,7 +464,9 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                 ),
                                 onPressed: currentStep < totalSteps
                                     ? () {
-                                        if (currentStep == 1 && selectedCategory == null) return;
+                                        if (currentStep == 1 && selectedCategory == null) {
+                                          return;
+                                        }
                                         next();
                                       }
                                     : (confirmTruth
