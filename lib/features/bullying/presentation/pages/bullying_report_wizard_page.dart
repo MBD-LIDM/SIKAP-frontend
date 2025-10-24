@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BullyingReportWizardPage extends StatefulWidget {
   const BullyingReportWizardPage({super.key});
@@ -376,53 +377,135 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF7F55B1),
-        body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _header(),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _content(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: previous,
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF7F55B1),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF7F55B1), // Purple at 76%
+                Color(0xFFFFDBB6), // Light peach/orange at 100%
+              ],
+              stops: [0.76, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _header(),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: _content(),
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: currentStep < totalSteps
-                        ? () {
-                            if (currentStep == 1 && selectedCategory == null) return;
-                            next();
-                          }
-                        : (confirmTruth
-                            ? () {
-                                Navigator.of(context).pop();
-                              }
-                            : null),
-                    child: Text(currentStep < totalSteps ? 'Selanjutnya' : 'Kirim Laporan'),
-                  )
-                ],
-              )
-            ],
+                  ),
+                ),
+                // Footer dengan background SVG
+                SizedBox(
+                  height: 95, // Fixed height from SVG
+                  child: Stack(
+                    children: [
+                      // SVG background
+                      Positioned.fill(
+                        child: SvgPicture.asset(
+                          'assets/others/footer_form.svg',
+                          fit: BoxFit.fill,
+                        ),
+                      ),
+                      // Buttons
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Back Button
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                color: Color(0xAA9D6CFF), // Purple-ish color with opacity
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: previous,
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                            
+                            // Selanjutnya Button
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFC89EFF), // Light purple color
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFC89EFF), // Light purple color
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.zero, // Padding sudah diatur di Container
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  elevation: 0, // Remove default elevation since we're using custom shadow
+                                ),
+                                onPressed: currentStep < totalSteps
+                                    ? () {
+                                        if (currentStep == 1 && selectedCategory == null) return;
+                                        next();
+                                      }
+                                    : (confirmTruth
+                                        ? () {
+                                            Navigator.of(context).pop();
+                                          }
+                                        : null),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      currentStep < totalSteps ? 'Selanjutnya' : 'Kirim Laporan',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

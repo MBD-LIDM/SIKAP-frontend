@@ -32,12 +32,24 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       appBar: AppBar(
         title: Text(widget.bullyingId == null ? 'Laporkan Bullying' : 'Edit Laporan'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF7F55B1), // Purple at 76%
+              Color(0xFFFFDBB6), // Light peach/orange at 100%
+            ],
+            stops: [0.76, 1.0],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -117,6 +129,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
