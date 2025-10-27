@@ -144,22 +144,24 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
         return SimpleDialog(
           title: const Text('Filter status'),
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...['Semua', 'Baru', 'Diproses', 'Selesai'].map(
-                  (s) => RadioListTile<String>(
-                    title: Text(s),
-                    value: s,
-                    groupValue: _filter,
-                    onChanged: (val) {
-                      if (val == null) return;
-                      setState(() => _filter = val);
-                      Navigator.pop(context);
-                    },
+            RadioGroup<String>(
+              groupValue: _filter,
+              onChanged: (val) {
+                if (val == null) return;
+                setState(() => _filter = val);
+                Navigator.pop(context);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...['Semua', 'Baru', 'Diproses', 'Selesai'].map(
+                    (s) => RadioListTile<String>(
+                      title: Text(s),
+                      value: s,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );
@@ -174,22 +176,24 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
         return SimpleDialog(
           title: const Text('Urutkan'),
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...['Terbaru', 'Terlama'].map(
-                  (s) => RadioListTile<String>(
-                    title: Text(s),
-                    value: s,
-                    groupValue: _sort,
-                    onChanged: (val) {
-                      if (val == null) return;
-                      setState(() => _sort = val);
-                      Navigator.pop(context);
-                    },
+            RadioGroup<String>(
+              groupValue: _sort,
+              onChanged: (val) {
+                if (val == null) return;
+                setState(() => _sort = val);
+                Navigator.pop(context);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...['Terbaru', 'Terlama'].map(
+                    (s) => RadioListTile<String>(
+                      title: Text(s),
+                      value: s,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );

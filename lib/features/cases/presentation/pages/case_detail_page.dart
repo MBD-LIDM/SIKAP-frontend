@@ -159,6 +159,7 @@ class CaseDetailPage extends StatelessWidget {
                               builder: (_) => CaseConfirmationPage(caseTitle: title, action: 'tolak'),
                             ),
                           );
+                          if (!context.mounted) return;
                           if (result != null) {
                             Navigator.of(context).pop(result);
                           }
@@ -176,6 +177,7 @@ class CaseDetailPage extends StatelessWidget {
                               builder: (_) => CaseConfirmationPage(caseTitle: title, action: 'proses'),
                             ),
                           );
+                          if (!context.mounted) return;
                           if (result != null) {
                             Navigator.of(context).pop(result);
                           }

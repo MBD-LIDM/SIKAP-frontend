@@ -104,7 +104,7 @@ class _Section extends StatelessWidget {
       children: [
         Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
-        ...items.map((s) => _ScenarioTile(title: s, description: descriptions[s] ?? '-', question: questions[s] ?? '-')).toList(),
+        ...items.map((s) => _ScenarioTile(title: s, description: descriptions[s] ?? '-', question: questions[s] ?? '-')),
         const SizedBox(height: 20),
       ],
     );

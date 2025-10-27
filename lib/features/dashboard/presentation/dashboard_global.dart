@@ -277,7 +277,7 @@ class _DashboardGlobalPageState extends State<DashboardGlobalPage> {
               children: [
                 const Text('Distribusi Kategori', style: TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 12),
-                ...categoryMap.entries.map((e) => _barRow(label: e.key, value: e.value, maxValue: categoryMap.values.isEmpty ? 1 : (categoryMap.values.reduce((a, b) => a > b ? a : b)))).toList(),
+                ...categoryMap.entries.map((e) => _barRow(label: e.key, value: e.value, maxValue: categoryMap.values.isEmpty ? 1 : (categoryMap.values.reduce((a, b) => a > b ? a : b)))),
               ],
             ),
           ),
@@ -496,17 +496,24 @@ class _DashboardGlobalPageState extends State<DashboardGlobalPage> {
                     )),
                 const SizedBox(height: 8),
                 const Text('Ada bukti', style: TextStyle(fontWeight: FontWeight.w700)),
-                ...['Semua', 'Ya', 'Tidak'].map((s) => RadioListTile<String>(
-                      value: s,
-                      groupValue: evid,
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => evid = v);
-                        }
-                      },
-                      title: Text(s),
-                      contentPadding: EdgeInsets.zero,
-                    )),
+                RadioGroup<String>(
+                  groupValue: evid,
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => evid = v);
+                    }
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...['Semua', 'Ya', 'Tidak'].map((s) => RadioListTile<String>(
+                            value: s,
+                            title: Text(s),
+                            contentPadding: EdgeInsets.zero,
+                          )),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

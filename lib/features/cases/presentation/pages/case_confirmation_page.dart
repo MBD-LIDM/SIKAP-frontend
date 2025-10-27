@@ -34,6 +34,7 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
         );
       },
     );
+    if (!mounted) return;
     if (result == true) {
       // Di sini nantinya bisa dipanggil API. Untuk sekarang, hanya kembali.
       Navigator.of(context).pop({
