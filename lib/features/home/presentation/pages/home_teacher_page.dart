@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../widgets/feature_button_placeholder.dart';
-import '../../../cases/presentation/pages/cases_list_page.dart';
+import '../../../cases/presentation/pages/case_list_page.dart';
+import '../../../reflections/presentation/reflection_scenario.dart';
+import '../../../dashboard/presentation/dashboard_global.dart';
 
 class HomeTeacherPage extends StatefulWidget {
   const HomeTeacherPage({super.key});
@@ -49,6 +51,21 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
                   // Buttons Section
                   Column(
                     children: [
+                      // Dashboard Bullying Button - placeholder style
+                      FeatureButtonPlaceholder(
+                        title: 'Dasbor Bullying',
+                        subtitle: 'Insight laporan bullying sekolah',
+                        icon: Icons.analytics,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const DashboardGlobalPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       // Lihat Kasus Button - gunakan placeholder style
                       FeatureButtonPlaceholder(
                         title: 'Lihat Kasus',
@@ -70,7 +87,12 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
                         subtitle: 'Pantau refleksi dan kemajuan emosi',
                         icon: Icons.insights,
                         onTap: () {
-                          _showComingSoonDialog('Lihat Refleksi Siswa');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ReflectionScenarioPage(),
+                            ),
+                          );
                         },
                       ),
                     ],
@@ -96,26 +118,6 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(feature),
-          content: const Text('Fitur ini akan segera hadir!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

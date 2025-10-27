@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
+import 'package:sikap/features/bullying/presentation/pages/bullying_reports_list_page.dart';
 import 'package:sikap/features/wellbeing_resources/presentation/pages/pojok_tenang_page.dart';
 import '../widgets/feature_button_placeholder.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const BullyingReportWizardPage(),
+                              builder: (context) => const BullyingReportsListPage(),
                             ),
                           );
                         },
