@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'case_detail_page.dart';
 
 class CasesListPage extends StatefulWidget {
   const CasesListPage({super.key});
@@ -9,9 +10,9 @@ class CasesListPage extends StatefulWidget {
 
 class _CasesListPageState extends State<CasesListPage> {
   final List<_CaseItem> _all = [
-    _CaseItem(status: 'Baru', title: 'Perundungan Verbal di Kelas 8A', dateRange: '20 Dec 2025', createdAt: DateTime(2025, 8, 22, 9, 18)),
-    _CaseItem(status: 'Diproses', title: 'Intimidasi di Lapangan', dateRange: '19 Dec 2025', createdAt: DateTime(2025, 8, 21, 15, 10)),
-    _CaseItem(status: 'Selesai', title: 'Penyebaran Rumor Online', dateRange: '12 Dec 2025', createdAt: DateTime(2025, 8, 18, 8, 30)),
+    _CaseItem(status: 'Baru', title: 'Bullying Verbal', createdAt: DateTime(2025, 8, 22, 9, 18)),
+    _CaseItem(status: 'Diproses', title: 'Pengucilan', createdAt: DateTime(2025, 8, 21, 15, 10)),
+    _CaseItem(status: 'Selesai', title: 'Cyberbullying', createdAt: DateTime(2025, 8, 18, 8, 30)),
   ];
 
   String _filter = 'Semua';
@@ -162,10 +163,9 @@ class _CasesListPageState extends State<CasesListPage> {
 }
 
 class _CaseItem {
-  _CaseItem({required this.status, required this.title, required this.dateRange, required this.createdAt});
+  _CaseItem({required this.status, required this.title, required this.createdAt});
   final String status;
   final String title;
-  final String dateRange;
   final DateTime createdAt;
 }
 
@@ -188,7 +188,7 @@ class _CaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -210,14 +210,6 @@ class _CaseCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.event, size: 18, color: Colors.black54),
-                const SizedBox(width: 8),
-                Expanded(child: Text(item.dateRange, style: const TextStyle(color: Colors.black54))),
-              ],
-            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -230,6 +222,30 @@ class _CaseCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (item.title == 'Bullying Verbal') {
+      return GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => CaseDetailPage(
+                title: item.title,
+                status: item.status,
+                createdAt: item.createdAt,
+                category: 'Secara verbal',
+                description:
+                    'Terjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsung. Terjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsung',
+                evidences: const ['Screenshot chat', 'Catatan kronologi'],
+                anonymous: false,
+                confirmTruth: true,
+              ),
+            ),
+          );
+        },
+        child: card,
+      );
+    }
+    return card;
   }
 
   static String _formatDate(DateTime dt) {
