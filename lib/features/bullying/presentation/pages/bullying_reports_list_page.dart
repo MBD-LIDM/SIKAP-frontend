@@ -31,6 +31,8 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
       evidences: const ['Foto daftar hadir'],
       anonymous: true,
       confirmTruth: true,
+      teacherComment: 'Laporan akan ditindaklanjuti',
+      teacherCommentDate: DateTime(2025, 8, 21, 16, 0),
     ),
     _ReportItem(
       status: 'Selesai',
@@ -41,6 +43,18 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
       evidences: const ['Tangkapan layar komentar'],
       anonymous: false,
       confirmTruth: true,
+    ),
+    _ReportItem(
+      status: 'Ditolak',
+      title: 'Bullying Fisik',
+      createdAt: DateTime(2025, 8, 20, 10, 45),
+      category: 'Fisik',
+      description: 'Tindakan pemukulan ringan di lorong sekolah saat waktu istirahat.',
+      evidences: const ['Pernyataan saksi', 'Foto bekas memar'],
+      anonymous: false,
+      confirmTruth: true,
+      teacherComment: 'Bukti tidak memadai',
+      teacherCommentDate: DateTime(2025, 8, 20, 12, 0),
     ),
   ];
 
@@ -154,7 +168,7 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ...['Semua', 'Baru', 'Diproses', 'Selesai'].map(
+                  ...['Semua', 'Baru', 'Diproses', 'Selesai', 'Ditolak'].map(
                     (s) => RadioListTile<String>(
                       title: Text(s),
                       value: s,
@@ -212,6 +226,8 @@ class _ReportItem {
     required this.evidences,
     required this.anonymous,
     required this.confirmTruth,
+    this.teacherComment,
+    this.teacherCommentDate,
   });
 
   final String status;
@@ -222,6 +238,8 @@ class _ReportItem {
   final List<String> evidences;
   final bool anonymous;
   final bool confirmTruth;
+  final String? teacherComment;
+  final DateTime? teacherCommentDate;
 }
 
 class _ReportCard extends StatelessWidget {
@@ -236,6 +254,8 @@ class _ReportCard extends StatelessWidget {
         return const Color(0xFFFF9800);
       case 'Selesai':
         return const Color(0xFF2E7D32);
+      case 'Ditolak':
+        return const Color(0xFFD32F2F);
       default:
         return Colors.grey;
     }
@@ -261,6 +281,8 @@ class _ReportCard extends StatelessWidget {
               evidences: item.evidences,
               anonymous: item.anonymous,
               confirmTruth: item.confirmTruth,
+              teacherComment: item.teacherComment,
+              teacherCommentDate: item.teacherCommentDate,
             ),
           ),
         );

@@ -11,6 +11,8 @@ class BullyingDetailPage extends StatelessWidget {
     required this.evidences,
     required this.anonymous,
     required this.confirmTruth,
+    this.teacherComment,
+    this.teacherCommentDate,
   });
 
   final String title;
@@ -21,6 +23,8 @@ class BullyingDetailPage extends StatelessWidget {
   final List<String> evidences;
   final bool anonymous;
   final bool confirmTruth;
+  final String? teacherComment;
+  final DateTime? teacherCommentDate;
 
   Color get statusColor {
     switch (status) {
@@ -30,6 +34,8 @@ class BullyingDetailPage extends StatelessWidget {
         return const Color(0xFFFF9800);
       case 'Selesai':
         return const Color(0xFF2E7D32);
+      case 'Ditolak':
+        return const Color(0xFFD32F2F);
       default:
         return Colors.grey;
     }
@@ -142,6 +148,39 @@ class BullyingDetailPage extends StatelessWidget {
                                   .toList(),
                             ),
                           const SizedBox(height: 8),
+                          // Teacher Comment (optional)
+                          if (teacherComment != null) ...[
+                            const Divider(height: 32),
+                            const Text('Komentar Guru', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.edit_calendar, size: 18, color: Colors.black45),
+                                const SizedBox(width: 8),
+                                Text(
+                                  teacherCommentDate != null ? _formatDate(teacherCommentDate!) : '-',
+                                  style: const TextStyle(color: Colors.black45),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE6D7FF),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                ],
+                              ),
+                              child: Text(
+                                teacherComment!,
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                         ],
                       ),
                     ),
