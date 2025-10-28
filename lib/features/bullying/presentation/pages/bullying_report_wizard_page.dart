@@ -331,14 +331,6 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         ),
         const SizedBox(height: 12),
         CheckboxListTile(
-          value: anonymous,
-          onChanged: (v) => setState(() => anonymous = v ?? false),
-          title: const Text('Laporkan secara anonim (identitas saya akan dirahasiakan).', style: TextStyle(color: Colors.white)),
-          controlAffinity: ListTileControlAffinity.leading,
-          activeColor: Colors.white,
-          checkColor: const Color(0xFF7F55B1),
-        ),
-        CheckboxListTile(
           value: confirmTruth,
           onChanged: (v) => setState(() => confirmTruth = v ?? false),
           title: const Text('Saya menyatakan bahwa informasi ini adalah kejadian yang benar-benar terjadi.', style: TextStyle(color: Colors.white)),
