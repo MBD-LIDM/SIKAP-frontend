@@ -1,0 +1,668 @@
+[
+    {
+      "jenjang": "SD",
+      "skenario": "Kasus Hilangnya Kotak Pensil & Ejekan",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai tindakan berani yang aman. Selain itu, kamu juga akan mengidentifikasi bullying sederhana. Kamu akan tahu cara tepat meminta bantuan orang dewasa.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Di kelas, kamu melihat temanmu, Sani, terlihat sedih dan mencari-cari sesuatu di bawah meja. Terdengar beberapa anak laki-laki di belakangmu berbisik dan tertawa sambil menunjuk ke arahnya. Sani terlihat sangat cemas.",
+          "pertanyaan": "Apa yang kamu pikirkan?",
+          "ilustrasi_file": "sd_1_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Sani pasti lupa menaruh pensilnya.",
+              "umpan_balik": "Mungkin saja. Tapi tawa teman-temanmu sepertinya ada yang aneh. Coba perhatikan lagi.",
+              "lanjut_ke_tahap": 1
+            },
+            {
+              "id": "B",
+              "jawaban": "Jangan-jangan kotak pensil Sani disembunyikan teman-teman itu!",
+              "umpan_balik": "HEBAT! Kamu memperhatikan tanda-tanda yang kurang baik.",
+              "lanjut_ke_tahap": 2
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Ternyata benar, kamu melihat salah satu anak di belakangmu memasukkan kotak pensil Sani ke dalam ranselnya sendiri. Sani mulai menangis pelan. Kamu merasa takut.",
+          "pertanyaan": "Apa yang kamu lakukan pada situasi ini?",
+          "ilustrasi_file": "sd_1_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Mendatangi anak itu dan marah-marah agar ia mengembalikan.",
+              "umpan_balik": "Wah, kamu berani! Tapi mendatangi orang yang sedang marah bisa membuat keadaan makin gaduh. Coba cara yang lebih aman, yuk.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Pergi ke guru di luar kelas dan melapor secara diam-diam.",
+              "umpan_balik": "HEBAT! Melapor ke guru adalah langkah paling aman. Itu adalah langkah keberanian yang bijak.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Kamu melapor ke Guru Bimbingan. Guru datang dan menyelesaikan masalah itu dengan tenang. Kotak pensil Sani kembali. Sani tersenyum dan berterima kasih. Kamu merasa hatimu lega.",
+          "pertanyaan": "Bagaimana kamu mengelola rasa takutmu?",
+          "ilustrasi_file": "sd_1_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Tarik napas panjang 5 kali dan ingat bahwa guru akan membantumu.",
+              "umpan_balik": "HEBAT! Mengatur napas membantu menenangkan tubuh. Kamu berhasil mengendalikan rasa takutmu.",
+              "lanjut_ke_tahap": 4
+            },
+            {
+              "id": "B",
+              "jawaban": "Berlari keluar kelas sampai rasa takut hilang.",
+              "umpan_balik": "Berlari bisa membantu. Tapi nanti kamu akan kehabisan napas dan gurumu bingung. Lain kali, coba tarik napas dulu, ya.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu sudah berhasil menolong temanmu.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu pelajari tentang menjadi \"pahlawan\" yang baik hari ini?",
+          "ilustrasi_file": "sd_1_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SD",
+      "skenario": "Merasa Sedih Karena Gagal Gambar",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara mengelola perasaan frustrasi. Selain itu, kamu juga akan mencari bantuan saat kesulitan belajar. Kamu akan fokus pada proses usaha, bukan hanya hasil akhir.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Ibu Guru meminta kalian menggambar pemandangan sawah. Kamu sudah berusaha keras, tapi gambarmu tidak terlihat sebagus punya temanmu, Risa. Kamu merasa sedih dan kesal. Tiba-tiba, kamu ingin merobek kertas gambarmu.",
+          "pertanyaan": "Apa yang kamu lakukan saat perasaan kesal itu muncul?",
+          "ilustrasi_file": "sd_2_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Tarik napas panjang 5 kali dan tutup matamu sebentar.",
+              "umpan_balik": "HEBAT! Mengatur napas adalah langkah pertama untuk menenangkan hati. Kamu berhasil mengendalikan perasaanmu.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Segera robek kertas itu dan sembunyikan di dalam tas.",
+              "umpan_balik": "Merobek kertas hanya akan membuatmu kehilangan kesempatan untuk mencoba lagi. Lain kali, coba tenangkan diri dulu sebelum bertindak, ya.",
+              "lanjut_ke_tahap": 1
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Setelah tenang, kamu melihat ke gambarmu lagi. Kamu tidak tahu bagian mana yang harus diperbaiki. Kamu merasa malu untuk bertanya pada Ibu Guru.",
+          "pertanyaan": "Apa yang kamu lakukan selanjutnya?",
+          "ilustrasi_file": "sd_2_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Pura-pura sakit perut dan minta izin pulang dari sekolah.",
+              "umpan_balik": "Semua orang pernah merasa sedih karena gagal, itu wajar. Tapi melarikan diri tidak menyelesaikan masalah gambarmu. Lebih baik coba cari bantuan, ya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Angkat tangan dan tanyakan pada Ibu Guru, \"Bu, bagaimana cara menggambar pohon yang benar?\"",
+              "umpan_balik": "HEBAT! Berani bertanya adalah tanda kamu ingin belajar. Ibu Guru pasti senang melihat usahamu!",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Ibu Guru datang ke mejamu, memberikan petunjuk sederhana, dan tersenyum. Kamu merasa sedikit lebih baik dan mulai menggambar lagi dengan petunjuk baru itu.",
+          "pertanyaan": "Apa yang kamu ingat tentang usaha yang sudah kamu lakukan?",
+          "ilustrasi_file": "sd_2_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Ingat bahwa kamu sudah berusaha keras, jadi tidak apa-apa jika hasilnya belum sempurna.",
+              "umpan_balik": "HEBAT! Ingat usahamu lebih penting daripada hasil akhirnya. Kamu punya semangat yang kuat!",
+              "lanjut_ke_tahap": 4
+            },
+            {
+              "id": "B",
+              "jawaban": "Ingat bahwa kamu harus menggambar lebih bagus dari Risa besok.",
+              "umpan_balik": "Senang melihat kamu termotivasi. Tapi fokuslah pada usahamu sendiri, bukan membandingkan dengan orang lain. Coba fokus pada seberapa baik kamu hari ini, ya.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu sudah berhasil melanjutkan gambarmu. Kamu tahu cara untuk lebih tenang lain kali.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu lakukan saat sedih/kesal agar bisa semangat lagi?",
+          "ilustrasi_file": "sd_2_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SD",
+      "skenario": "Melihat Teman Didorong di Lapangan",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara aman menjadi upstander. Selain itu, kamu juga akan mengutamakan keselamatan saat menolong. Kamu akan memahami bahwa melapor adalah tindakan keberanian.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Saat jam istirahat, kamu melihat Doni (temanmu) sedang berjalan sendirian. Tiba-tiba, Bima datang dari belakang dan mendorong Doni hingga jatuh. Doni terlihat kaget dan hampir menangis. Tidak ada guru di dekat sana.",
+          "pertanyaan": "Apa yang paling tepat kamu lakukan saat ini?",
+          "ilustrasi_file": "sd_3_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Berpura-pura tidak melihat dan berlari ke kantin.",
+              "umpan_balik": "Wajar jika kamu takut, tapi Doni butuh bantuan. Pahlawan yang baik akan membantu temannya. Coba pikirkan cara yang aman untuk menolong, ya.",
+              "lanjut_ke_tahap": 1
+            },
+            {
+              "id": "B",
+              "jawaban": "Berhenti berjalan dan lihat apa yang Bima lakukan selanjutnya.",
+              "umpan_balik": "HEBAT! Mengamati situasi adalah langkah yang bijak. Sekarang kamu tahu bahwa Doni sedang dalam kesulitan.",
+              "lanjut_ke_tahap": 2
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Bima mulai mengejek Doni dan menertawakannya. Doni semakin sedih. Kamu tahu Bima kuat dan kamu takut padanya.",
+          "pertanyaan": "Apa tindakan berani yang paling aman untuk Doni?",
+          "ilustrasi_file": "sd_3_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Teriak ke Bima, \"STOP! Jangan nakal!\"",
+              "umpan_balik": "Teriakanmu berani, tapi ini bisa membuat Bima makin marah dan mendorongmu juga. Ada cara yang lebih aman untuk membuat bullying ini berhenti. Coba cara lain, ya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Segera lari memanggil guru atau petugas keamanan di dekat sana.",
+              "umpan_balik": "HEBAT! Kamu memilih langkah yang paling bijak. Guru akan segera datang dan menghentikan perbuatan Bima. Kamu sudah menolong Doni dengan aman!",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Kamu berhasil memanggil Guru Olahraga. Guru menegur Bima dan menolong Doni. Beberapa temanmu mungkin berpikir kamu \"mengadu\" kepada guru.",
+          "pertanyaan": "Bagaimana kamu menyikapi perasaan itu?",
+          "ilustrasi_file": "sd_3_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Ingat bahwa melapor adalah tanda keberanian karena kamu melindungi teman.",
+              "umpan_balik": "HEBAT! Melindungi teman dari bahaya adalah tugas pahlawan yang baik. Jangan dengarkan teman yang bilang kamu mengadu!",
+              "lanjut_ke_tahap": 4
+            },
+            {
+              "id": "B",
+              "jawaban": "Merasa malu dan berjanji tidak akan melapor lagi.",
+              "umpan_balik": "Jangan malu! Melapor bukan mengadu. Melapor adalah membantu teman yang tidak bisa membela diri. Doni senang kamu melapor, kan?",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu sudah berhasil menjadi upstander yang aman.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu lakukan saat kamu melihat teman butuh bantuan tetapi kamu merasa takut?",
+          "ilustrasi_file": "sd_3_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMP",
+      "skenario": "Dikeluarkan dari Grup WA & Rumor",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai mengendalikan emosi saat krisis daring. Selain itu, kamu juga akan memilih strategi pelaporan yang efektif. Kamu akan melindungi diri dari cyberbullying yang meluas.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Kamu sedang mengecek HP dan menyadari kamu telah dikeluarkan dari grup chat belajar yang berisi semua teman dekatmu. Tak lama, kamu menerima screenshot dari teman lain yang menunjukkan mereka sedang membicarakanmu dengan kata-kata kasar. Kamu merasa kaget, marah, dan sangat sedih.",
+          "pertanyaan": "Apa yang paling ingin kamu lakukan saat ini?",
+          "ilustrasi_file": "smp_1_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Segera buat story yang menyindir mereka balik dengan kata-kata yang lebih pedas.",
+              "umpan_balik": "Membalas dengan kemarahan hanya akan membuat masalah makin besar dan membuat kamu terlihat sama buruknya. Coba pikirkan, apa yang bisa membuat hatimu tenang dulu?",
+              "lanjut_ke_tahap": 1
+            },
+            {
+              "id": "B",
+              "jawaban": "Letakkan HP-mu jauh-jauh, tarik napas, dan cari aktivitas lain untuk menenangkan diri.",
+              "umpan_balik": "HEBAT! Mengatur emosi adalah langkah pertama yang paling dewasa. Kamu berhasil mengendalikan impuls untuk menyerang balik.",
+              "lanjut_ke_tahap": 2
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Setelah sedikit tenang, kamu tahu kamu harus menyelesaikan ini. Kamu tidak bisa belajar tanpa grup chat itu dan kamu tidak ingin reputasimu rusak.",
+          "pertanyaan": "Langkah strategis apa yang kamu ambil untuk menyelesaikan masalah ini?",
+          "ilustrasi_file": "smp_1_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Kirim chat pribadi yang sangat panjang ke ketua kelompok untuk menuntut penjelasan.",
+              "umpan_balik": "Mengkonfrontasi secara langsung bisa membuat mereka makin keras kepala. Informasi pribadimu bisa disebarkan lebih jauh. Coba cari bantuan dari pihak yang netral dan berwenang.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Kumpulkan screenshot bukti dan bicarakan masalah ini dengan Guru BK atau orang tuamu.",
+              "umpan_balik": "HEBAT! Kamu berpikir strategis. Mengumpulkan bukti dan melapor ke orang dewasa yang netral adalah cara teraman untuk menghentikan cyberbullying dan rumor.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Guru BK berjanji akan membantu memediasi. Namun, prosesnya akan memakan waktu. Kamu merasa cemas dan kesepian.",
+          "pertanyaan": "Bagaimana kamu menjaga dirimu selama proses menunggu ini?",
+          "ilustrasi_file": "smp_1_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Aku akan mencoba mencari teman baru di luar kelompok itu dan fokus pada hobiku.",
+              "umpan_balik": "HEBAT! Fokus pada hal yang bisa kamu kontrol (hobimu) dan memperluas pertemanan adalah tanda resiliensi yang luar biasa!",
+              "lanjut_ke_tahap": 4
+            },
+            {
+              "id": "B",
+              "jawaban": "Aku akan terus membuka grup chat mereka dari akun teman lain untuk melihat apa yang mereka bicarakan tentangku.",
+              "umpan_balik": "Terus memantau chat hanya akan menambah kecemasanmu dan membuatmu makin sedih. Lebih baik alihkan fokusmu ke hal-hal yang positif dan membangun, ya.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu berhasil melewati masa sulit ini dengan bijak.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu pelajari tentang menghadapi masalah di media sosial tanpa mengorbankan dirimu sendiri?",
+          "ilustrasi_file": "smp_1_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMP",
+      "skenario": "Tekanan Cepat Menyelesaikan Tugas Kelompok",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai komunikasi asertif. Selain itu, kamu juga akan menyusun perencanaan kerja yang realistis. Kamu akan menyelesaikan konflik akademik dengan kepala dingin.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Tugas proyek kelompokmu harus dikumpulkan besok, tetapi anggota kelompokmu (Reno dan Sarah) terlihat santai. Kamu merasa sangat cemas karena takut nilaimu turun. Reno marah saat kamu mengingatkan.",
+          "pertanyaan": "Perasaan apa yang paling kuat kamu rasakan saat ini?",
+          "ilustrasi_file": "smp_2_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Aku merasa marah pada Reno, dan cemas pada diriku sendiri.",
+              "umpan_balik": "HEBAT! Mengakui perasaan marah dan cemas adalah langkah awal untuk mengendalikan mereka. Jangan biarkan emosi itu menguasaimu, ya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Aku merasa tenang-tenang saja, pasti besok beres.",
+              "umpan_balik": "Mungkin kamu berharap begitu. Tapi mengabaikan tenggat waktu tugas bisa berisiko. Lebih baik akui perasaan cemasmu agar bisa mencari solusinya.",
+              "lanjut_ke_tahap": 1
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Kamu harus bicara dengan Reno dan Sarah, tapi kamu tidak mau bertengkar. Kamu perlu memastikan tugas selesai malam ini.",
+          "pertanyaan": "Bagaimana kamu berkomunikasi dengan kelompokmu secara efektif tanpa menyerang?",
+          "ilustrasi_file": "smp_2_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Kirim chat bernada mengancam, \"Pokoknya kalau tugas ini gagal, kalian yang tanggung jawab!\"",
+              "umpan_balik": "Mengancam hanya akan membuat mereka makin malas bekerja sama. Komunikasi yang baik harus fokus pada solusi, bukan menyalahkan. Coba cara lain, ya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Ajak mereka bertemu dan katakan, \"Aku cemas tugas ini tidak selesai tepat waktu. Bisakah kita buat jadwal kerja per jam malam ini?\"",
+              "umpan_balik": "HEBAT! Ini adalah komunikasi asertif. Kamu menyampaikan perasaanmu dan langsung menawarkan solusi. Ini adalah cara yang dewasa.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Reno dan Sarah setuju membuat jadwal baru. Tugasmu sekarang adalah membagi ulang waktu. Kamu harus mengorbankan waktu bermainmu.",
+          "pertanyaan": "Bagaimana kamu mengatur ulang prioritas kerjamu malam ini?",
+          "ilustrasi_file": "smp_2_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Fokuskan energi hanya pada bagianmu sendiri dan biarkan Reno menyelesaikan sisanya.",
+              "umpan_balik": "Tugas kelompok harus diselesaikan bersama. Jika kamu tidak ikut membantu, Reno dan Sarah akan merasa sendirian. Coba pikirkan bagaimana kalian bisa saling mendukung.",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Tetapkan batas waktu ketat untuk tiap sub-bab, dan minta bantuan Sarah untuk mengecek pekerjaan Reno.",
+              "umpan_balik": "HEBAT! Kamu menjadi pemimpin yang baik! Pembagian kerja yang jelas dan monitoring akan membantu kalian selesai tepat waktu. Ini adalah forethought yang baik!",
+              "lanjut_ke_tahap": 4
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kalian berhasil menyelesaikan tugas kelompok tepat waktu.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu pelajari tentang pentingnya perencanaan dan berbicara jujur dalam kelompok?",
+          "ilustrasi_file": "smp_2_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMP",
+      "skenario": "Melihat Siswa Lain Memaksa Junior Membayar Jajan",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai pengambilan keputusan etis. Selain itu, kamu juga akan menyelamatkan korban tanpa konfrontasi. Kamu akan mempertahankan nilai keadilan di sekolah.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Sepulang sekolah, kamu melihat Dani (siswa kelas IX) sedang berdiri di depan Wira (siswa kelas VII) di gerbang kantin. Dani berkata dengan nada tinggi, \"Hei, bayar jajananku yang kemarin! Kalau tidak, jangan harap kamu aman di sekolah.\" Wira terlihat sangat takut dan mengeluarkan uangnya.",
+          "pertanyaan": "Apa yang paling membuatmu ragu untuk bertindak?",
+          "ilustrasi_file": "smp_3_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Aku takut Dani akan balas dendam padaku atau melibatkanku.",
+              "umpan_balik": "HEBAT! Mengakui rasa takut itu penting. Sekarang, bandingkan ketakutan ini dengan pentingnya nilai keadilan. Itu adalah langkah awal pemikiran kritis.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Aku pikir itu bukan urusanku, mereka hanya sedang bercanda.",
+              "umpan_balik": "Candaan tidak akan membuat seseorang terlihat ketakutan sampai mengeluarkan uang. Ini adalah pemaksaan. Jika kamu tidak bertindak, kamu membiarkan hal buruk terjadi. Coba lihat lagi situasinya.",
+              "lanjut_ke_tahap": 1
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Kamu memutuskan kamu tidak bisa diam. Wira menoleh ke arahmu dengan tatapan memohon. Kamu harus bertindak tanpa mengonfrontasi Dani yang lebih besar dan terlihat emosi.",
+          "pertanyaan": "Apa tindakan berani dan cerdas yang kamu ambil saat ini?",
+          "ilustrasi_file": "smp_3_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Dekati Dani dan berbisik, \"Kalau kamu melakukan itu, aku akan lapor guru BK sekarang juga!\"",
+              "umpan_balik": "Berbisik ke Dani mungkin membuatnya kaget, tetapi ia bisa saja malah marah dan membuat situasi memanas. Memanggil bantuan adalah strategi paling aman dan efektif. Coba cara lain, ya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Berpura-pura kamu mencari teman, berjalan cepat ke arah Wira, lalu ajak Wira menjauh dengan berkata, \"Wira, dicari Ibu Guru di ruang BK!\"",
+              "umpan_balik": "HEBAT! Kamu berhasil menyelamatkan Wira dari situasi itu tanpa konfrontasi langsung. Sekarang, tugasmu adalah memastikan Wira aman dan melapor segera.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Wira berlari bersamamu dan merasa lega. Sekarang kalian berada di tempat yang aman. Wira bilang ia takut Dani akan tahu bahwa ia melapor.",
+          "pertanyaan": "Apa yang kamu katakan kepada Wira tentang melapor?",
+          "ilustrasi_file": "smp_3_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Katakan pada Wira, \"Kita tidak akan lapor! Aku akan coba chat Dani untuk mengancamnya balik.\"",
+              "umpan_balik": "Mengancam balik tidak akan menyelesaikan masalah, malah kamu bisa kena masalah karena ikut mengancam. Melapor ke guru adalah langkah yang wajib. Itu bukan mengadu, itu adalah mencari keadilan!",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Katakan, \"Aku akan melapor sekarang dan kita pastikan laporan itu rahasia. Tugas kita adalah menghentikannya, bukan takut padanya.\"",
+              "umpan_balik": "HEBAT! Kamu berpegang pada nilai keadilan. Kamu menunjukkan Wira bahwa melapor adalah tindakan berani untuk menghentikan kejahatan. Ayo lapor segera!",
+              "lanjut_ke_tahap": 4
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu sudah berhasil menyelamatkan Wira dan melaporkan kasusnya.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang membuatmu berani bertindak, meskipun ada risiko bahaya?",
+          "ilustrasi_file": "smp_3_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMA",
+      "skenario": "Perselisihan Posting Medsos & Cancel Culture",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai berpikir kritis saat krisis daring. Selain itu, kamu juga akan melindungi diri dari tekanan groupthink. Kamu akan menerapkan strategi manajemen krisis media sosial.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Salah satu temanmu, Maya, membuat posting di media sosial yang dianggap sangat menyinggung sekelompok siswa lain. Ia diserang oleh ratusan komentar jahat, dibagikan foto-foto lamanya, dan nama baiknya dihancurkan secara daring. Kamu tahu Maya sebenarnya tidak bermaksud jahat.",
+          "pertanyaan": "Apa yang kamu lakukan terhadap informasi yang membanjiri beranda mediamu?",
+          "ilustrasi_file": "sma_1_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Ikut berkomentar agar tidak dianggap membela Maya, meskipun kamu tahu itu berlebihan.",
+              "umpan_balik": "Mengikuti massa adalah groupthink. Menyerang orang yang sedang tertekan adalah bullying. Pahlawan sejati berpikir kritis. Coba cari cara lain untuk mengambil posisi yang etis.",
+              "lanjut_ke_tahap": 1
+            },
+            {
+              "id": "B",
+              "jawaban": "Berhenti membaca komentar, sembunyikan posting-an itu, dan fokus memverifikasi fakta di balik perselisihan.",
+              "umpan_balik": "HEBAT! Kamu mengendalikan dopamine hit media sosial. Mengumpulkan fakta dan menenangkan diri adalah langkah forethought yang cerdas sebelum bertindak.",
+              "lanjut_ke_tahap": 2
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Kamu berhasil memverifikasi bahwa posting Maya memang kesalahpahaman. Maya sekarang panik dan mematikan notifikasi. Kamu ingin membantu, tetapi kamu tidak bisa mengendalikan massa daring.",
+          "pertanyaan": "Apa tindakan berani dan strategis yang kamu sarankan kepada Maya?",
+          "ilustrasi_file": "sma_1_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Sarankan Maya untuk membuat video klarifikasi emosional dan meminta maaf kepada semua orang.",
+              "umpan_balik": "Klarifikasi emosional saat sedang krisis hanya akan memicu lebih banyak serangan. Lebih baik Maya tenang dulu. Coba cara lain yang memprioritaskan keamanan mentalnya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Sarankan Maya untuk segera menghapus posting yang bermasalah, mencatat semua bukti ancaman, dan mencari bantuan profesional (Guru BK/Orang Tua).",
+              "umpan_balik": "HEBAT! Kamu memprioritaskan keamanan (menghapus ancaman) dan segera help-seeking. Ini adalah strategi manajemen krisis yang tepat.",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Maya mengikuti saranmu dan meminta bantuan Guru BK. Sekarang, beberapa temanmu mulai menanyakan posisimu, menekanmu untuk mengecam Maya.",
+          "pertanyaan": "Bagaimana kamu berkomunikasi dengan temanmu tanpa terlibat konflik baru?",
+          "ilustrasi_file": "sma_1_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Balas dengan keras, \"Aku tidak ikut-ikutan. Kalian semua lebay dan tidak tahu kebenarannya!\"",
+              "umpan_balik": "Menggunakan kata-kata kasar hanya akan memindahkan cancel culture itu kepadamu. Komunikasi harus fokus pada solusi, bukan penghakiman.",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Jawab dengan tenang, \"Aku tidak akan berkomentar tentang hal ini. Aku sudah bicara dengan Maya dan menyarankan dia bicara dengan Guru BK. Ini masalah sensitif.\"",
+              "umpan_balik": "HEBAT! Ini adalah asertivitas yang tenang. Kamu menetapkan batas diri, melindungi teman, dan mendorong saluran komunikasi yang sehat (Guru BK).",
+              "lanjut_ke_tahap": 4
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu berhasil melewati krisis ini dengan pikiran jernih.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu pelajari tentang pentingnya berpikir kritis dan mengelola emosi dalam menghadapi tekanan sosial daring?",
+          "ilustrasi_file": "sma_1_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMA",
+      "skenario": "Dilema Menjadi Saksi Kecurangan Ujian",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai pentingnya integritas akademik. Selain itu, kamu juga akan memilih saluran pelaporan anonim yang tepat. Kamu akan mengelola tekanan sosial setelah mengambil sikap jujur.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Kamu sedang menjalani Ujian Tengah Semester mata pelajaran yang sulit. Tiba-tiba, kamu melihat temanmu yang paling populer, David, mengeluarkan HP-nya dan memotret soal ujian. David kemudian mengirimkan foto itu ke grup chat kelas yang kamu ikuti. Kamu merasa sangat tertekan.",
+          "pertanyaan": "Apa yang paling membuatmu takut untuk bertindak?",
+          "ilustrasi_file": "sma_2_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Aku takut David dan teman-temannya akan memusuhiku dan aku akan kehilangan circle pertemanan.",
+              "umpan_balik": "HEBAT! Mengakui ketakutan sosial itu penting. Sekarang, bandingkan ketakutan ini dengan pentingnya nilai kejujuran. Itu adalah langkah awal pemikiran kritis.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Aku takut aku akan ketinggalan informasi kunci dari grup chat itu dan nilaiku terancam.",
+              "umpan_balik": "Wajar jika kamu peduli nilai. Tetapi, nilai yang didapat dari kecurangan tidak akan bertahan lama. Fokus pada integritasmu. Coba pikirkan lagi, apa dampak tindakan David pada dirimu dan kelas?",
+              "lanjut_ke_tahap": 1
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "David menoleh ke arahmu dan memberikan isyarat agar kamu diam. Kamu tahu, jika David ketahuan, reputasi kelas akan hancur. Namun, kamu percaya kejujuran adalah kunci.",
+          "pertanyaan": "Apa tindakan yang paling menjaga integritas dirimu dan keamanan lingkungan akademik?",
+          "ilustrasi_file": "sma_2_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Segera tinggalkan ruangan, dan temui Guru Pengawas setelah ujian selesai untuk melapor secara anonim.",
+              "umpan_balik": "HEBAT! Kamu memilih tindakan yang menjaga integritas tanpa mengganggu jalannya ujian dan meminimalkan risiko konfrontasi langsung. Ini adalah strategi yang dewasa.",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Biarkan saja David, tetapi ambil screenshot pesan di grup chat sebagai bukti cadangan.",
+              "umpan_balik": "Mengambil bukti itu bagus, tetapi bukti itu tidak akan menghentikan David saat ini. Nilai kejujuran harus diprioritaskan. Coba pikirkan, siapa yang bisa menghentikan kecurangan ini secepatnya?",
+              "lanjut_ke_tahap": 2
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Kamu berhasil melapor. Guru Pengawas mengambil tindakan segera. David dan grupnya kini marah besar padamu (meskipun kamu melapor anonim, mereka curiga). Kamu merasa stres dan dihujani kebencian.",
+          "pertanyaan": "Bagaimana kamu mengelola tekanan emosional dan sosial ini?",
+          "ilustrasi_file": "sma_2_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Aku akan mencoba menjelaskan kepada teman-teman bahwa aku benar. Aku harus membela diri!",
+              "umpan_balik": "Mencoba menjelaskan saat emosi sedang tinggi seringkali sia-sia. Tetapkan batas. Prioritaskan kesehatan mentalmu. Coba cara lain untuk mengelola stres sosial ini.",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Aku akan mengurangi interaksi dengan mereka, mencari dukungan dari teman yang kupercaya, dan fokus pada tujuan akademisku sendiri.",
+              "umpan_balik": "HEBAT! Kamu menetapkan batas diri dan mencari dukungan sosial yang sehat. Fokus pada tujuanmu sendiri adalah tanda SRL dan resiliensi yang luar biasa!",
+              "lanjut_ke_tahap": 4
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu berhasil mempertahankan integritasmu.",
+          "pertanyaan": "Tuliskan di bawah ini: Mengapa nilai kejujuran lebih penting daripada popularitas sosial di sekolah?",
+          "ilustrasi_file": "sma_2_4.png",
+          "pilihan": []
+        }
+      ]
+    },
+    {
+      "jenjang": "SMA",
+      "skenario": "Menghadapi Guru yang Memberikan Komentar Merendahkan",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara berkomunikasi secara asertif dengan figur otoritas. Selain itu, kamu juga akan mencari dukungan profesional di sekolah. Kamu akan memisahkan komentar destruktif dari nilai dirimu.",
+      "tahapan": [
+        {
+          "tahap_ke": 1,
+          "narasi": "Saat pembagian tugas di kelas, Pak Anwar mengembalikan tugasmu dengan skor rendah. Di depan semua temanmu, ia berkata, \"Nilai kamu selalu segini. Kamu ini memang tidak ada bakat di bidang ini, buang-buang waktu saja.\" Kamu merasa direndahkan dan marah besar.",
+          "pertanyaan": "Apa yang paling harus kamu jaga dan kendalikan saat ini?",
+          "ilustrasi_file": "sma_3_1.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Emosimu. Jangan biarkan kemarahanmu membuatmu membantah Pak Anwar di kelas.",
+              "umpan_balik": "HEBAT! Mengendalikan emosi di depan figur otoritas adalah tanda kedewasaan. Ini mencegah situasi menjadi lebih buruk. Kamu berhasil self-manage!",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Reputasimu. Segera katakan, \"Nilai saya tinggi di mata pelajaran lain!\"",
+              "umpan_balik": "Mempertahankan diri itu baik, tetapi membantah di depan kelas bisa membuatmu dan Pak Anwar sama-sama emosi. Prioritaskan ketenangan dan strategi yang lebih baik.",
+              "lanjut_ke_tahap": 1
+            }
+          ]
+        },
+        {
+          "tahap_ke": 2,
+          "narasi": "Setelah kelas selesai, kamu harus bicara dengan Pak Anwar. Kamu ingin menyampaikan bahwa komentarnya tidak profesional tanpa menyerangnya.",
+          "pertanyaan": "Bagaimana kamu memulai percakapan ini secara asertif?",
+          "ilustrasi_file": "sma_3_2.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Katakan, \"Pak, komentar Bapak tadi tidak pantas! Bapak merusak mental saya.\"",
+              "umpan_balik": "Ini adalah pernyataan menyerang (agresif). Pak Anwar akan defensif dan tidak mau mendengarkan. Coba ubah fokus pada perilakunya dan perasaanmu, bukan karakternya.",
+              "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "B",
+              "jawaban": "Katakan, \"Pak, saya ingin bicara tentang nilai saya. Saya merasa terdemotivasi dengan komentar Bapak di depan kelas. Bisakah kita diskusikan cara belajar saya saja?\"",
+              "umpan_balik": "HEBAT! Ini adalah komunikasi asertif. Kamu jujur tentang perasaanmu dan mengarahkan diskusi kembali ke solusi (cara belajar). Ini adalah strategi coping yang matang!",
+              "lanjut_ke_tahap": 3
+            }
+          ]
+        },
+        {
+          "tahap_ke": 3,
+          "narasi": "Pak Anwar mendengarkanmu, tetapi ia tetap membela diri. Kamu tahu kamu butuh dukungan lebih lanjut untuk memproses stres ini dan memastikan hal ini tidak terulang.",
+          "pertanyaan": "Siapa yang paling tepat kamu hubungi selanjutnya?",
+          "ilustrasi_file": "sma_3_3.png",
+          "pilihan": [
+            {
+              "id": "A",
+              "jawaban": "Posting keluhanmu di media sosial tanpa menyebut nama Pak Anwar, untuk mencari dukungan publik.",
+              "umpan_balik": "Posting di media sosial bisa menjadi cyberbullying yang kembali ke dirimu. Carilah bantuan dari saluran resmi sekolah yang menjamin kerahasiaan.",
+              "lanjut_ke_tahap": 3
+            },
+            {
+              "id": "B",
+              "jawaban": "Segera hubungi Guru BK atau Wali Kelas untuk menceritakan kejadian dan meminta mediasi/konseling.",
+              "umpan_balik": "HEBAT! Kamu mencari bantuan profesional melalui saluran resmi. Guru BK/Wali Kelas dapat membantu mengelola stresmu dan menangani masalah ini secara prosedural.",
+              "lanjut_ke_tahap": 4
+            }
+          ]
+        },
+        {
+          "tahap_ke": 4,
+          "narasi": "Kamu telah berhasil membela diri dan mencari bantuan.",
+          "pertanyaan": "Tuliskan di bawah ini: Apa yang kamu pelajari tentang pentingnya memisahkan kritik yang merusak (destruktif) dengan nilai dirimu sendiri?",
+          "ilustrasi_file": "sma_3_4.png",
+          "pilihan": []
+        }
+      ]
+    }
+  ]

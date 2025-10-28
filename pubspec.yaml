@@ -23,3 +23,5 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/others/
+    - assets/data/
+    - assets/images/scenario_illustration/
