@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_reports_list_page.dart';
 import 'package:sikap/features/wellbeing_resources/presentation/pages/pojok_tenang_page.dart';
+import 'package:sikap/features/scenarios/presentation/pages/scenario_catalog_page.dart';
 import 'package:sikap/features/authentication/presentation/pages/login_page.dart';
 import '../widgets/feature_button_placeholder.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -17,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFE7CE),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -24,7 +26,7 @@ class _HomePageState extends State<HomePage> {
             end: Alignment.bottomCenter,
             colors: [
               Color(0xFF7F55B1), // Purple at 76%
-              Color(0xFFFFDBB6), // Light peach/orange at 100%
+              Color(0xFFFFE7CE), // Soft cream at 100%
             ],
             stops: [0.76, 1.0],
           ),
@@ -101,8 +103,12 @@ class _HomePageState extends State<HomePage> {
                       // Jejak Intervensi Button - Full SVG
                       GestureDetector(
                         onTap: () {
-                          // TODO: Navigate to intervention trail page
-                          _showComingSoonDialog('Jejak Intervensi');
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ScenarioCatalogPage(),
+                            ),
+                          );
                         },
                         child: SizedBox(
                           width: double.infinity,
@@ -162,24 +168,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(feature),
-          content: const Text('Fitur ini akan segera hadir!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
