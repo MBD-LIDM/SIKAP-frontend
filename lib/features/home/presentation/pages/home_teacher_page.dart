@@ -4,6 +4,7 @@ import '../widgets/feature_button_placeholder.dart';
 import '../../../cases/presentation/pages/case_list_page.dart';
 import '../../../reflections/presentation/reflection_scenario.dart';
 import '../../../dashboard/presentation/dashboard_global.dart';
+import '../../../authentication/presentation/pages/login_page.dart';
 
 class HomeTeacherPage extends StatefulWidget {
   const HomeTeacherPage({super.key});
@@ -95,6 +96,26 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
                           );
                         },
                       ),
+                      const SizedBox(height: 16),
+                      // Logout Button
+                      FeatureButtonPlaceholder(
+                        title: 'Log Out',
+                        subtitle: '',
+                        icon: Icons.logout,
+                        isSettings: true,
+                        backgroundColor: const Color(0xFFB678FF),
+                        textColor: Colors.white,
+                        iconColor: Colors.white,
+                        filled: true,
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                            (route) => false,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                   const SizedBox(height: 20),

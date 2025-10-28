@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_reports_list_page.dart';
 import 'package:sikap/features/wellbeing_resources/presentation/pages/pojok_tenang_page.dart';
+import 'package:sikap/features/authentication/presentation/pages/login_page.dart';
 import '../widgets/feature_button_placeholder.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -116,15 +117,23 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Pengaturan Button
+                      // Log Out Button
                       FeatureButtonPlaceholder(
-                        title: 'Pengaturan',
-                        subtitle: '', // Empty for settings
-                        icon: Icons.settings,
+                        title: 'Log Out',
+                        subtitle: '', // Empty for logout
+                        icon: Icons.logout,
                         isSettings: true,
+                        backgroundColor: const Color(0xFFB678FF),
+                        textColor: Colors.white,
+                        iconColor: Colors.white,
+                        filled: true,
                         onTap: () {
-                          // TODO: Navigate to settings page
-                          _showComingSoonDialog('Pengaturan');
+                          // Navigate back to LoginPage and clear navigation stack
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                            (route) => false,
+                          );
                         },
                       ),
                     ],

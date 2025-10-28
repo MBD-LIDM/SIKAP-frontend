@@ -9,6 +9,10 @@ class FeatureButtonPlaceholder extends StatelessWidget {
   final VoidCallback onTap;
   final bool isSettings;
   final String? svgAsset;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final Color? iconColor;
+  final bool filled;
 
   const FeatureButtonPlaceholder({
     super.key,
@@ -18,6 +22,10 @@ class FeatureButtonPlaceholder extends StatelessWidget {
     required this.onTap,
     this.isSettings = false,
     this.svgAsset,
+    this.backgroundColor,
+    this.textColor,
+    this.iconColor,
+    this.filled = false,
   });
 
   @override
@@ -28,7 +36,7 @@ class FeatureButtonPlaceholder extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.creamBackground,
+          color: backgroundColor ?? AppTheme.creamBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -41,33 +49,55 @@ class FeatureButtonPlaceholder extends StatelessWidget {
         child: Row(
           children: [
             // Icon/SVG container
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Center(
-                child: svgAsset != null
-                    ? SvgPicture.asset(
-                        svgAsset!,
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                      )
-                    : Icon(
-                        icon,
-                        size: 24,
-                        color: isSettings ? AppTheme.primaryPurple : Colors.grey[600],
+            filled
+                ? SizedBox(
+                    width: 60,
+                    height: 60,
+                    child: Center(
+                      child: svgAsset != null
+                          ? SvgPicture.asset(
+                              svgAsset!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.contain,
+                              colorFilter: iconColor != null
+                                  ? ColorFilter.mode(iconColor!, BlendMode.srcIn)
+                                  : null,
+                            )
+                          : Icon(
+                              icon,
+                              size: 24,
+                              color: iconColor ?? (isSettings ? AppTheme.primaryPurple : Colors.grey[600]),
+                            ),
+                    ),
+                  )
+                : Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        width: 2,
+                        style: BorderStyle.solid,
                       ),
-              ),
-            ),
+                    ),
+                    child: Center(
+                      child: svgAsset != null
+                          ? SvgPicture.asset(
+                              svgAsset!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.contain,
+                            )
+                          : Icon(
+                              icon,
+                              size: 24,
+                              color: isSettings ? AppTheme.primaryPurple : Colors.grey[600],
+                            ),
+                    ),
+                  ),
             const SizedBox(width: 16),
             // Text content
             Expanded(
@@ -76,9 +106,9 @@ class FeatureButtonPlaceholder extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: isSettings 
-                        ? AppTheme.buttonTextPurple
-                        : AppTheme.buttonText,
+                    style: (isSettings ? AppTheme.buttonTextPurple : AppTheme.buttonText).copyWith(
+                      color: textColor ?? (isSettings ? AppTheme.primaryPurple : AppTheme.orangeAccent),
+                    ),
                   ),
                   if (!isSettings) ...[
                     const SizedBox(height: 4),
