@@ -1,13 +1,14 @@
 /// lib/core/network/api_env.dart
 class ApiEnv {
   // Default environment
-  static const String _env = String.fromEnvironment('ENV', defaultValue: 'production');
+  static const String _env =
+      String.fromEnvironment('ENV', defaultValue: 'production');
 
   // URLs per environment
   static const Map<String, String> _baseUrls = {
     'production': 'https://sikap-backend-production.up.railway.app',
     'staging': 'https://sikap-backend-staging.up.railway.app',
-    'development': 'http://10.0.2.2:8000', // default local Django for emulator
+    'development': 'http://localhost:8000', // local Django for web development
   };
 
   /// Base URL yang dipakai oleh aplikasi

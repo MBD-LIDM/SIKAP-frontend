@@ -1,69 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_detail_page.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
+import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
 
 class BullyingReportsListPage extends StatefulWidget {
   const BullyingReportsListPage({super.key});
 
   @override
-  State<BullyingReportsListPage> createState() => _BullyingReportsListPageState();
+  State<BullyingReportsListPage> createState() =>
+      _BullyingReportsListPageState();
 }
 
 class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
-  final List<_ReportItem> _all = [
-    _ReportItem(
-      status: 'Baru',
-      title: 'Bullying Verbal',
-      createdAt: DateTime(2025, 8, 22, 9, 18),
-      category: 'Secara verbal',
-      description:
-          'Terjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsung.',
-      evidences: const ['Screenshot chat', 'Catatan kronologi'],
-      anonymous: false,
-      confirmTruth: true,
-    ),
-    _ReportItem(
-      status: 'Diproses',
-      title: 'Pengucilan',
-      createdAt: DateTime(2025, 8, 21, 15, 10),
-      category: 'Pengucilan',
-      description: 'Dikucilkan dari kelompok belajar dan kegiatan ekstrakurikuler.',
-      evidences: const ['Foto daftar hadir'],
-      anonymous: true,
-      confirmTruth: true,
-      teacherComment: 'Laporan akan ditindaklanjuti',
-      teacherCommentDate: DateTime(2025, 8, 21, 16, 0),
-    ),
-    _ReportItem(
-      status: 'Selesai',
-      title: 'Cyberbullying',
-      createdAt: DateTime(2025, 8, 18, 8, 30),
-      category: 'Cyberbullying',
-      description: 'Komentar menghina di media sosial dan pesan direct yang kasar.',
-      evidences: const ['Tangkapan layar komentar'],
-      anonymous: false,
-      confirmTruth: true,
-    ),
-    _ReportItem(
-      status: 'Ditolak',
-      title: 'Bullying Fisik',
-      createdAt: DateTime(2025, 8, 20, 10, 45),
-      category: 'Fisik',
-      description: 'Tindakan pemukulan ringan di lorong sekolah saat waktu istirahat.',
-      evidences: const ['Pernyataan saksi', 'Foto bekas memar'],
-      anonymous: false,
-      confirmTruth: true,
-      teacherComment: 'Bukti tidak memadai',
-      teacherCommentDate: DateTime(2025, 8, 20, 12, 0),
-    ),
-  ];
+  late final BullyingRepository repo;
+  bool _isLoading = true;
+  List<_ReportItem> _all = [];
 
   String _filter = 'Semua';
   String _sort = 'Terbaru';
 
+  @override
+  void initState() {
+    super.initState();
+    repo = BullyingRepository(
+        apiClient: ApiClient(),
+        auth: AuthHeaderProvider(
+            loadUserToken: () async => null, loadGuestToken: () async => null));
+    _loadReports();
+  }
+
+  Future<void> _loadReports() async {
+    try {
+      print("[DEBUG] Loading bullying reports");
+      final result = await repo.getMyBullyingReports(asGuest: true);
+      print("[DEBUG] Loaded reports: ${result.data}");
+      if (result.success && result.data != null) {
+        setState(() {
+          _all = result.data!
+              .map((item) => _ReportItem.fromJson(item as Map<String, dynamic>))
+              .toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to load reports: ${result.message}')));
+        }
+      }
+    } catch (e) {
+      print("[DEBUG] Error loading reports: $e");
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error loading reports: $e')));
+      }
+    }
+  }
+
   List<_ReportItem> get _filteredSorted {
-    List<_ReportItem> list = _all.where((c) => _filter == 'Semua' || c.status == _filter).toList();
-    list.sort((a, b) => _sort == 'Terbaru' ? b.createdAt.compareTo(a.createdAt) : a.createdAt.compareTo(b.createdAt));
+    List<_ReportItem> list =
+        _all.where((c) => _filter == 'Semua' || c.status == _filter).toList();
+    list.sort((a, b) => _sort == 'Terbaru'
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
     return list;
   }
 
@@ -79,7 +81,8 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const BullyingReportWizardPage()),
+            MaterialPageRoute(
+                builder: (context) => const BullyingReportWizardPage()),
           );
         },
         backgroundColor: const Color(0xFFC89EFF),
@@ -97,36 +100,50 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: _buildPillButton(icon: Icons.filter_list, label: 'Filter', onTap: _showFilterDialog)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildPillButton(icon: Icons.sort, label: 'Urutkan', onTap: _showSortDialog)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _filteredSorted.length,
-                    itemBuilder: (context, index) {
-                      final item = _filteredSorted[index];
-                      return _ReportCard(item: item);
-                    },
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                              child: _buildPillButton(
+                                  icon: Icons.filter_list,
+                                  label: 'Filter',
+                                  onTap: _showFilterDialog)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: _buildPillButton(
+                                  icon: Icons.sort,
+                                  label: 'Urutkan',
+                                  onTap: _showSortDialog)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: _filteredSorted.length,
+                          itemBuilder: (context, index) {
+                            final item = _filteredSorted[index];
+                            return _ReportCard(item: item);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildPillButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildPillButton(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -135,7 +152,10 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
           color: Colors.white.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
           ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -144,7 +164,9 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
           children: [
             Icon(icon, color: const Color(0xFF7F55B1)),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -218,6 +240,7 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
 
 class _ReportItem {
   _ReportItem({
+    required this.id,
     required this.status,
     required this.title,
     required this.createdAt,
@@ -230,6 +253,7 @@ class _ReportItem {
     this.teacherCommentDate,
   });
 
+  final String id;
   final String status;
   final String title;
   final DateTime createdAt;
@@ -240,6 +264,24 @@ class _ReportItem {
   final bool confirmTruth;
   final String? teacherComment;
   final DateTime? teacherCommentDate;
+
+  factory _ReportItem.fromJson(Map<String, dynamic> json) {
+    return _ReportItem(
+      id: json['id']?.toString() ?? '',
+      status: json['status'] ?? '',
+      title: json['title'] ?? '',
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      category: json['incident_type'] ?? '',
+      description: json['description'] ?? '',
+      evidences: List<String>.from(json['evidences'] ?? []),
+      anonymous: json['anonymous'] ?? false,
+      confirmTruth: json['confirm_truth'] ?? false,
+      teacherComment: json['teacher_comment'],
+      teacherCommentDate: json['teacher_comment_date'] != null
+          ? DateTime.tryParse(json['teacher_comment_date'])
+          : null,
+    );
+  }
 }
 
 class _ReportCard extends StatelessWidget {
@@ -272,18 +314,7 @@ class _ReportCard extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => BullyingDetailPage(
-              title: item.title,
-              status: item.status,
-              createdAt: item.createdAt,
-              category: item.category,
-              description: item.description,
-              evidences: item.evidences,
-              anonymous: item.anonymous,
-              confirmTruth: item.confirmTruth,
-              teacherComment: item.teacherComment,
-              teacherCommentDate: item.teacherCommentDate,
-            ),
+            builder: (context) => BullyingDetailPage(id: item.id),
           ),
         );
       },
@@ -293,7 +324,10 @@ class _ReportCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Padding(
@@ -302,18 +336,31 @@ class _ReportCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                child: Text(item.status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(item.status,
+                    style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12)),
               ),
               const SizedBox(height: 8),
-              Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87)),
+              Text(item.title,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87)),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.edit_calendar, size: 18, color: Colors.black45),
+                  const Icon(Icons.edit_calendar,
+                      size: 18, color: Colors.black45),
                   const SizedBox(width: 8),
-                  Text(_formatDate(item.createdAt), style: const TextStyle(color: Colors.black45)),
+                  Text(_formatDate(item.createdAt),
+                      style: const TextStyle(color: Colors.black45)),
                 ],
               ),
             ],
@@ -323,5 +370,3 @@ class _ReportCard extends StatelessWidget {
     );
   }
 }
-
-

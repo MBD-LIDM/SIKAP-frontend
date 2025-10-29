@@ -53,6 +53,15 @@ class BullyingRepository {
         {'success': true, 'message': '', 'data': resp.data});
   }
 
+  Future<BullyingListResponse> getMyBullyingReports(
+      {bool asGuest = false}) async {
+    final headers = await auth.build(asGuest: asGuest);
+    final resp = await apiClient.get<List<dynamic>>('/api/bullying/report/my/',
+        headers: headers, transform: (raw) => raw as List<dynamic>);
+    return BullyingListResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data});
+  }
+
   Future<BullyingModel> updateBullyingReport(
       String id, Map<String, dynamic> data) async {
     final headers = await auth.build();

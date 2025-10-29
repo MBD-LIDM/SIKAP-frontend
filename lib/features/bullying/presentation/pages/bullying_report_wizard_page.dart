@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
 
 class BullyingReportWizardPage extends StatefulWidget {
   const BullyingReportWizardPage({super.key});
 
   @override
-  State<BullyingReportWizardPage> createState() => _BullyingReportWizardPageState();
+  State<BullyingReportWizardPage> createState() =>
+      _BullyingReportWizardPageState();
 }
 
 class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
@@ -14,7 +18,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
 
   // form state
   String? selectedCategory; // step 1
-  final TextEditingController descriptionController = TextEditingController(); // step 2
+  final TextEditingController descriptionController =
+      TextEditingController(); // step 2
   final List<String> evidences = []; // step 3 (placeholder path strings)
   bool anonymous = false; // step 4
   bool confirmTruth = false; // step 4
@@ -50,7 +55,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Langkah $currentStep dari $totalSteps', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text('Langkah $currentStep dari $totalSteps',
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
@@ -92,17 +98,22 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE6D7FF) : const Color(0xFFF5F5DC), // Purple tint when selected, beige when not
+            color: isSelected
+                ? const Color(0xFFE6D7FF)
+                : const Color(
+                    0xFFF5F5DC), // Purple tint when selected, beige when not
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? const Color(0xFF7F55B1) : const Color(0xFF7F55B1).withValues(alpha: 0.3),
+              color: isSelected
+                  ? const Color(0xFF7F55B1)
+                  : const Color(0xFF7F55B1).withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: isSelected 
-                  ? const Color(0xFF7F55B1).withValues(alpha: 0.2)
-                  : Colors.black.withValues(alpha: 0.1),
+                color: isSelected
+                    ? const Color(0xFF7F55B1).withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.1),
                 blurRadius: isSelected ? 12 : 8,
                 offset: const Offset(0, 2),
               ),
@@ -119,9 +130,9 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: isSelected 
-                        ? const Color(0xFF7F55B1).withValues(alpha: 0.3)
-                        : Colors.black.withValues(alpha: 0.1),
+                      color: isSelected
+                          ? const Color(0xFF7F55B1).withValues(alpha: 0.3)
+                          : Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -151,9 +162,11 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                     const SizedBox(height: 8),
                     // Bottom right - Type description
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFE4B5), // Light orange/peach background
+                        color: const Color(
+                            0xFFFFE4B5), // Light orange/peach background
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -221,7 +234,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       children: [
         _stepTitle('Apa yang terjadi?'),
         const SizedBox(height: 8),
-        const Text('Pilih sesuai kategori kejadian bullying', style: TextStyle(color: Colors.white70)),
+        const Text('Pilih sesuai kategori kejadian bullying',
+            style: TextStyle(color: Colors.white70)),
         const SizedBox(height: 16),
         ...items.map((item) {
           final isSelected = selectedCategory == item['key'];
@@ -251,9 +265,13 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8),
-          ]),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08), blurRadius: 8),
+              ]),
           child: TextField(
             controller: descriptionController,
             maxLines: 10,
@@ -280,16 +298,28 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       children: [
         _stepTitle('Apakah kamu punya bukti yang bisa dibagikan?'),
         const SizedBox(height: 8),
-        const Text('Bukti dapat berupa foto, video, atau dokumen PDF. (Placeholder daftar)', style: TextStyle(color: Colors.white70)),
+        const Text(
+            'Bukti dapat berupa foto, video, atau dokumen PDF. (Placeholder daftar)',
+            style: TextStyle(color: Colors.white70)),
         const SizedBox(height: 12),
         ...evidences.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12)),
                 child: Row(
-                  children: [const Icon(Icons.insert_drive_file, color: Color(0xFF7F55B1)), const SizedBox(width: 8), Expanded(child: Text(e)),
-                    IconButton(onPressed: () => setState(() => evidences.remove(e)), icon: const Icon(Icons.close))],
+                  children: [
+                    const Icon(Icons.insert_drive_file,
+                        color: Color(0xFF7F55B1)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(e)),
+                    IconButton(
+                        onPressed: () => setState(() => evidences.remove(e)),
+                        icon: const Icon(Icons.close))
+                  ],
                 ),
               ),
             )),
@@ -301,7 +331,9 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
           },
           icon: const Icon(Icons.add),
           label: const Text('Tambah bukti (placeholder)'),
-          style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white70)),
+          style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white70)),
         ),
       ],
     );
@@ -315,17 +347,24 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Kategori Bullying: ${selectedCategory ?? '-'}'),
               const SizedBox(height: 8),
               const Text('Penjelasan:'),
-              Text(descriptionController.text.isEmpty ? '-' : descriptionController.text),
+              Text(descriptionController.text.isEmpty
+                  ? '-'
+                  : descriptionController.text),
               const SizedBox(height: 8),
               const Text('Bukti:'),
-              Wrap(spacing: 8, runSpacing: 8, children: evidences.map((e) => Chip(label: Text(e))).toList()),
+              Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      evidences.map((e) => Chip(label: Text(e))).toList()),
             ],
           ),
         ),
@@ -333,7 +372,9 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         CheckboxListTile(
           value: confirmTruth,
           onChanged: (v) => setState(() => confirmTruth = v ?? false),
-          title: const Text('Saya menyatakan bahwa informasi ini adalah kejadian yang benar-benar terjadi.', style: TextStyle(color: Colors.white)),
+          title: const Text(
+              'Saya menyatakan bahwa informasi ini adalah kejadian yang benar-benar terjadi.',
+              style: TextStyle(color: Colors.white)),
           controlAffinity: ListTileControlAffinity.leading,
           activeColor: Colors.white,
           checkColor: const Color(0xFF7F55B1),
@@ -384,7 +425,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -413,7 +455,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                       ),
                       // Buttons
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 24),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -423,7 +466,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                               width: 50,
                               height: 50,
                               decoration: const BoxDecoration(
-                                color: Color(0xAA9D6CFF), // Purple-ish color with opacity
+                                color: Color(
+                                    0xAA9D6CFF), // Purple-ish color with opacity
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -436,45 +480,97 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                 padding: EdgeInsets.zero,
                               ),
                             ),
-                            
+
                             // Selanjutnya Button
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFC89EFF), // Light purple color
+                                color: const Color(
+                                    0xFFC89EFF), // Light purple color
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFC89EFF), // Light purple color
+                                  backgroundColor: const Color(
+                                      0xFFC89EFF), // Light purple color
                                   foregroundColor: Colors.white,
-                                  padding: EdgeInsets.zero, // Padding sudah diatur di Container
+                                  padding: EdgeInsets
+                                      .zero, // Padding sudah diatur di Container
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30),
                                   ),
-                                  elevation: 0, // Remove default elevation since we're using custom shadow
+                                  elevation:
+                                      0, // Remove default elevation since we're using custom shadow
                                 ),
                                 onPressed: currentStep < totalSteps
                                     ? () {
-                                        if (currentStep == 1 && selectedCategory == null) {
+                                        if (currentStep == 1 &&
+                                            selectedCategory == null) {
                                           return;
                                         }
                                         next();
                                       }
                                     : (confirmTruth
-                                        ? () {
-                                            Navigator.of(context).pushReplacement(
-                                              MaterialPageRoute(
-                                                builder: (_) => const BullyingReportSuccessPage(),
-                                              ),
-                                            );
+                                        ? () async {
+                                            final data = {
+                                              'incident_type': selectedCategory,
+                                              'description':
+                                                  descriptionController.text,
+                                              'evidences': evidences,
+                                              'anonymous': anonymous,
+                                              'confirm_truth': confirmTruth,
+                                            };
+                                            try {
+                                              print(
+                                                  "[DEBUG] Submitting bullying report");
+                                              final repo = BullyingRepository(
+                                                  apiClient: ApiClient(),
+                                                  auth: AuthHeaderProvider(
+                                                      loadUserToken: () async =>
+                                                          null,
+                                                      loadGuestToken:
+                                                          () async => null));
+                                              final result = await repo
+                                                  .createBullyingReport(data,
+                                                      asGuest: true);
+                                              print(
+                                                  "[DEBUG] Submit result: ${result.data}");
+                                              if (result.success) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(const SnackBar(
+                                                        content: Text(
+                                                            'Report submitted successfully')));
+                                                Navigator.of(context)
+                                                    .pushReplacement(
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        const BullyingReportSuccessPage(),
+                                                  ),
+                                                );
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(SnackBar(
+                                                        content: Text(
+                                                            'Failed to submit report: ${result.message}')));
+                                              }
+                                            } catch (e) {
+                                              print(
+                                                  "[DEBUG] Error submitting report: $e");
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                      content: Text(
+                                                          'Error submitting report: $e')));
+                                            }
                                           }
                                         : null),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      currentStep < totalSteps ? 'Selanjutnya' : 'Kirim Laporan',
+                                      currentStep < totalSteps
+                                          ? 'Selanjutnya'
+                                          : 'Kirim Laporan',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600,
@@ -505,9 +601,6 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
     );
   }
 }
-
-
-
 
 class BullyingReportSuccessPage extends StatelessWidget {
   const BullyingReportSuccessPage({super.key});
@@ -568,7 +661,8 @@ class BullyingReportSuccessPage extends StatelessWidget {
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
                       child: Text(
                         'Selesai',
                         style: TextStyle(
@@ -587,4 +681,3 @@ class BullyingReportSuccessPage extends StatelessWidget {
     );
   }
 }
-
