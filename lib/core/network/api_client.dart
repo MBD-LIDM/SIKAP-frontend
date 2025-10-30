@@ -1,31 +1,110 @@
+// lib/core/network/api_client.dart
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:http/http.dart' as http;
+
 import 'api_env.dart';
 import 'api_exception.dart';
 import 'api_response.dart';
+import 'logging.dart';
 
 class ApiClient {
   final http.Client _client;
+  final Uri _base = Uri.parse(ApiEnv.baseUrl);
+
   ApiClient({http.Client? client}) : _client = client ?? http.Client();
+
+  /// Normalisasi penyusunan URL agar tidak pernah double-slash.
+  Uri _build(String endpoint) {
+    final clean = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    final basePath = _base.path.endsWith('/')
+        ? _base.path
+        : (_base.path.isEmpty ? '/' : '${_base.path}/');
+    return _base.replace(path: '$basePath$clean');
+  }
 
   Future<ApiResponse<T>> get<T>(
     String endpoint, {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
   }) async {
-    final uri = Uri.parse("${ApiEnv.baseUrl}$endpoint");
+    // debug kecil untuk memastikan ter-load
+    // ignore: avoid_print
+    print("[DEBUG] ApiClient loaded successfully");
+
+    final uri = _build(endpoint);
+    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+    final mergedHeaders = _withDefaults(headers, requestId: requestId);
+    final sw = Stopwatch()..start();
+
     try {
+      logHttp(
+        phase: 'REQ',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        headers: mergedHeaders,
+      );
       final resp = await _client
-          .get(uri, headers: _withDefaults(headers))
+          .get(uri, headers: mergedHeaders)
           .timeout(ApiEnv.readTimeout);
 
+      sw.stop();
+      logHttp(
+        phase: 'RES',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        status: resp.statusCode,
+        duration: sw.elapsed,
+      );
+
       return _handle<T>(resp, transform: transform);
-    } on SocketException {
+    } on TimeoutException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
+      throw TimeoutExceptionApi('Waktu koneksi habis');
+    } on SocketException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
       throw NetworkException("Tidak ada koneksi internet");
-    } on HttpException {
+    } on HttpException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
       throw NetworkException("Gagal koneksi ke server");
-    } on FormatException {
+    } on FormatException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'GET',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
       throw ApiException(message: "Format respons tidak valid");
     }
   }
@@ -36,17 +115,58 @@ class ApiClient {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
   }) async {
-    final uri = Uri.parse("${ApiEnv.baseUrl}$endpoint");
+    final uri = _build(endpoint);
+    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+    final mergedHeaders = _withDefaults(headers, requestId: requestId);
+    final sw = Stopwatch()..start();
+
     try {
+      logHttp(
+        phase: 'REQ',
+        requestId: requestId,
+        method: 'POST',
+        uri: uri,
+        headers: mergedHeaders,
+        body: body,
+      );
+
       final resp = await _client
-          .post(uri, headers: _withDefaults(headers), body: jsonEncode(body))
+          .post(uri, headers: mergedHeaders, body: jsonEncode(body))
           .timeout(ApiEnv.readTimeout);
 
+      sw.stop();
+      logHttp(
+        phase: 'RES',
+        requestId: requestId,
+        method: 'POST',
+        uri: uri,
+        status: resp.statusCode,
+        duration: sw.elapsed,
+      );
+
       return _handle<T>(resp, transform: transform);
-    } on SocketException {
-      throw NetworkException("Tidak ada koneksi internet");
-    } on FormatException {
-      throw ApiException(message: "Format respons tidak valid");
+    } on TimeoutException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'POST',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
+      throw TimeoutExceptionApi('Waktu koneksi habis');
+    } catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'POST',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
+      rethrow;
     }
   }
 
@@ -56,43 +176,91 @@ class ApiClient {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
   }) async {
-    final uri = Uri.parse("${ApiEnv.baseUrl}$endpoint");
+    final uri = _build(endpoint);
+    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+    final mergedHeaders = _withDefaults(headers, requestId: requestId);
+    final sw = Stopwatch()..start();
+
     try {
+      logHttp(
+        phase: 'REQ',
+        requestId: requestId,
+        method: 'PATCH',
+        uri: uri,
+        headers: mergedHeaders,
+        body: body,
+      );
+
       final resp = await _client
-          .patch(uri, headers: _withDefaults(headers), body: jsonEncode(body))
+          .patch(uri, headers: mergedHeaders, body: jsonEncode(body))
           .timeout(ApiEnv.readTimeout);
 
+      sw.stop();
+      logHttp(
+        phase: 'RES',
+        requestId: requestId,
+        method: 'PATCH',
+        uri: uri,
+        status: resp.statusCode,
+        duration: sw.elapsed,
+      );
+
       return _handle<T>(resp, transform: transform);
-    } on SocketException {
-      throw NetworkException("Tidak ada koneksi internet");
-    } on FormatException {
-      throw ApiException(message: "Format respons tidak valid");
+    } on TimeoutException catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'PATCH',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
+      throw TimeoutExceptionApi('Waktu koneksi habis');
+    } catch (e) {
+      sw.stop();
+      logHttp(
+        phase: 'ERR',
+        requestId: requestId,
+        method: 'PATCH',
+        uri: uri,
+        error: e,
+        duration: sw.elapsed,
+      );
+      rethrow;
     }
   }
 
-  Map<String, String> _withDefaults(Map<String, String>? headers) => {
+  Map<String, String> _withDefaults(
+    Map<String, String>? headers, {
+    required String requestId,
+  }) =>
+      {
         "Accept": "application/json",
         "Content-Type": "application/json",
+        "X-Request-Id": requestId, // korelasi dengan logs Railway
         ...?headers,
       };
 
-  ApiResponse<T> _handle<T>(http.Response resp, {T Function(dynamic)? transform}) {
+  ApiResponse<T> _handle<T>(
+    http.Response resp, {
+    T Function(dynamic)? transform,
+  }) {
     final decoded = jsonDecode(resp.body);
 
-    // Error dari server (400–500) → bungkus jadi ApiException dengan envelope
+    // Error HTTP
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      final msg = decoded is Map ? (decoded["message"] ?? resp.reasonPhrase ?? "Server error") : "Server error";
-      final errs = decoded is Map ? (decoded["errors"] as Map<String, dynamic>?) : null;
+      final msg = decoded is Map
+          ? (decoded["message"] ?? resp.reasonPhrase ?? "Server error")
+          : "Server error";
+      final errs =
+          decoded is Map ? (decoded["errors"] as Map<String, dynamic>?) : null;
       throw ApiException(message: msg, code: resp.statusCode, errors: errs);
     }
 
-    // Sukses tapi bukan envelope → tolak, supaya konsisten
-    if (decoded is! Map || !decoded.containsKey("success")) {
-      throw ApiException(message: "Envelope tidak ditemukan pada respons");
-    }
-
-    if (decoded["success"] != true) {
-      throw ApiException(message: decoded["message"] ?? "Gagal", code: resp.statusCode, errors: decoded["errors"]);
+    // Envelope {success, message, data}
+    if (decoded is! Map || decoded["success"] != true) {
+      throw ApiException(message: "Envelope tidak ditemukan atau success=false");
     }
 
     final raw = decoded["data"];

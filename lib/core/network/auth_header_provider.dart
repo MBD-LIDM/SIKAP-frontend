@@ -1,20 +1,24 @@
-typedef TokenLoader = Future<String?> Function();
-typedef GuestLoader = Future<String?> Function();
-
 class AuthHeaderProvider {
-  final TokenLoader loadUserToken;
-  final GuestLoader loadGuestToken;
+  final Future<String?> Function()? loadUserToken;
+  final Future<String?> Function()? loadGuestToken;
 
-  AuthHeaderProvider({required this.loadUserToken, required this.loadGuestToken});
+  AuthHeaderProvider({this.loadUserToken, this.loadGuestToken});
 
-  Future<Map<String, String>> build({bool asGuest = false}) async {
-    final headers = <String, String>{};
+  Future<Map<String, String>> buildHeaders({bool asGuest = false}) async {
+    final headers = <String, String>{
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    };
     if (asGuest) {
-      final guest = await loadGuestToken();
-      if (guest != null && guest.isNotEmpty) headers["X-Guest-Token"] = guest;
-    } else {
-      final token = await loadUserToken();
-      if (token != null && token.isNotEmpty) headers["Authorization"] = "Bearer $token";
+      final t = await (loadGuestToken?.call());
+      if (t != null && t.isNotEmpty) {
+        headers["X-Guest-Token"] = t;
+      }
+      return headers;
+    }
+    final userT = await (loadUserToken?.call());
+    if (userT != null && userT.isNotEmpty) {
+      headers["Authorization"] = "Bearer $userT";
     }
     return headers;
   }

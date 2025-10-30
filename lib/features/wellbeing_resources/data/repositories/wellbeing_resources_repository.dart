@@ -17,11 +17,13 @@ class WellbeingResourcesRepository {
       String? ordering,
       bool asGuest = false}) async {
     final params = <String>[];
-    if (category != null && category.isNotEmpty)
+    if (category != null && category.isNotEmpty) {
       params.add('category=$category');
+    }
     if (type != null && type.isNotEmpty) params.add('type=$type');
-    if (ordering != null && ordering.isNotEmpty)
+    if (ordering != null && ordering.isNotEmpty) {
       params.add('ordering=$ordering');
+    }
     final q = params.isNotEmpty ? '?${params.join('&')}' : '';
 
     final headers = await auth.build(asGuest: asGuest);

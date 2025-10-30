@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class MoodCheckResultPage extends StatelessWidget {
-  const MoodCheckResultPage({super.key});
+  const MoodCheckResultPage({super.key, required this.result});
+
+  final Map<String, dynamic> result;
 
   @override
   Widget build(BuildContext context) {
@@ -87,14 +89,14 @@ class MoodCheckResultPage extends StatelessWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.warning_amber, color: Color(0xFFFFDBB6), size: 18),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.insights, color: Color(0xFFFFDBB6), size: 18),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        '70% Sadness',
-                                        style: TextStyle(
+                                        _primaryLabel(result),
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800,
@@ -102,9 +104,8 @@ class MoodCheckResultPage extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                  SizedBox(height: 8),
-                                  _Legend(color: Colors.white, label: '20% Anxiety'),
-                                  _Legend(color: Color(0xFFBFD4FF), label: '10% Calmness'),
+                                  const SizedBox(height: 8),
+                                  ..._legendFromResult(result),
                                 ],
                               ),
                             ),
@@ -116,19 +117,9 @@ class MoodCheckResultPage extends StatelessWidget {
                       const _SectionTitle('Hasil Analisis'),
                       const SizedBox(height: 12),
 
-                      const Text(
-                        'Sadness (Kesedihan) adalah emosi yang paling dominan. Ini bisa jadi berasal dari nada suara yang menurun, ritme bicara yang lambat, atau jeda yang lebih panjang saat kamu  berbicara.',
-                        style: TextStyle(fontSize: 14, color: Colors.white, height: 1.6),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Sistem juga mendeteksi adanya Anxiety (Kecemasan) dengan probabilitas 20% dari tempo bicara yang sedikit tidak teratur atau variasi nada suara yang tidak stabil, meskipun tidak dominan.',
-                        style: TextStyle(fontSize: 14, color: Colors.white, height: 1.6),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Sementara itu, Calmness (Ketenangan) hanya terdeteksi 10%. Ini menunjukkan bahwa meski ada unsur ketenangan, emosi tersebut tidak menjadi emosi utama dalam rekaman suaramu.',
-                        style: TextStyle(fontSize: 14, color: Colors.white, height: 1.6),
+                      Text(
+                        _summaryText(result),
+                        style: const TextStyle(fontSize: 14, color: Colors.white, height: 1.6),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -231,6 +222,66 @@ class _SectionTitle extends StatelessWidget {
       ),
     );
   }
+}
+
+// Helpers to render dynamic result
+String _primaryLabel(Map<String, dynamic> result) {
+  // Try common shapes: {primary_emotion, scores: {sad:0.7,...}} or flat {emotion:'sadness', score:0.7}
+  final primary = result['primary_emotion'] ?? result['emotion'];
+  final score = result['score'] ?? (result['primary_score'] ?? _maxScore(result['scores']));
+  if (primary != null && score != null) {
+    final pct = ((score as num) * 100).toStringAsFixed(0);
+    return '$pct% ${_title(primary.toString())}';
+  }
+  return 'Emosi Terdeteksi';
+}
+
+List<Widget> _legendFromResult(Map<String, dynamic> result) {
+  final scores = result['scores'];
+  if (scores is Map) {
+    final entries = scores.entries
+        .where((e) => e.value is num)
+        .cast<MapEntry<dynamic, num>>()
+        .toList()
+      ..sort((a, b) => (b.value).compareTo(a.value));
+    final colors = [Colors.white, const Color(0xFFBFD4FF), Colors.white70, Colors.white60];
+    return [
+      for (var i = 0; i < entries.length && i < 4; i++)
+        _Legend(color: colors[i % colors.length], label: '${((entries[i].value) * 100).toStringAsFixed(0)}% ${_title(entries[i].key.toString())}')
+    ];
+  }
+  return const [];
+}
+
+double? _maxScore(dynamic scores) {
+  if (scores is Map) {
+    final values = scores.values.whereType<num>();
+    if (values.isNotEmpty) return values.reduce((a, b) => a > b ? a : b).toDouble();
+  }
+  return null;
+}
+
+String _title(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+String _summaryText(Map<String, dynamic> result) {
+  final primary = result['primary_emotion'] ?? result['emotion'];
+  final scores = result['scores'];
+  if (primary != null) {
+    return 'Emosi dominan: ${_title(primary.toString())}.\nHasil ini adalah wawasan teknis berdasarkan analisis suara, bukan diagnosis medis.';
+  }
+  if (scores is Map) {
+    final top = scores.entries
+        .where((e) => e.value is num)
+        .cast<MapEntry<dynamic, num>>()
+        .toList()
+      ..sort((a, b) => (b.value).compareTo(a.value));
+    if (top.isNotEmpty) {
+      final first = top.first;
+      final pct = (first.value * 100).toStringAsFixed(0);
+      return 'Emosi tertinggi: ${_title(first.key.toString())} ($pct%).\nHasil ini adalah wawasan teknis berdasarkan analisis suara, bukan diagnosis medis.';
+    }
+  }
+  return 'Analisis berhasil. Detail lengkap ditampilkan di atas.';
 }
 
 

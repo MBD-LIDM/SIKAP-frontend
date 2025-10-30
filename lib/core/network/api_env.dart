@@ -7,7 +7,7 @@ class ApiEnv {
   // URLs per environment
   static const Map<String, String> _baseUrls = {
     'production': 'https://sikap-backend-production.up.railway.app',
-    'staging': 'https://sikap-backend-staging.up.railway.app',
+    'staging': 'https://sikap-backend-dev.up.railway.app',
     'development': 'http://localhost:8000', // local Django for web development
   };
 
