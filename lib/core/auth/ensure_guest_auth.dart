@@ -84,12 +84,18 @@ Future<void> _quickLogin() async {
     throw ApiException(message: "guest_id tidak ditemukan/invalid", code: 500);
   }
 
-  final token = data['guest_token']?.toString();
+  // Prefer token dari body jika ada, fallback ke header (x-guest-token/x-token)
+  final tokenFromBody = data['guest_token']?.toString();
+  final tokenFromHeader = response.headers?['x-guest-token'] ?? response.headers?['x-token'];
+  final token = (tokenFromBody != null && tokenFromBody.isNotEmpty)
+      ? tokenFromBody
+      : (tokenFromHeader != null && tokenFromHeader.isNotEmpty)
+          ? tokenFromHeader
+          : null;
   if (token == null || token.isEmpty) {
-    throw ApiException(
-      message: "guest_token tidak ditemukan/invalid",
-      code: 500,
-    );
+    // BE tidak mengirim token; simpan guest_id saja.
+    await _sessionService.saveGuest(guestId: guestId, token: null);
+    return;
   }
 
   await _sessionService.saveGuestAuth(token: token, guestId: guestId);

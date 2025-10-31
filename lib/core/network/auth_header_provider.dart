@@ -3,10 +3,12 @@
 class AuthHeaderProvider {
   final Future<String?> Function()? loadUserToken;
   final Future<String?> Function()? loadGuestToken;
+  final Future<int?> Function()? loadGuestId;
 
   AuthHeaderProvider({
     this.loadUserToken,
     this.loadGuestToken,
+    this.loadGuestId,
   });
 
   Future<Map<String, String>> buildHeaders({bool asGuest = false}) async {
@@ -20,8 +22,14 @@ class AuthHeaderProvider {
       if (token != null && token.isNotEmpty) {
         headers['X-Guest-Token'] = token;
       } else {
-        // ignore: avoid_print
-        print('[AuthHeaderProvider] warning: guest token missing');
+        // fallback: gunakan guest_id bila tersedia
+        final gid = await (loadGuestId?.call());
+        if (gid != null) {
+          headers['X-Guest-Id'] = gid.toString();
+        } else {
+          // ignore: avoid_print
+          print('[AuthHeaderProvider] warning: guest token missing');
+        }
       }
       return headers;
     }
