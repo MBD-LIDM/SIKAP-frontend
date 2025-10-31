@@ -13,10 +13,9 @@ import 'api_response.dart';
 import 'logging.dart';
 
 class MultipartClient {
-  final http.Client _client;
   final Uri _base = Uri.parse(ApiEnv.baseUrl);
 
-  MultipartClient({http.Client? client}) : _client = client ?? http.Client();
+  MultipartClient();
 
   /// Normalisasi penyusunan URL agar tidak double-slash.
   Uri _build(String endpoint) {

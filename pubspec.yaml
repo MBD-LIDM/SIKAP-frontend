@@ -11,6 +11,14 @@ dependencies:
     sdk: flutter
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
+  http: ^1.2.0
+  record: ^5.1.1
+  path_provider: ^2.1.4
+  mime: ^1.0.5
+  http_parser: ^4.0.2
+  file_picker: ^8.1.2
+  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage_web: ^1.2.1
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +33,6 @@ flutter:
     - assets/others/
     - assets/data/
     - assets/images/scenario_illustration/
+
+
+

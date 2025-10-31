@@ -15,7 +15,7 @@ class ScreeningRepository {
     Map<String, dynamic> data, {
     bool asGuest = true,
   }) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     // [DEBUG]
     // ignore: avoid_print
     print('[DEBUG] submitStudentSurvey() payload=${data.keys.toList()} asGuest=$asGuest');
@@ -38,7 +38,7 @@ class ScreeningRepository {
 
   /// GET /api/screenings/student-surveys/my/
   Future<StudentSurveyListResponse> getMySurveys({bool asGuest = false}) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     // [DEBUG]
     // ignore: avoid_print
     print('[DEBUG] getMySurveys() asGuest=$asGuest');
@@ -60,7 +60,7 @@ class ScreeningRepository {
 
   /// GET /api/screenings/student-surveys/teacher/list/
   Future<StudentSurveyListResponse> getTeacherSurveys({bool asGuest = false}) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     // [DEBUG]
     // ignore: avoid_print
     print('[DEBUG] getTeacherSurveys() asGuest=$asGuest');

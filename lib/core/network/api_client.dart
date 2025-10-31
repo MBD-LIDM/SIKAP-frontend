@@ -1,112 +1,129 @@
 // lib/core/network/api_client.dart
-import 'dart:async';
+// FIX: default JSON headers + dukung endpoint tanpa envelope (expectEnvelope=false).
+// Tambah logging ringan biar gampang trace.
+
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:http/http.dart' as http;
+import 'package:sikap/core/network/api_exception.dart';
+import 'package:sikap/core/network/api_env.dart';
 
-import 'api_env.dart';
-import 'api_exception.dart';
-import 'api_response.dart';
-import 'logging.dart';
+Map<String, dynamic>? _tryDecodeJson(String s) {
+  try { final d = s.isEmpty ? null : (jsonDecode(s) as Object?); 
+        return (d is Map<String, dynamic>) ? d : null; } catch (_) { return null; }
+}
+
+T _handle<T>(http.Response res, {
+  bool expectEnvelope = true,
+  T Function(dynamic raw)? transform,
+}) {
+  final status = res.statusCode;
+  final bodyStr = res.body;
+  final jsonMap = _tryDecodeJson(bodyStr);
+
+  if (status >= 200 && status < 300) {
+    final raw = expectEnvelope ? (jsonMap?['data']) : (jsonMap ?? bodyStr);
+    return (transform != null) ? transform(raw) : raw as T;
+  }
+
+  // Kumpulkan pesan & field errors dari BE
+  String msg = 'HTTP $status';
+  Map<String, dynamic>? errs;
+
+  if (jsonMap != null) {
+    // pola umum DRF: {"detail": "..."} atau field: {"school_id":["Invalid school."]}
+    if (jsonMap['detail'] is String) msg = jsonMap['detail'] as String;
+    // if envelope error: {"success":false,"message":"...","errors":{...}}
+    if (jsonMap['message'] is String) msg = jsonMap['message'] as String;
+    if (jsonMap['errors'] is Map<String, dynamic>) errs = Map<String, dynamic>.from(jsonMap['errors']);
+    // kalau bukan "errors", anggap seluruh map adalah field errors
+    errs ??= Map<String, dynamic>.from(jsonMap);
+  }
+
+  throw ApiException(message: msg, code: status, errors: errs);
+}
+
+class ApiResponse<T> {
+  final T data;
+  final int? status;
+  final Map<String, String>? headers;
+  ApiResponse(this.data, {this.status, this.headers});
+}
 
 class ApiClient {
-  final http.Client _client;
-  final Uri _base = Uri.parse(ApiEnv.baseUrl);
+  final http.Client _client = http.Client();
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+  Uri _u(String endpoint) => Uri.parse("${ApiEnv.baseUrl}$endpoint");
 
-  /// Normalisasi penyusunan URL agar tidak pernah double-slash.
-  Uri _build(String endpoint) {
-    final clean = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-    final basePath = _base.path.endsWith('/')
-        ? _base.path
-        : (_base.path.isEmpty ? '/' : '${_base.path}/');
-    return _base.replace(path: '$basePath$clean');
+  Map<String, String> _jsonDefaults([Map<String, String>? extra]) {
+    final base = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (extra != null && extra.isNotEmpty) base.addAll(extra);
+    return base;
+  }
+
+  void _logReq(String method, Uri url, Map<String, String> headers, Object? body) {
+    // ignore: avoid_print
+    print("[HTTP $method] $url\n  headers=$headers\n  body=${body is String ? body : jsonEncode(body)}");
+  }
+
+  ApiResponse<T> _handle<T>(
+    http.Response resp, {
+    T Function(dynamic)? transform,
+    bool expectEnvelope = true,
+  }) {
+    final contentType = resp.headers['content-type'] ?? '';
+
+    dynamic decoded;
+    try {
+      decoded = resp.bodyBytes.isEmpty ? null : jsonDecode(resp.body);
+    } catch (_) {
+      decoded = null;
+    }
+
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      // Guard: HTML error page (e.g., 404/500 from proxy)
+      if (contentType.contains('text/html')) {
+        throw ApiException(
+          message: "HTTP ${resp.statusCode} (HTML error page)",
+          code: resp.statusCode,
+        );
+      }
+      String msg = resp.reasonPhrase ?? "HTTP ${resp.statusCode}";
+      Map<String, dynamic>? errs;
+      if (decoded is Map) {
+        if (decoded['message'] is String) msg = decoded['message'];
+        if (decoded['detail'] is String) msg = decoded['detail'];
+        if (decoded['errors'] is Map) errs = Map<String, dynamic>.from(decoded['errors']);
+      }
+      throw ApiException(message: msg, code: resp.statusCode, errors: errs);
+    }
+
+    if (!expectEnvelope) {
+      final data = (transform != null) ? transform(decoded) : decoded as T;
+      return ApiResponse<T>(data, status: resp.statusCode, headers: resp.headers);
+    }
+
+    if (decoded is! Map || decoded['success'] != true) {
+      throw ApiException(message: "Envelope tidak valid / success != true");
+    }
+    final raw = decoded['data'];
+    final data = (transform != null) ? transform(raw) : raw as T;
+    return ApiResponse<T>(data, status: resp.statusCode, headers: resp.headers);
   }
 
   Future<ApiResponse<T>> get<T>(
     String endpoint, {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
+    bool expectEnvelope = true,
   }) async {
-    // debug kecil untuk memastikan ter-load
-    // ignore: avoid_print
-    print("[DEBUG] ApiClient loaded successfully");
-
-    final uri = _build(endpoint);
-    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
-    final mergedHeaders = _withDefaults(headers, requestId: requestId);
-    final sw = Stopwatch()..start();
-
-    try {
-      logHttp(
-        phase: 'REQ',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        headers: mergedHeaders,
-      );
-      final resp = await _client
-          .get(uri, headers: mergedHeaders)
-          .timeout(ApiEnv.readTimeout);
-
-      sw.stop();
-      logHttp(
-        phase: 'RES',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        status: resp.statusCode,
-        duration: sw.elapsed,
-      );
-
-      return _handle<T>(resp, transform: transform);
-    } on TimeoutException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw TimeoutExceptionApi('Waktu koneksi habis');
-    } on SocketException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw NetworkException("Tidak ada koneksi internet");
-    } on HttpException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw NetworkException("Gagal koneksi ke server");
-    } on FormatException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'GET',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw ApiException(message: "Format respons tidak valid");
-    }
+    final uri = _u(endpoint);
+    final h = _jsonDefaults(headers);
+    _logReq('GET', uri, h, null);
+    final r = await _client.get(uri, headers: h);
+    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
   Future<ApiResponse<T>> post<T>(
@@ -114,60 +131,14 @@ class ApiClient {
     dynamic body, {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
+    bool expectEnvelope = true,
   }) async {
-    final uri = _build(endpoint);
-    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
-    final mergedHeaders = _withDefaults(headers, requestId: requestId);
-    final sw = Stopwatch()..start();
-
-    try {
-      logHttp(
-        phase: 'REQ',
-        requestId: requestId,
-        method: 'POST',
-        uri: uri,
-        headers: mergedHeaders,
-        body: body,
-      );
-
-      final resp = await _client
-          .post(uri, headers: mergedHeaders, body: jsonEncode(body))
-          .timeout(ApiEnv.readTimeout);
-
-      sw.stop();
-      logHttp(
-        phase: 'RES',
-        requestId: requestId,
-        method: 'POST',
-        uri: uri,
-        status: resp.statusCode,
-        duration: sw.elapsed,
-      );
-
-      return _handle<T>(resp, transform: transform);
-    } on TimeoutException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'POST',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw TimeoutExceptionApi('Waktu koneksi habis');
-    } catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'POST',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      rethrow;
-    }
+    final uri = _u(endpoint);
+    final h = _jsonDefaults(headers);
+    final b = jsonEncode(body);
+    _logReq('POST', uri, h, b);
+    final r = await _client.post(uri, headers: h, body: b);
+    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
   Future<ApiResponse<T>> patch<T>(
@@ -175,96 +146,26 @@ class ApiClient {
     dynamic body, {
     Map<String, String>? headers,
     T Function(dynamic json)? transform,
+    bool expectEnvelope = true,
   }) async {
-    final uri = _build(endpoint);
-    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
-    final mergedHeaders = _withDefaults(headers, requestId: requestId);
-    final sw = Stopwatch()..start();
-
-    try {
-      logHttp(
-        phase: 'REQ',
-        requestId: requestId,
-        method: 'PATCH',
-        uri: uri,
-        headers: mergedHeaders,
-        body: body,
-      );
-
-      final resp = await _client
-          .patch(uri, headers: mergedHeaders, body: jsonEncode(body))
-          .timeout(ApiEnv.readTimeout);
-
-      sw.stop();
-      logHttp(
-        phase: 'RES',
-        requestId: requestId,
-        method: 'PATCH',
-        uri: uri,
-        status: resp.statusCode,
-        duration: sw.elapsed,
-      );
-
-      return _handle<T>(resp, transform: transform);
-    } on TimeoutException catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'PATCH',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      throw TimeoutExceptionApi('Waktu koneksi habis');
-    } catch (e) {
-      sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'PATCH',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
-      rethrow;
-    }
+    final uri = _u(endpoint);
+    final h = _jsonDefaults(headers);
+    final b = jsonEncode(body);
+    _logReq('PATCH', uri, h, b);
+    final r = await _client.patch(uri, headers: h, body: b);
+    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
-  Map<String, String> _withDefaults(
-    Map<String, String>? headers, {
-    required String requestId,
-  }) =>
-      {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "X-Request-Id": requestId, // korelasi dengan logs Railway
-        ...?headers,
-      };
-
-  ApiResponse<T> _handle<T>(
-    http.Response resp, {
-    T Function(dynamic)? transform,
-  }) {
-    final decoded = jsonDecode(resp.body);
-
-    // Error HTTP
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      final msg = decoded is Map
-          ? (decoded["message"] ?? resp.reasonPhrase ?? "Server error")
-          : "Server error";
-      final errs =
-          decoded is Map ? (decoded["errors"] as Map<String, dynamic>?) : null;
-      throw ApiException(message: msg, code: resp.statusCode, errors: errs);
-    }
-
-    // Envelope {success, message, data}
-    if (decoded is! Map || decoded["success"] != true) {
-      throw ApiException(message: "Envelope tidak ditemukan atau success=false");
-    }
-
-    final raw = decoded["data"];
-    final data = (transform != null) ? transform(raw) : raw as T;
-    return ApiResponse<T>(data);
+  Future<ApiResponse<T>> delete<T>(
+    String endpoint, {
+    Map<String, String>? headers,
+    T Function(dynamic json)? transform,
+    bool expectEnvelope = true,
+  }) async {
+    final uri = _u(endpoint);
+    final h = _jsonDefaults(headers);
+    _logReq('DELETE', uri, h, null);
+    final r = await _client.delete(uri, headers: h);
+    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 }

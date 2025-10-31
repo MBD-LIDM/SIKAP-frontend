@@ -1,0 +1,8 @@
+*
+!*/
+!*.dart
+!**/*.dart
+
+# Tambahan konteks minimal yang sering krusial:
+!pubspec.yaml
+!analysis_options.yaml

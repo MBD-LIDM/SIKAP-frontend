@@ -3,6 +3,8 @@ import 'package:sikap/features/bullying/data/repositories/bullying_repository.da
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';      // <— penting
+import 'package:sikap/core/network/api_exception.dart';
 
 class BullyingFormPage extends StatefulWidget {
   final String? bullyingId; // null for create, not null for edit
@@ -21,58 +23,95 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
   final _session = SessionService();
   final _api = ApiClient();
 
-  String _selectedType = 'verbal';
+  late final AuthHeaderProvider _auth;
+  late final BullyingRepository _repo;
+
+  // UI state
   String _selectedSeverity = 'medium';
   bool _isLoading = false;
 
-  // Incident types dari BE: [{incident_type_id, type_name}, ...]
+  // Data incident types dari server: [{id, name, slug}]
   List<Map<String, dynamic>> _incidentTypes = [];
-  int? _incidentTypeId; // hasil mapping dari _selectedType → incident_type_id
+  int? _incidentTypeId;
 
   @override
   void initState() {
     super.initState();
-    _bootstrap();
+    _auth = AuthHeaderProvider(
+      loadUserToken: () async => null, // guest-only flow
+      loadGuestToken: () async => await _session.loadGuestToken(),
+    );
+    _repo = BullyingRepository(apiClient: _api, auth: _auth);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
   Future<void> _bootstrap() async {
-    // pastikan guest session ada, lalu load incident types
-    await _session.ensureGuest();
-    if (!mounted) return;
-    await _loadIncidentTypes();
+    try {
+      // Pastikan sesi tamu ada (akan quick-login bila perlu).
+      await ensureGuestAuthenticated();
+
+      // Muat incident types
+      await _loadIncidentTypes();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Inisialisasi gagal: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> _loadIncidentTypes() async {
     try {
-      // Jika endpoint ini butuh guest, pastikan ApiClient/Interceptor menambah X-Guest-Token.
-      // Response pakai envelope: { success, message, data: [...] }
-      final res = await _api.get<Map<String, dynamic>>(
+      final headers = await _auth.buildHeaders(asGuest: true);
+      final resp = await _api.get<dynamic>(
         "/api/bullying/incident-types/",
-        transform: (raw) => raw as Map<String, dynamic>,
+        headers: headers,
+        transform: (raw) {
+          if (raw is List) return raw;
+          if (raw is Map && raw['results'] is List) return raw['results'];
+          throw const FormatException("Unexpected incident-types shape");
+        },
       );
 
-      final list = (res.data["data"] as List).cast<Map<String, dynamic>>();
+      final list = (resp.data as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) {
+            final dynamicId = e['incident_type_id'] ?? e['id'];
+            final dynamicName = e['type_name'] ?? e['name'] ?? e['type'] ?? 'Unknown';
+            final id = (dynamicId is num) ? dynamicId.toInt() : int.tryParse('$dynamicId');
+            final name = '$dynamicName';
+            return {
+              'id': id,
+              'name': name,
+              'slug': name.toLowerCase().trim(),
+            };
+          })
+          .where((m) => m['id'] != null)
+          .toList();
+
+      int? pickedId;
+      if (list.isNotEmpty) {
+        pickedId = list.first['id'] as int;
+      }
+
+      if (!mounted) return;
       setState(() {
         _incidentTypes = list;
-
-        // mapping default dari selected type (verbal) → incident_type_id
-        final match = _incidentTypes.firstWhere(
-          (e) => (e["type_name"] as String).toLowerCase() == _selectedType,
-          orElse: () => _incidentTypes.first,
-        );
-        _incidentTypeId = (match["incident_type_id"] as num).toInt();
+        _incidentTypeId = pickedId;
       });
-    } catch (e, st) {
-      // Jangan blok UI, tapi beri log
-      // ignore: avoid_print
-      print("[ERROR] load incident types: $e");
-      print(st);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Gagal memuat jenis insiden. Coba lagi."),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
   Future<void> _submitForm() async {
-    // ignore: avoid_print
-    print("[DEBUG] Submit pressed");
     if (!_formKey.currentState!.validate()) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,60 +134,31 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       return;
     }
 
-    final guestToken = await _session.loadGuestToken();
-    final guestId = await _session.loadGuestId();
-    if (guestToken == null || guestId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Sesi tamu belum tersedia. Sedang mencoba quick-login..."),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      final ok = await _session.ensureGuest();
-      if (!ok) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Gagal membuat sesi tamu. Coba lagi."),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+    // Pastikan token ada sebelum mengirim
+    final token = await _session.loadGuestToken();
+    final gid = await _session.loadGuestId();
+    if ((token == null || token.isEmpty) && gid == null) {
+      // coba quick-login sekali lagi
+      try {
+        await ensureGuestAuthenticated();
+      } catch (_) {}
     }
 
-    setState(() => _isLoading = true);
-
-    final repo = BullyingRepository(
-      apiClient: _api,
-      auth: AuthHeaderProvider(
-        // Pastikan AuthHeaderProvider menambahkan X-Guest-Token saat asGuest=true.
-        loadUserToken: () async => null,
-        loadGuestToken: () async => _session.loadGuestToken(),
-      ),
-    );
-
     final data = {
-      // Rekomendasi: jika BE sudah derive guest dari token, baris ini bisa dihapus.
-      "guest_id": guestId,
       "title": _titleController.text.trim(),
-      "description": _descriptionController.text.trim(),
-      "location": _locationController.text.trim(),
-      "incident_type_id": _incidentTypeId,
-      "severity": _selectedSeverity,
+      "description": _descriptionController.text.trim(),  // ≥ 10
+      "location": _locationController.text.trim(),        // ≥ 2
+      "incident_type_id": _incidentTypeId,                // INT
+      "severity": _selectedSeverity,                      // low|medium|high|critical
       "confirm_truth": true,
-      // opsional:
-      // "target_pseudonym": "",
-      // "is_anonymous": false,
+      // jangan kirim guest_id — BE derive dari sesi guest
     };
 
+    setState(() => _isLoading = true);
     try {
+      final res = await _repo.createBullyingReport(data, asGuest: true);
       // ignore: avoid_print
-      print("[DEBUG] Sending POST /api/bullying/report/ with data=$data");
-      final res = await repo.createBullyingReport(data, asGuest: true);
-      // ignore: avoid_print
-      print("[DEBUG] Response received: ${res.data}");
+      print("[DEBUG] createBullyingReport OK: ${res.data}");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -157,18 +167,14 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
         ),
       );
       Navigator.pop(context);
-    } catch (e, st) {
-      // ignore: avoid_print
-      print("[ERROR] Failed to submit report: $e");
-      print(st);
-
-      // Retry sekali jika 401 dengan ensureGuest
-      try {
-        final ok = await _session.ensureGuest();
-        if (ok) {
-          final res2 = await repo.createBullyingReport(data, asGuest: true);
+    } on ApiException catch (e) {
+      // Retry hanya jika 401
+      if (e.code == 401) {
+        try {
+          await ensureGuestAuthenticated();
+          final res2 = await _repo.createBullyingReport(data, asGuest: true);
           // ignore: avoid_print
-          print("[DEBUG] Response after reauth: ${res2.data}");
+          print("[DEBUG] createBullyingReport retry OK: ${res2.data}");
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -178,11 +184,18 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
           );
           Navigator.pop(context);
           return;
+        } catch (_) {
+          // fallthrough ke snackbar di bawah
         }
-      } catch (_) {
-        // ignore
       }
-
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal mengirim laporan (${e.code ?? 'ERR'}): ${e.message}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -205,6 +218,8 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final canSubmit = !_isLoading && _incidentTypeId != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.bullyingId == null ? 'Laporkan Bullying' : 'Edit Laporan'),
@@ -212,126 +227,91 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF7F55B1), // Purple
-              Color(0xFFFFDBB6), // Light peach
-            ],
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Color(0xFF7F55B1), Color(0xFFFFDBB6)],
             stops: [0.76, 1.0],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Judul Laporan',
-                    border: OutlineInputBorder(),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Judul Laporan', border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Judul tidak boleh kosong' : null,
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Judul tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Deskripsi',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Deskripsi', border: OutlineInputBorder(),
+                    ),
+                    maxLines: 4,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Deskripsi tidak boleh kosong';
+                      if (v.trim().length < 10) return 'Deskripsi minimal 10 karakter';
+                      return null;
+                    },
                   ),
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Deskripsi tidak boleh kosong';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'Deskripsi minimal 10 karakter';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Lokasi Kejadian',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Lokasi Kejadian', border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                      (v == null || v.trim().length < 2) ? 'Lokasi minimal 2 karakter' : null,
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().length < 2) {
-                      return 'Lokasi minimal 2 karakter';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Jenis (mapping ke incident_type_id)
-                DropdownButtonFormField<String>(
-                  value: _selectedType,
-                  decoration: const InputDecoration(
-                    labelText: 'Jenis Bullying',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'verbal', child: Text('Verbal')),
-                    DropdownMenuItem(value: 'physical', child: Text('Fisik')),
-                    DropdownMenuItem(value: 'cyber', child: Text('Cyber')),
-                    DropdownMenuItem(value: 'social', child: Text('Sosial')),
-                    DropdownMenuItem(value: 'sexual', child: Text('Seksual')),
-                    DropdownMenuItem(value: 'other', child: Text('Lainnya')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value!;
-                      // sinkronkan id bila list sudah siap
-                      final match = _incidentTypes.firstWhere(
-                        (e) => (e["type_name"] as String).toLowerCase() == _selectedType,
-                        orElse: () => _incidentTypes.isNotEmpty ? _incidentTypes.first : {},
+                  // Dropdown "Jenis Bullying"
+                  DropdownButtonFormField<int>(
+                    value: _incidentTypeId,
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis Bullying', border: OutlineInputBorder(),
+                    ),
+                    items: _incidentTypes.map((m) {
+                      return DropdownMenuItem<int>(
+                        value: m['id'] as int,
+                        child: Text(m['name'] as String),
                       );
-                      final id = match["incident_type_id"];
-                      _incidentTypeId = id is num ? id.toInt() : id as int?;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Severity
-                DropdownButtonFormField<String>(
-                  value: _selectedSeverity,
-                  decoration: const InputDecoration(
-                    labelText: 'Tingkat Keparahan',
-                    border: OutlineInputBorder(),
+                    }).toList(),
+                    onChanged: (value) => setState(() => _incidentTypeId = value),
+                    validator: (_) => _incidentTypeId == null ? 'Pilih jenis bullying' : null,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'low', child: Text('Rendah')),
-                    DropdownMenuItem(value: 'medium', child: Text('Sedang')),
-                    DropdownMenuItem(value: 'high', child: Text('Tinggi')),
-                    DropdownMenuItem(value: 'critical', child: Text('Kritis')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSeverity = value!;
-                    });
-                  },
-                ),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submitForm,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(widget.bullyingId == null ? 'Kirim Laporan' : 'Update Laporan'),
-                ),
-              ],
+                  // Severity
+                  DropdownButtonFormField<String>(
+                    value: _selectedSeverity,
+                    decoration: const InputDecoration(
+                      labelText: 'Tingkat Keparahan', border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'low', child: Text('Rendah')),
+                      DropdownMenuItem(value: 'medium', child: Text('Sedang')),
+                      DropdownMenuItem(value: 'high', child: Text('Tinggi')),
+                      DropdownMenuItem(value: 'critical', child: Text('Kritis')),
+                    ],
+                    onChanged: (v) => setState(() => _selectedSeverity = v!),
+                  ),
+
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: canSubmit ? _submitForm : null,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(widget.bullyingId == null ? 'Kirim Laporan' : 'Update Laporan'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

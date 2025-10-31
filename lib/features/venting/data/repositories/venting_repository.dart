@@ -20,7 +20,7 @@ class VentingRepository {
     required String filename,
     bool asGuest = true,
   }) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     final mp = MultipartClient.fromBytesSingle('file', bytes, filename: filename);
 
     final resp = await multipartClient.postFile(
@@ -43,7 +43,7 @@ class VentingRepository {
       throw UnsupportedError('Gunakan analyzeAudioFromBytes() di Web');
     }
 
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     final mp = await MultipartClient.fromPathSingle('file', path, filename: filename);
 
     final resp = await multipartClient.postFile(

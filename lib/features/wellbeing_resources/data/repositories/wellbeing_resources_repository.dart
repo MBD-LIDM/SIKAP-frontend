@@ -26,7 +26,7 @@ class WellbeingResourcesRepository {
     }
     final q = params.isNotEmpty ? '?${params.join('&')}' : '';
 
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
 
     final resp = await apiClient.get<List<dynamic>>(
         '/api/wellbeing/resources/$q',
@@ -38,7 +38,7 @@ class WellbeingResourcesRepository {
 
   Future<WellbeingResourcesDetailResponse> getResourceDetail(String id,
       {bool asGuest = false}) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     final resp = await apiClient.get<Map<String, dynamic>>(
         '/api/wellbeing/resources/$id/',
         headers: headers,
@@ -49,7 +49,7 @@ class WellbeingResourcesRepository {
 
   Future<WellbeingResourcesCreateResponse> createResource(
       Map<String, dynamic> data) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/wellbeing/resources/', data,
         headers: headers, transform: (raw) => raw as Map<String, dynamic>);
@@ -59,7 +59,7 @@ class WellbeingResourcesRepository {
 
   Future<WellbeingResourcesDetailResponse> updateResource(
       String id, Map<String, dynamic> data) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.patch<Map<String, dynamic>>(
         '/api/wellbeing/resources/$id/', data,
         headers: headers, transform: (raw) => raw as Map<String, dynamic>);
@@ -68,7 +68,7 @@ class WellbeingResourcesRepository {
   }
 
   Future<bool> deleteResource(String id) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     // ApiClient doesn't have delete implemented; use patch to mark deleted or implement delete call later.
     // For now attempt to call endpoint via post to a delete action if backend supports it.
     await apiClient.patch('/api/wellbeing/resources/$id/delete/', {},
@@ -77,21 +77,21 @@ class WellbeingResourcesRepository {
   }
 
   Future<bool> likeResource(String id) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     await apiClient.post('/api/wellbeing/resources/$id/like/', {},
         headers: headers);
     return true;
   }
 
   Future<bool> unlikeResource(String id) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     await apiClient.post('/api/wellbeing/resources/$id/unlike/', {},
         headers: headers);
     return true;
   }
 
   Future<bool> viewResource(String id, {bool asGuest = false}) async {
-    final headers = await auth.build(asGuest: asGuest);
+  final headers = await auth.buildHeaders(asGuest: asGuest);
     await apiClient.post('/api/wellbeing/resources/$id/view/', {},
         headers: headers);
     return true;

@@ -1,57 +1,81 @@
+// lib/core/auth/session_service.dart
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:sikap/core/network/api_client.dart';
-import 'package:sikap/core/network/api_exception.dart';
+
+class UserProfile {
+  final int? schoolId;
+  final String? schoolCode;
+  final int? gradeId;
+  final String? grade;       // "10" | "11" | "12"
+  final String? deviceId;
+
+  const UserProfile({
+    this.schoolId,
+    this.schoolCode,
+    this.gradeId,
+    this.grade,
+    this.deviceId,
+  });
+}
 
 class SessionService {
-  static const _kGuestToken = 'guest_token';
-  static const _kGuestId = 'guest_id';
+  static const _kGuestId     = 'guest_id';
+  static const _kGuestToken  = 'guest_token';   // opsional bila BE nanti menambah token
+  static const _kSchoolId    = 'school_id';
+  static const _kSchoolCode  = 'school_code';
+  static const _kGradeId     = 'grade_id';
+  static const _kGrade       = 'grade_str';
+  static const _kDeviceId    = 'device_id';
 
-  final FlutterSecureStorage _storage;
-  final ApiClient _api;
+  final FlutterSecureStorage _s = const FlutterSecureStorage();
 
-  SessionService({FlutterSecureStorage? storage, ApiClient? api})
-      : _storage = storage ?? const FlutterSecureStorage(),
-        _api = api ?? ApiClient();
+  // ===== Guest creds =====
+  Future<void> saveGuest({required int guestId, String? token}) async {
+    await _s.write(key: _kGuestId, value: guestId.toString());
+    if (token != null && token.isNotEmpty) {
+      await _s.write(key: _kGuestToken, value: token);
+    }
+  }
 
-  Future<String?> loadGuestToken() => _storage.read(key: _kGuestToken);
   Future<int?> loadGuestId() async {
-    final raw = await _storage.read(key: _kGuestId);
-    return raw == null ? null : int.tryParse(raw);
-  }
-
-  Future<void> saveGuest({required String token, required int guestId}) async {
-    await _storage.write(key: _kGuestToken, value: token);
-    await _storage.write(key: _kGuestId, value: guestId.toString());
-  }
-
-  Future<void> clearGuest() async {
-    await _storage.delete(key: _kGuestToken);
-    await _storage.delete(key: _kGuestId);
-  }
-
-  Future<bool> ensureGuest() async {
-    final t = await loadGuestToken();
-    final id = await loadGuestId();
-    if (t != null && t.isNotEmpty && id != null) return true;
-
-    final res = await _api.post<Map<String, dynamic>>(
-      "/api/accounts/guest/quick-login/",
-      const {},                                // POSISIONAL body kedua
-      transform: (raw) => raw as Map<String, dynamic>,
-    );
-
-    if (res.data['success'] != true) return false;
-
-    final data = (res.data['data'] ?? {}) as Map<String, dynamic>;
-    // BE kita sekarang konsisten pakai 'token'
-    final token = data['token'] as String?;
-    final guestId = (data['guest_id'] as num?)?.toInt();
-
-    if (token == null || token.isEmpty || guestId == null) {
-      throw ApiException(message: "Guest token/ID tidak ada di respons");
+    final v = await _s.read(key: _kGuestId);
+    return v == null ? null : int.tryParse(v);
     }
 
-    await saveGuest(token: token, guestId: guestId);
-    return true;
+  Future<String?> loadGuestToken() => _s.read(key: _kGuestToken);
+
+  Future<void> clearGuest() async {
+    await _s.delete(key: _kGuestId);
+    await _s.delete(key: _kGuestToken);
+  }
+
+  // ===== Profile (school/grade/device) =====
+  Future<void> saveProfile({
+    int? schoolId,
+    String? schoolCode,
+    int? gradeId,
+    String? grade,
+    String? deviceId,
+  }) async {
+    if (schoolId != null)   await _s.write(key: _kSchoolId, value: schoolId.toString());
+    if (schoolCode != null) await _s.write(key: _kSchoolCode, value: schoolCode);
+    if (gradeId != null)    await _s.write(key: _kGradeId, value: gradeId.toString());
+    if (grade != null)      await _s.write(key: _kGrade, value: grade);
+    if (deviceId != null)   await _s.write(key: _kDeviceId, value: deviceId);
+  }
+
+  Future<UserProfile> loadProfile() async {
+    final sid = await _s.read(key: _kSchoolId);
+    final sc  = await _s.read(key: _kSchoolCode);
+    final gid = await _s.read(key: _kGradeId);
+    final gs  = await _s.read(key: _kGrade);
+    final dev = await _s.read(key: _kDeviceId);
+
+    return UserProfile(
+      schoolId: sid == null ? null : int.tryParse(sid),
+      schoolCode: sc,
+      gradeId: gid == null ? null : int.tryParse(gid),
+      grade: gs,
+      deviceId: dev,
+    );
   }
 }

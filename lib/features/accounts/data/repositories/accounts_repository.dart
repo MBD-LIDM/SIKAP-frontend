@@ -14,7 +14,7 @@ class AccountsRepository {
 
   Future<AccountsCreateResponse> createAccount(
       Map<String, dynamic> data) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/accounts/register/', data,
         headers: headers, transform: (raw) => raw as Map<String, dynamic>);
@@ -23,7 +23,7 @@ class AccountsRepository {
   }
 
   Future<AccountsDetailResponse> getAccountDetail(String id) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.get<Map<String, dynamic>>('/api/accounts/$id/',
         headers: headers, transform: (raw) => raw as Map<String, dynamic>);
     return AccountsDetailResponse.fromJson(
@@ -31,7 +31,7 @@ class AccountsRepository {
   }
 
   Future<AccountsListResponse> getAccountsList() async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.get<List<dynamic>>('/api/accounts/',
         headers: headers, transform: (raw) => raw as List<dynamic>);
     return AccountsListResponse.fromJson(
@@ -40,7 +40,7 @@ class AccountsRepository {
 
   Future<AccountsModel> updateAccount(
       String id, Map<String, dynamic> data) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     final resp = await apiClient.patch<Map<String, dynamic>>(
         '/api/accounts/$id/', data,
         headers: headers, transform: (raw) => raw as Map<String, dynamic>);
@@ -48,7 +48,7 @@ class AccountsRepository {
   }
 
   Future<bool> deleteAccount(String id) async {
-    final headers = await auth.build();
+  final headers = await auth.buildHeaders();
     await apiClient.patch('/api/accounts/$id/delete/', {}, headers: headers);
     return true;
   }

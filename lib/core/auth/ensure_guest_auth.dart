@@ -1,58 +1,107 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// lib/core/auth/ensure_guest.dart
+import 'package:uuid/uuid.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/api_exception.dart';
+import 'package:sikap/core/auth/session_service.dart';
 
-/// Ensures there's a guest token stored locally by performing a one-time
-/// quick-login against the backend.
-///
-/// Behaviour:
-/// - If 'guest_token' exists in storage, returns immediately.
-/// - Else, POSTs to /api/accounts/guest/quick-login/ using ApiClient.
-/// - Validates the success envelope and extracts guest_token and guest_id.
-/// - Writes both values to secure storage.
-/// - Prints a single debug line: "[GUEST] stored guest_id=<id>".
-///
-/// This function contains no UI and imports no dart:io to remain web-safe.
-Future<void> ensureGuestAuthenticated() => _ensureGuestAuthenticated();
+/// (Opsional) resolve school_code -> school_id.
+/// Untuk sementara pakai fallback seed SMATS -> 12345.
+Future<int> _resolveSchoolIdOrThrow(ApiClient api, String schoolCode) async {
+  if (schoolCode.toUpperCase() == 'SMATS') return 12345;
+  throw ApiException(
+    message: "Belum ada resolver school_code → school_id untuk: $schoolCode",
+    code: 400,
+  );
+}
 
-Future<void> _ensureGuestAuthenticated({
-  FlutterSecureStorage? storage,
-  ApiClient? apiClient,
+/// Pastikan ada sesi guest.
+/// - Ambil profil dari SessionService (schoolCode/grade/deviceId).
+/// - Lengkapi schoolId/gradeId kalau perlu.
+/// - Quick-login → simpan guest_id (+ guest_token jika ada).
+Future<void> ensureGuestAuthenticated({
+  int? schoolId,
+  String? schoolCode,
+  int? gradeId,
+  String? gradeStr, // "10" | "11" | "12"
+  String? deviceId,
 }) async {
-  final secure = storage ?? const FlutterSecureStorage();
+  final session = SessionService();
+  final profile = await session.loadProfile();
 
-  // 1) Fast path: already authenticated as guest
-  final existing = await secure.read(key: 'guest_token');
-  if (existing != null && existing.isNotEmpty) return;
+  // Fast path: kalau sudah punya guest_id, selesai.
+  final existingGid = await session.loadGuestId();
+  if (existingGid != null) return;
 
-  // 2) Request new guest credentials
-  final api = apiClient ?? ApiClient();
-  try {
-    final resp = await api.post<Map<String, dynamic>>(
-      '/api/accounts/guest/quick-login/',
-      <String, dynamic>{},
-      transform: (raw) => raw as Map<String, dynamic>,
-    );
+  final api = ApiClient();
 
-    final data = resp.data;
-    final token = data['guest_token'];
-    final id = data['guest_id'];
+  // Lengkapi deviceId
+  final dev = (deviceId ?? profile.deviceId ?? '').trim().isEmpty
+      ? const Uuid().v4()
+      : (deviceId ?? profile.deviceId!);
 
-    if (token is! String || token.isEmpty || id == null) {
-      throw ApiException(message: 'Envelope data tidak lengkap');
+  // Lengkapi schoolId
+  int? sid = schoolId ?? profile.schoolId;
+  final scode = schoolCode ?? profile.schoolCode;
+  if (sid == null) {
+    if (scode == null || scode.trim().isEmpty) {
+      throw ApiException(message: "Harap isi kode sekolah atau school_id.", code: 400);
     }
-
-    // Persist results; store id as string for consistency across platforms
-    await secure.write(key: 'guest_token', value: token);
-    await secure.write(key: 'guest_id', value: id.toString());
-
-    // Single debug line per spec
-    // ignore: avoid_print
-    print('[GUEST] stored guest_id=${id.toString()}');
-  } on ApiException {
-    rethrow; // already well-formed for caller
-  } catch (e) {
-    // Normalize unexpected errors into ApiException for consistent handling
-    throw ApiException(message: e.toString());
+    sid = await _resolveSchoolIdOrThrow(api, scode.trim());
   }
+
+  // Lengkapi gradeId
+  int? gid = gradeId ?? profile.gradeId;
+  if (gid == null) {
+    final gs = (gradeStr ?? profile.grade ?? '').trim();
+    if (gs.isEmpty) {
+      throw ApiException(message: "Harap isi grade/grade_id.", code: 400);
+    }
+    gid = int.tryParse(gs);
+    if (gid == null) {
+      throw ApiException(message: "Grade harus numerik (mis. 10/11/12).", code: 400);
+    }
+  }
+
+  // Simpan profil yang sudah lengkap
+  await session.saveProfile(schoolId: sid, schoolCode: scode, gradeId: gid, deviceId: dev);
+
+  // === QUICK-LOGIN STUDENT ===
+  final payload = {
+    "username": "g-$dev",
+    "school_id": sid,
+    "grade_id": gid,
+    "device_id": dev,
+  };
+
+  final res = await api.post<Map<String, dynamic>>(
+    "/api/accounts/student/quick-login/",
+    payload,
+    headers: const {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    expectEnvelope: false, // respons BE kamu bukan {success,data}
+    transform: (raw) => Map<String, dynamic>.from(raw as Map),
+  );
+
+  // Contoh respons BE kamu:
+  // {
+  //   "guest_id": 5, "username": "g-dev-123", "school_id": 12345,
+  //   "grade_id": 10, "device_id": "dev-123", "expires_at": "...",
+  //   (opsional) "guest_token": "..." 
+  // }
+  final rawId = res.data['guest_id'];
+  if (rawId == null) {
+    throw ApiException(message: "guest_id tidak ada di respons BE.", code: 500);
+  }
+  final gId = (rawId is num) ? rawId.toInt() : int.tryParse(rawId.toString());
+  if (gId == null) {
+    throw ApiException(message: "guest_id bukan integer: $rawId", code: 500);
+  }
+
+  final token = res.data['guest_token'] ?? res.data['token'];
+  await session.saveGuest(guestId: gId, token: token is String ? token : null);
+
+  // ignore: avoid_print
+  print("[GUEST] stored guest_id=$gId (device=$dev, school=$sid, grade=$gid)");
 }

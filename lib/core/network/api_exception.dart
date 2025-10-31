@@ -1,9 +1,15 @@
+// lib/core/network/api_exception.dart
 class ApiException implements Exception {
   final String message;
   final int? code;
   final Map<String, dynamic>? errors;
+
   ApiException({required this.message, this.code, this.errors});
-  @override String toString() => "ApiException($code): $message";
+
+  int? get statusCode => code; // <— tambahkan ini
+
+  @override
+  String toString() => "ApiException($code): $message";
 }
 
 class NetworkException extends ApiException {
