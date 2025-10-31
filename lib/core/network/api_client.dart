@@ -3,6 +3,7 @@
 // Tambah logging ringan biar gampang trace.
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/network/api_env.dart';
@@ -50,22 +51,26 @@ class ApiResponse<T> {
 }
 
 class ApiClient {
-  final http.Client _client = http.Client();
+  ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
+
+  static bool debugLogging =
+      const bool.fromEnvironment('API_HTTP_DEBUG', defaultValue: false);
+
+  final http.Client _client;
 
   Uri _u(String endpoint) => Uri.parse("${ApiEnv.baseUrl}$endpoint");
 
-  Map<String, String> _jsonDefaults([Map<String, String>? extra]) {
-    final base = <String, String>{
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
-    if (extra != null && extra.isNotEmpty) base.addAll(extra);
-    return base;
-  }
-
   void _logReq(String method, Uri url, Map<String, String> headers, Object? body) {
+    if (!debugLogging) return;
+    final masked = headers.map((key, value) {
+      final lower = key.toLowerCase();
+      if (lower.contains('token')) {
+        return MapEntry(key, _maskToken(value));
+      }
+      return MapEntry(key, value);
+    });
     // ignore: avoid_print
-    print("[HTTP $method] $url\n  headers=$headers\n  body=${body is String ? body : jsonEncode(body)}");
+    print("[HTTP $method] $url\n  headers=$masked\n  body=${body is String ? body : jsonEncode(body)}");
   }
 
   ApiResponse<T> _handle<T>(
@@ -120,7 +125,7 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = _jsonDefaults(headers);
+    final h = composeHeaders(headers);
     _logReq('GET', uri, h, null);
     final r = await _client.get(uri, headers: h);
     return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
@@ -134,7 +139,7 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = _jsonDefaults(headers);
+    final h = composeHeaders(headers);
     final b = jsonEncode(body);
     _logReq('POST', uri, h, b);
     final r = await _client.post(uri, headers: h, body: b);
@@ -149,7 +154,7 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = _jsonDefaults(headers);
+    final h = composeHeaders(headers);
     final b = jsonEncode(body);
     _logReq('PATCH', uri, h, b);
     final r = await _client.patch(uri, headers: h, body: b);
@@ -163,9 +168,30 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = _jsonDefaults(headers);
+    final h = composeHeaders(headers);
     _logReq('DELETE', uri, h, null);
     final r = await _client.delete(uri, headers: h);
     return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
+  }
+
+  @visibleForTesting
+  static Map<String, String> composeHeaders(Map<String, String>? extra) {
+    final base = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (extra == null || extra.isEmpty) {
+      return base;
+    }
+    final merged = Map<String, String>.from(base);
+    extra.forEach((key, value) {
+      merged[key] = value;
+    });
+    return merged;
+  }
+
+  static String _maskToken(String token, {int head = 6, int tail = 4}) {
+    if (token.length <= head + tail) return token;
+    return '${token.substring(0, head)}…${token.substring(token.length - tail)}';
   }
 }

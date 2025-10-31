@@ -33,13 +33,15 @@ class SessionService {
     await _s.write(key: _kGuestId, value: guestId.toString());
     if (token != null && token.isNotEmpty) {
       await _s.write(key: _kGuestToken, value: token);
+    } else {
+      await _s.delete(key: _kGuestToken);
     }
   }
 
   Future<int?> loadGuestId() async {
     final v = await _s.read(key: _kGuestId);
     return v == null ? null : int.tryParse(v);
-    }
+  }
 
   Future<String?> loadGuestToken() => _s.read(key: _kGuestToken);
 
