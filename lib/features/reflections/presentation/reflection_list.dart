@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/features/scenarios/data/scenario_repository.dart';
 
 class ReflectionListPage extends StatefulWidget {
   const ReflectionListPage({
@@ -6,11 +10,14 @@ class ReflectionListPage extends StatefulWidget {
     required this.scenarioTitle,
     required this.scenarioDescription,
     required this.question,
+    this.scenarioId,
   });
 
   final String scenarioTitle;
   final String scenarioDescription;
   final String question;
+  final int?
+      scenarioId; // optional backend scenario id to fetch real reflections
 
   @override
   State<ReflectionListPage> createState() => _ReflectionListPageState();
@@ -19,16 +26,28 @@ class ReflectionListPage extends StatefulWidget {
 class _ReflectionListPageState extends State<ReflectionListPage> {
   String _sort = 'Terbaru';
 
-  // Placeholder data. Nantinya dapat diganti dari API/backend.
-  final List<_ReflectionItem> _reflections = [
-    _ReflectionItem(createdAt: DateTime.now().subtract(const Duration(hours: 2)), text: 'Saya belajar untuk minta bantuan wali kelas saat melihat teman dibully.'),
-    _ReflectionItem(createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)), text: 'Saat sedih, saya mencoba bernapas dalam dan bicara ke orang tua.'),
-    _ReflectionItem(createdAt: DateTime.now().subtract(const Duration(days: 3)), text: 'Saya akan melapor dengan aman dan tidak menghadapi sendiri pelaku.'),
+  // Placeholder data. Will be replaced by API data when scenarioId is provided.
+  List<_ReflectionItem> _reflections = [
+    _ReflectionItem(
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        text:
+            'Saya belajar untuk minta bantuan wali kelas saat melihat teman dibully.'),
+    _ReflectionItem(
+        createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
+        text:
+            'Saat sedih, saya mencoba bernapas dalam dan bicara ke orang tua.'),
+    _ReflectionItem(
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        text:
+            'Saya akan melapor dengan aman dan tidak menghadapi sendiri pelaku.'),
   ];
+  bool _loadingRemote = false;
 
   List<_ReflectionItem> get _sortedList {
     final list = [..._reflections];
-    list.sort((a, b) => _sort == 'Terbaru' ? b.createdAt.compareTo(a.createdAt) : a.createdAt.compareTo(b.createdAt));
+    list.sort((a, b) => _sort == 'Terbaru'
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
     return list;
   }
 
@@ -43,64 +62,147 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
       body: Container(
         color: const Color(0xFF7F55B1),
         child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.scenarioTitle, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    Text('Deskripsi Skenario: ${widget.scenarioDescription}', style: const TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 8),
-                    Text('Pertanyaan yang diberikan: ${widget.question}', style: const TextStyle(color: Colors.white70)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 44,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2)),
-                        ]),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _sort,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            items: const [
-                              DropdownMenuItem(value: 'Terbaru', child: Text('Terbaru')),
-                              DropdownMenuItem(value: 'Terlama', child: Text('Terlama')),
-                            ],
-                            onChanged: (v) => setState(() => _sort = v ?? 'Terbaru'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.scenarioTitle,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        Text(
+                            'Deskripsi Skenario: ${widget.scenarioDescription}',
+                            style: const TextStyle(color: Colors.white70)),
+                        const SizedBox(height: 8),
+                        Text('Pertanyaan yang diberikan: ${widget.question}',
+                            style: const TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 44,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.08),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2)),
+                                ]),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _sort,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 'Terbaru', child: Text('Terbaru')),
+                                  DropdownMenuItem(
+                                      value: 'Terlama', child: Text('Terlama')),
+                                ],
+                                onChanged: (v) =>
+                                    setState(() => _sort = v ?? 'Terbaru'),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemCount: _sortedList.length,
+                      itemBuilder: (context, index) {
+                        final item = _sortedList[index];
+                        return _ReflectionCard(item: item);
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: _sortedList.length,
-                  itemBuilder: (context, index) {
-                    final item = _sortedList[index];
-                    return _ReflectionCard(item: item);
-                  },
+              if (_loadingRemote)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.25),
+                    child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white)),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scenarioId != null) {
+      _loadRemote();
+    }
+  }
+
+  Future<void> _loadRemote() async {
+    setState(() => _loadingRemote = true);
+    try {
+      final session = SessionService();
+      final api = ApiClient();
+      final auth = AuthHeaderProvider(
+          loadUserToken: () async => null,
+          loadGuestToken: () async => await session.loadGuestToken(),
+          loadGuestId: () async => await session.loadGuestId());
+      final repo = ScenarioRepository(apiClient: api, auth: auth);
+      final data = await repo.getSchoolReflections(
+          scenarioId: widget.scenarioId?.toString());
+      final List<_ReflectionItem> parsed = [];
+      for (final e in data) {
+        try {
+          final Map<String, dynamic> m =
+              (e is Map) ? Map<String, dynamic>.from(e) : {};
+          final created = m['created_at'] is String
+              ? DateTime.tryParse(m['created_at'] as String)
+              : null;
+          final refl = m['reflection'];
+          String text = '';
+          if (refl is String)
+            text = refl;
+          else if (refl is Map && refl['text'] is String)
+            text = refl['text'] as String;
+          else if (refl is Map) text = refl.toString();
+          if (created != null)
+            parsed.add(_ReflectionItem(createdAt: created, text: text));
+        } catch (_) {
+          // skip invalid item
+        }
+      }
+      if (parsed.isNotEmpty) {
+        setState(() => _reflections = parsed);
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('[ReflectionListPage] failed to load remote reflections: $e');
+    } finally {
+      setState(() => _loadingRemote = false);
+    }
   }
 }
 
@@ -122,7 +224,10 @@ class _ReflectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Padding(
@@ -134,7 +239,8 @@ class _ReflectionCard extends StatelessWidget {
               children: [
                 const Icon(Icons.schedule, size: 18, color: Colors.black54),
                 const SizedBox(width: 8),
-                Text(_formatDate(item.createdAt), style: const TextStyle(color: Colors.black54)),
+                Text(_formatDate(item.createdAt),
+                    style: const TextStyle(color: Colors.black54)),
               ],
             ),
             const SizedBox(height: 8),
@@ -150,5 +256,3 @@ class _ReflectionCard extends StatelessWidget {
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
 }
-
-

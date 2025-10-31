@@ -45,7 +45,9 @@ class ScenarioStage {
       narration: json['narasi'] as String,
       question: json['pertanyaan'] as String,
       illustrationFile: json['ilustrasi_file'] as String,
-      options: rawOptions.map((e) => ScenarioOption.fromJson(e as Map<String, dynamic>)).toList(),
+      options: rawOptions
+          .map((e) => ScenarioOption.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -56,12 +58,14 @@ class ScenarioItem {
     required this.title,
     required this.srlLesson,
     required this.stages,
+    this.remoteId,
   });
 
   final String level; // SD/SMP/SMA
   final String title; // Nama skenario
   final String srlLesson; // pelajaran_srl
   final List<ScenarioStage> stages;
+  final int? remoteId; // optional backend scenario id
 
   factory ScenarioItem.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawStages = json['tahapan'] as List<dynamic>;
@@ -69,10 +73,14 @@ class ScenarioItem {
       level: json['jenjang'] as String,
       title: json['skenario'] as String,
       srlLesson: json['pelajaran_srl'] as String,
-      stages: rawStages.map((e) => ScenarioStage.fromJson(e as Map<String, dynamic>)).toList(),
+      stages: rawStages
+          .map((e) => ScenarioStage.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      remoteId: json['scenario_id'] is int
+          ? json['scenario_id'] as int
+          : (json['scenario_id'] is String
+              ? int.tryParse(json['scenario_id'] as String)
+              : null),
     );
   }
 }
-
-
-
