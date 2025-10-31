@@ -1,11 +1,12 @@
 // lib/features/bullying/data/repositories/bullying_repository.dart
 
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/auth/guest_auth_gate.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/network/with_guest_auth_retry.dart';
 
 import '../models/bullying_create_response.dart';
 import '../models/bullying_detail_response.dart';
@@ -16,11 +17,13 @@ class BullyingRepository {
   final ApiClient apiClient;
   final SessionService session;
   final AuthHeaderProvider auth;
+  final GuestAuthGate gate;
 
   BullyingRepository({
     required this.apiClient,
     required this.session,
     required this.auth,
+    required this.gate,
   });
 
   // =========================
@@ -31,13 +34,26 @@ class BullyingRepository {
   /// Guest-allowed. Kembalikan list map sederhana (id, type_name, dst).
   Future<List<Map<String, dynamic>>> getIncidentTypes(
       {bool asGuest = true}) async {
-    final headers = await auth.buildHeaders(asGuest: asGuest);
-    final resp = await apiClient.get<List<dynamic>>(
-      '/api/bullying/incident-types/',
-      headers: headers,
-      transform: (raw) => raw as List<dynamic>,
-    );
-    return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      final resp = await apiClient.get<List<dynamic>>(
+        '/api/bullying/incident-types/',
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+
+    await gate.ensure();
+    return withGuestAuthRetry(() async {
+      final headers = await auth.guestHeaders();
+      final resp = await apiClient.get<List<dynamic>>(
+        '/api/bullying/incident-types/',
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }, gate);
   }
 
   /// POST /api/bullying/report/
@@ -46,47 +62,49 @@ class BullyingRepository {
     Map<String, dynamic> data, {
     bool asGuest = true,
   }) async {
-    await ensureGuestAuthenticated();
-    final guestId = await session.loadGuestId();
-    if (guestId == null) {
-      throw ApiException(
-        message: "Guest belum terautentikasi",
-        code: 401,
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      final resp = await apiClient.post<Map<String, dynamic>>(
+        '/api/bullying/report/',
+        data,
+        headers: headers,
+        transform: (raw) => raw as Map<String, dynamic>,
+      );
+      return BullyingCreateResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
       );
     }
 
-    final payload = Map<String, dynamic>.from(data);
+    await gate.ensure();
+    return withGuestAuthRetry(() async {
+      final guestId = await session.loadGuestId();
+      if (guestId == null) {
+        throw ApiException(message: "Guest belum terautentikasi", code: 401);
+      }
 
-    // Pastikan incident_type_id benar-benar numerik.
-    final incidentType = payload['incident_type_id'];
-    if (incidentType is String) {
-      final parsed = int.tryParse(incidentType);
-      if (parsed != null) payload['incident_type_id'] = parsed;
-    }
-    payload['incident_type_id'] = payload['incident_type_id'] is num
-        ? (payload['incident_type_id'] as num).toInt()
-        : payload['incident_type_id'];
+      final payload = Map<String, dynamic>.from(data);
+      final incidentType = payload['incident_type_id'];
+      if (incidentType is String) {
+        final parsed = int.tryParse(incidentType);
+        if (parsed != null) payload['incident_type_id'] = parsed;
+      }
+      payload['incident_type_id'] = payload['incident_type_id'] is num
+          ? (payload['incident_type_id'] as num).toInt()
+          : payload['incident_type_id'];
+      payload['guest_id'] = guestId;
+      payload.removeWhere((key, value) => value == null);
 
-    // Sisipkan guest_id agar backend dapat mengenali sesi tanpa header kustom.
-    payload['guest_id'] = guestId;
-
-    // Buang nilai null agar payload rapi saat dikirim.
-    payload.removeWhere((key, value) => value == null);
-
-    final headers = await auth.buildHeaders(asGuest: asGuest);
-    // ignore: avoid_print
-    print(
-        "[BULLY] POST /report kIsWeb=$kIsWeb (gid=$guestId) body=${payload.keys}");
-
-    final resp = await apiClient.post<Map<String, dynamic>>(
-      '/api/bullying/report/',
-      payload,
-      headers: headers,
-      transform: (raw) => raw as Map<String, dynamic>,
-    );
-    return BullyingCreateResponse.fromJson(
-      {'success': true, 'message': '', 'data': resp.data},
-    );
+      final headers = await auth.guestHeaders();
+      final resp = await apiClient.post<Map<String, dynamic>>(
+        '/api/bullying/report/',
+        payload,
+        headers: headers,
+        transform: (raw) => raw as Map<String, dynamic>,
+      );
+      return BullyingCreateResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }, gate);
   }
 
   /// GET /api/bullying/report/history/{guest_id}/
@@ -95,15 +113,30 @@ class BullyingRepository {
     required int guestId,
     bool asGuest = true,
   }) async {
-    final headers = await auth.buildHeaders(asGuest: asGuest);
-    final resp = await apiClient.get<List<dynamic>>(
-      '/api/bullying/report/history/$guestId/',
-      headers: headers,
-      transform: (raw) => raw as List<dynamic>,
-    );
-    return BullyingListResponse.fromJson(
-      {'success': true, 'message': '', 'data': resp.data},
-    );
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      final resp = await apiClient.get<List<dynamic>>(
+        '/api/bullying/report/history/$guestId/',
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return BullyingListResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }
+
+    await gate.ensure();
+    return withGuestAuthRetry(() async {
+      final headers = await auth.guestHeaders();
+      final resp = await apiClient.get<List<dynamic>>(
+        '/api/bullying/report/history/$guestId/',
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return BullyingListResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }, gate);
   }
 
   /// GET /api/bullying/report/{id}/
@@ -112,15 +145,30 @@ class BullyingRepository {
     String id, {
     bool asGuest = true,
   }) async {
-    final headers = await auth.buildHeaders(asGuest: asGuest);
-    final resp = await apiClient.get<Map<String, dynamic>>(
-      '/api/bullying/report/$id/',
-      headers: headers,
-      transform: (raw) => raw as Map<String, dynamic>,
-    );
-    return BullyingDetailResponse.fromJson(
-      {'success': true, 'message': '', 'data': resp.data},
-    );
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      final resp = await apiClient.get<Map<String, dynamic>>(
+        '/api/bullying/report/$id/',
+        headers: headers,
+        transform: (raw) => raw as Map<String, dynamic>,
+      );
+      return BullyingDetailResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }
+
+    await gate.ensure();
+    return withGuestAuthRetry(() async {
+      final headers = await auth.guestHeaders();
+      final resp = await apiClient.get<Map<String, dynamic>>(
+        '/api/bullying/report/$id/',
+        headers: headers,
+        transform: (raw) => raw as Map<String, dynamic>,
+      );
+      return BullyingDetailResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }, gate);
   }
 
   // =========================
@@ -192,31 +240,37 @@ class BullyingRepository {
   // =========================
   Future<BullyingListResponse> getMyBullyingReports(
       {bool asGuest = true}) async {
-    await ensureGuestAuthenticated();
-    final guestId = await session.loadGuestId();
-    if (guestId == null) {
-      throw ApiException(
-        message: "Guest belum terautentikasi",
-        code: 401,
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      final resp = await apiClient.get<List<dynamic>>(
+        '/api/bullying/report/my/',
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return BullyingListResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
       );
     }
 
-    final headers = await auth.buildHeaders(asGuest: asGuest);
-    final path = kIsWeb
-        ? '/api/bullying/report/my/?guest_id=$guestId'
-        : '/api/bullying/report/my/';
+    await gate.ensure();
+    return withGuestAuthRetry(() async {
+      final guestId = await session.loadGuestId();
+      if (guestId == null) {
+        throw ApiException(message: "Guest belum terautentikasi", code: 401);
+      }
+      final headers = await auth.guestHeaders();
+      final path = kIsWeb
+          ? '/api/bullying/report/my/?guest_id=$guestId'
+          : '/api/bullying/report/my/';
 
-    // ignore: avoid_print
-    print(
-        "[BULLY] GET /my kIsWeb=$kIsWeb (gid=$guestId) path=$path headers=$headers");
-
-    final resp = await apiClient.get<List<dynamic>>(
-      path,
-      headers: headers,
-      transform: (raw) => raw as List<dynamic>,
-    );
-    return BullyingListResponse.fromJson(
-      {'success': true, 'message': '', 'data': resp.data},
-    );
+      final resp = await apiClient.get<List<dynamic>>(
+        path,
+        headers: headers,
+        transform: (raw) => raw as List<dynamic>,
+      );
+      return BullyingListResponse.fromJson(
+        {'success': true, 'message': '', 'data': resp.data},
+      );
+    }, gate);
   }
 }

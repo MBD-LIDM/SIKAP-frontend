@@ -40,12 +40,12 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
     _auth = AuthHeaderProvider(
       loadUserToken: () async => null, // guest-only flow
       loadGuestToken: () async => await _session.loadGuestToken(),
-      loadGuestId: () async => await _session.loadGuestId(),
     );
     _repo = BullyingRepository(
       apiClient: _api,
       session: _session,
       auth: _auth,
+      gate: guestAuthGateInstance(),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());

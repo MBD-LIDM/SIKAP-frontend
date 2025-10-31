@@ -3,17 +3,24 @@
 // Tambah logging ringan biar gampang trace.
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/network/api_env.dart';
 
+const bool kApiDebugLog =
+    bool.fromEnvironment('API_HTTP_DEBUG', defaultValue: false);
+
 Map<String, dynamic>? _tryDecodeJson(String s) {
-  try { final d = s.isEmpty ? null : (jsonDecode(s) as Object?); 
-        return (d is Map<String, dynamic>) ? d : null; } catch (_) { return null; }
+  try {
+    final d = s.isEmpty ? null : (jsonDecode(s) as Object?);
+    return (d is Map<String, dynamic>) ? d : null;
+  } catch (_) {
+    return null;
+  }
 }
 
-T _handle<T>(http.Response res, {
+T _handle<T>(
+  http.Response res, {
   bool expectEnvelope = true,
   T Function(dynamic raw)? transform,
 }) {
@@ -35,7 +42,8 @@ T _handle<T>(http.Response res, {
     if (jsonMap['detail'] is String) msg = jsonMap['detail'] as String;
     // if envelope error: {"success":false,"message":"...","errors":{...}}
     if (jsonMap['message'] is String) msg = jsonMap['message'] as String;
-    if (jsonMap['errors'] is Map<String, dynamic>) errs = Map<String, dynamic>.from(jsonMap['errors']);
+    if (jsonMap['errors'] is Map<String, dynamic>)
+      errs = Map<String, dynamic>.from(jsonMap['errors']);
     // kalau bukan "errors", anggap seluruh map adalah field errors
     errs ??= Map<String, dynamic>.from(jsonMap);
   }
@@ -53,24 +61,17 @@ class ApiResponse<T> {
 class ApiClient {
   ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
 
-  static bool debugLogging =
-      const bool.fromEnvironment('API_HTTP_DEBUG', defaultValue: false);
-
   final http.Client _client;
 
   Uri _u(String endpoint) => Uri.parse("${ApiEnv.baseUrl}$endpoint");
 
-  void _logReq(String method, Uri url, Map<String, String> headers, Object? body) {
-    if (!debugLogging) return;
-    final masked = headers.map((key, value) {
-      final lower = key.toLowerCase();
-      if (lower.contains('token')) {
-        return MapEntry(key, _maskToken(value));
-      }
-      return MapEntry(key, value);
-    });
+  void _logReq(String method, Uri url, Map<String, String> headers) {
+    if (!kApiDebugLog) return;
+    final token = headers['X-Guest-Token'];
+    final prefix =
+        (token == null || token.isEmpty) ? '-' : token.substring(0, 6);
     // ignore: avoid_print
-    print("[HTTP $method] $url\n  headers=$masked\n  body=${body is String ? body : jsonEncode(body)}");
+    print('[API] $method $url headers=${headers.keys} token=$prefix');
   }
 
   ApiResponse<T> _handle<T>(
@@ -100,14 +101,16 @@ class ApiClient {
       if (decoded is Map) {
         if (decoded['message'] is String) msg = decoded['message'];
         if (decoded['detail'] is String) msg = decoded['detail'];
-        if (decoded['errors'] is Map) errs = Map<String, dynamic>.from(decoded['errors']);
+        if (decoded['errors'] is Map)
+          errs = Map<String, dynamic>.from(decoded['errors']);
       }
       throw ApiException(message: msg, code: resp.statusCode, errors: errs);
     }
 
     if (!expectEnvelope) {
       final data = (transform != null) ? transform(decoded) : decoded as T;
-      return ApiResponse<T>(data, status: resp.statusCode, headers: resp.headers);
+      return ApiResponse<T>(data,
+          status: resp.statusCode, headers: resp.headers);
     }
 
     if (decoded is! Map || decoded['success'] != true) {
@@ -125,9 +128,14 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = composeHeaders(headers);
-    _logReq('GET', uri, h, null);
-    final r = await _client.get(uri, headers: h);
+    final base = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    final finalHeaders = {...base, if (headers != null) ...headers};
+    _logReq('GET', uri, finalHeaders);
+    final r = await _client.get(uri, headers: finalHeaders);
     return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
@@ -139,10 +147,19 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = composeHeaders(headers);
-    final b = jsonEncode(body);
-    _logReq('POST', uri, h, b);
-    final r = await _client.post(uri, headers: h, body: b);
+    final base = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+
+    final finalHeaders = {...base, if (headers != null) ...headers};
+    final encodedBody = body is String ? body : jsonEncode(body);
+    _logReq('POST', uri, finalHeaders);
+    final r = await _client.post(
+      uri,
+      headers: finalHeaders,
+      body: encodedBody,
+    );
     return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
@@ -154,10 +171,18 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = composeHeaders(headers);
-    final b = jsonEncode(body);
-    _logReq('PATCH', uri, h, b);
-    final r = await _client.patch(uri, headers: h, body: b);
+    final base = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    final finalHeaders = {...base, if (headers != null) ...headers};
+    final encodedBody = body is String ? body : jsonEncode(body);
+    _logReq('PATCH', uri, finalHeaders);
+    final r = await _client.patch(
+      uri,
+      headers: finalHeaders,
+      body: encodedBody,
+    );
     return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 
@@ -168,30 +193,13 @@ class ApiClient {
     bool expectEnvelope = true,
   }) async {
     final uri = _u(endpoint);
-    final h = composeHeaders(headers);
-    _logReq('DELETE', uri, h, null);
-    final r = await _client.delete(uri, headers: h);
-    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
-  }
-
-  @visibleForTesting
-  static Map<String, String> composeHeaders(Map<String, String>? extra) {
-    final base = <String, String>{
+    final base = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    if (extra == null || extra.isEmpty) {
-      return base;
-    }
-    final merged = Map<String, String>.from(base);
-    extra.forEach((key, value) {
-      merged[key] = value;
-    });
-    return merged;
-  }
-
-  static String _maskToken(String token, {int head = 6, int tail = 4}) {
-    if (token.length <= head + tail) return token;
-    return '${token.substring(0, head)}…${token.substring(token.length - tail)}';
+    final finalHeaders = {...base, if (headers != null) ...headers};
+    _logReq('DELETE', uri, finalHeaders);
+    final r = await _client.delete(uri, headers: finalHeaders);
+    return _handle<T>(r, transform: transform, expectEnvelope: expectEnvelope);
   }
 }

@@ -3,36 +3,35 @@
 class AuthHeaderProvider {
   final Future<String?> Function()? loadUserToken;
   final Future<String?> Function()? loadGuestToken;
-  final Future<int?> Function()? loadGuestId;
 
   AuthHeaderProvider({
     this.loadUserToken,
     this.loadGuestToken,
-    this.loadGuestId,
   });
 
   Future<Map<String, String>> buildHeaders({bool asGuest = false}) async {
     final headers = <String, String>{
-      "Content-Type": "application/json",
-      "Accept": "application/json",
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
     };
 
     if (asGuest) {
-      final guestToken = await (loadGuestToken?.call());
-      if (guestToken != null && guestToken.isNotEmpty) {
-        headers["X-Guest-Token"] = guestToken;
-      }
-      final guestId = await (loadGuestId?.call());
-      if (guestId != null) {
-        headers["X-Guest-Id"] = guestId.toString();
+      final token = await (loadGuestToken?.call());
+      if (token != null && token.isNotEmpty) {
+        headers['X-Guest-Token'] = token;
+      } else {
+        // ignore: avoid_print
+        print('[AuthHeaderProvider] warning: guest token missing');
       }
       return headers;
     }
 
     final userToken = await (loadUserToken?.call());
     if (userToken != null && userToken.isNotEmpty) {
-      headers["Authorization"] = "Bearer $userToken";
+      headers['Authorization'] = 'Bearer $userToken';
     }
     return headers;
   }
+
+  Future<Map<String, String>> guestHeaders() => buildHeaders(asGuest: true);
 }

@@ -31,8 +31,8 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
       auth: AuthHeaderProvider(
         loadUserToken: () async => null,
         loadGuestToken: () async => await _session.loadGuestToken(),
-        loadGuestId: () async => await _session.loadGuestId(),
       ),
+      gate: guestAuthGateInstance(),
     );
     _loadDetail();
   }
