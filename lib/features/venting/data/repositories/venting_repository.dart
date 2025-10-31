@@ -20,17 +20,20 @@ class VentingRepository {
     required String filename,
     bool asGuest = true,
   }) async {
-  final headers = await auth.buildHeaders(asGuest: asGuest);
-    final mp = MultipartClient.fromBytesSingle('file', bytes, filename: filename);
+    final headers = await auth.buildHeaders(asGuest: asGuest);
+    final mp =
+        MultipartClient.fromBytesSingle('audio', bytes, filename: filename);
 
     final resp = await multipartClient.postFile(
       endpoint: '/api/venting/analyze/',
       file: mp,
-      fieldName: 'file',
+      fieldName: 'audio',
       headers: headers,
     );
 
-    return Map<String, dynamic>.from(resp.data as Map);
+    // Normalize backend response into UI-friendly shape expected by MoodCheckResultPage
+    final raw = Map<String, dynamic>.from(resp.data as Map);
+    return _normalizeBackendVentingResponse(raw);
   }
 
   /// === MOBILE/DESKTOP: kirim dari path file lokal ===
@@ -43,17 +46,91 @@ class VentingRepository {
       throw UnsupportedError('Gunakan analyzeAudioFromBytes() di Web');
     }
 
-  final headers = await auth.buildHeaders(asGuest: asGuest);
-    final mp = await MultipartClient.fromPathSingle('file', path, filename: filename);
+    final headers = await auth.buildHeaders(asGuest: asGuest);
+    final mp =
+        await MultipartClient.fromPathSingle('audio', path, filename: filename);
 
     final resp = await multipartClient.postFile(
       endpoint: '/api/venting/analyze/',
       file: mp,
-      fieldName: 'file',
+      fieldName: 'audio',
       headers: headers,
     );
 
-    return Map<String, dynamic>.from(resp.data as Map);
+    // Normalize backend response into UI-friendly shape expected by MoodCheckResultPage
+    final raw = Map<String, dynamic>.from(resp.data as Map);
+    return _normalizeBackendVentingResponse(raw);
+  }
+
+  /// Convert backend response to a UI-friendly map.
+  /// - Prefer `plutchik` (percentages summing ~100) and convert to `scores` with 0..1 values.
+  /// - Set `primary_emotion` to the largest plutchik key and `primary_score` as fraction (0..1).
+  /// - Fallback to legacy `emotions` if `plutchik` not present.
+  Map<String, dynamic> _normalizeBackendVentingResponse(
+      Map<String, dynamic> raw) {
+    final out = <String, dynamic>{};
+
+    // Pass-through common fields
+    if (raw.containsKey('result_id')) out['result_id'] = raw['result_id'];
+    if (raw.containsKey('disclaimer')) out['disclaimer'] = raw['disclaimer'];
+    if (raw.containsKey('suggestion')) out['suggestion'] = raw['suggestion'];
+    if (raw.containsKey('warning')) out['warning'] = raw['warning'];
+
+    // Summary
+    if (raw.containsKey('summary')) {
+      out['summary'] = raw['summary']?.toString();
+    }
+
+    // Prefer plutchik set
+    final plutchik = raw['plutchik'];
+    Map<String, dynamic>? scores;
+    if (plutchik is Map) {
+      scores = <String, dynamic>{};
+      plutchik.forEach((k, v) {
+        if (v is num) {
+          // backend provides percentages (0..100). Convert to fraction 0..1
+          scores![k.toString()] = (v.toDouble() / 100.0).clamp(0.0, 1.0);
+        }
+      });
+    }
+
+    // Fallback to legacy emotions (sadness/anxiety/calmness)
+    if (scores == null || scores.isEmpty) {
+      final legacy = raw['emotions'];
+      if (legacy is Map) {
+        scores = <String, dynamic>{};
+        legacy.forEach((k, v) {
+          if (v is num) {
+            scores![k.toString()] = (v.toDouble() / 100.0).clamp(0.0, 1.0);
+          }
+        });
+      }
+    }
+
+    if (scores != null && scores.isNotEmpty) {
+      out['scores'] = scores;
+      // determine primary
+      String? primary;
+      double primaryScore = 0.0;
+      scores.forEach((k, v) {
+        final val = (v is num)
+            ? v.toDouble()
+            : double.tryParse(v?.toString() ?? '0') ?? 0.0;
+        if (val > primaryScore) {
+          primaryScore = val;
+          primary = k;
+        }
+      });
+      if (primary != null) {
+        out['primary_emotion'] = primary;
+        out['primary_score'] = primaryScore;
+        // keep legacy keys for compatibility
+        out['emotion'] = primary;
+        out['score'] = primaryScore;
+      }
+    }
+
+    return out;
   }
 
   /// === KOMPATIBILITAS: method lama yang UI kamu panggil ===
@@ -70,7 +147,8 @@ class VentingRepository {
         final Uint8List? bytes = dyn.bytes as Uint8List?;
         final String? name = dyn.name as String?;
         if (bytes != null) {
-          return analyzeAudioFromBytes(bytes, filename: name ?? 'audio.wav', asGuest: asGuest);
+          return analyzeAudioFromBytes(bytes,
+              filename: name ?? 'audio.wav', asGuest: asGuest);
         }
       } catch (_) {
         // fallback di bawah
@@ -78,7 +156,8 @@ class VentingRepository {
 
       // Coba: langsung Uint8List
       if (audio is Uint8List) {
-        return analyzeAudioFromBytes(audio, filename: 'audio.wav', asGuest: asGuest);
+        return analyzeAudioFromBytes(audio,
+            filename: 'audio.wav', asGuest: asGuest);
       }
 
       throw UnsupportedError(
@@ -88,10 +167,18 @@ class VentingRepository {
       // Coba: objek yang punya .path (XFile/File)
       try {
         final dyn = audio as dynamic;
-        final String? path = dyn.path as String?;
-        final String? name = dyn.name as String?;
-        if (path != null && path.isNotEmpty) {
-          return analyzeAudioFromPath(path, filename: name, asGuest: asGuest);
+        // Access path first — some types (e.g. File) have .path but not .name.
+        final pathAny = dyn.path;
+        if (pathAny is String && pathAny.isNotEmpty) {
+          String? name;
+          try {
+            final nameAny = dyn.name;
+            if (nameAny is String) name = nameAny;
+          } catch (_) {
+            // ignore: some objects don't expose .name
+          }
+          return analyzeAudioFromPath(pathAny,
+              filename: name, asGuest: asGuest);
         }
       } catch (_) {
         // fallback di bawah

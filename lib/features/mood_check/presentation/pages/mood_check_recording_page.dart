@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/network/multipart_client.dart';
@@ -32,6 +34,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
     _recorder = AudioRecorder();
     _startRecording();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,7 +102,8 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(60),
-                              onTap: _uploading ? null : _showStopRecordingDialog,
+                              onTap:
+                                  _uploading ? null : _showStopRecordingDialog,
                               child: Center(
                                 child: SizedBox(
                                   width: 40,
@@ -171,7 +175,8 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                       children: [
                         CircularProgressIndicator(color: Colors.white),
                         SizedBox(height: 12),
-                        Text('Mengunggah dan menganalisis...', style: TextStyle(color: Colors.white)),
+                        Text('Mengunggah dan menganalisis...',
+                            style: TextStyle(color: Colors.white)),
                       ],
                     ),
                   ),
@@ -229,6 +234,16 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
       // [DEBUG]
       // ignore: avoid_print
       print('[DEBUG] Analyze result received: keys=${result.keys.toList()}');
+      if (kDebugMode) {
+        try {
+          // ignore: avoid_print
+          print('[DEBUG] Analyze result full: ${jsonEncode(result)}');
+        } catch (_) {
+          // Fallback if result is not pure JSON-serializable
+          // ignore: avoid_print
+          print('[DEBUG] Analyze result full (toString): $result');
+        }
+      }
 
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -237,7 +252,13 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
           builder: (context) => MoodCheckResultPage(result: result),
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('[DEBUG] Analyze failed: $e');
+        // ignore: avoid_print
+        print(st);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menganalisis: $e')),
@@ -255,10 +276,11 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
         print('[DEBUG] Microphone permission denied');
         return;
       }
-  final dir = await getTemporaryDirectory();
-  final filename = 'venting_${DateTime.now().millisecondsSinceEpoch}.m4a';
-  final path = '${dir.path}/$filename';
-  await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+      final dir = await getTemporaryDirectory();
+      final filename = 'venting_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${dir.path}/$filename';
+      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path);
       // ignore: avoid_print
       print('[DEBUG] Recording started');
     } catch (e) {
@@ -269,7 +291,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
 
   Future<String?> _stopRecording() async {
     try {
-  final path = await _recorder.stop();
+      final path = await _recorder.stop();
       // ignore: avoid_print
       print('[DEBUG] Recording stopped: $path');
       return path;
