@@ -1,9 +1,10 @@
+// lib/features/authentication/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:sikap/core/auth/session_service.dart';
-import 'package:sikap/core/auth/ensure_guest_auth.dart';      // <— penting
+import 'package:sikap/core/auth/ensure_guest_auth.dart'; // pastikan file ini ada
 import 'package:sikap/core/network/api_exception.dart';
 
 import '../../../home/presentation/pages/home_page.dart';
@@ -39,20 +40,28 @@ class _LoginPageState extends State<LoginPage> {
 
     final session = SessionService();
     try {
-      // deviceId stabil: ambil existing; kalau kosong generate
+      // 1) Pastikan deviceId stabil
       final prof = await session.loadProfile();
       final deviceId =
           (prof.deviceId ?? '').isNotEmpty ? prof.deviceId! : const Uuid().v4();
 
-      // Simpan profil dari form
+      final schoolCode = _kodeSekolahController.text.trim(); // ex: "SMATS"
+      final gradeStr = _selectedKelas!.trim();               // "10" | "11" | "12"
+
+      // 2) Simpan profil (opsional tapi berguna untuk layar lain)
       await session.saveProfile(
-        schoolCode: _kodeSekolahController.text.trim(), // contoh "SMATS"
-        grade: _selectedKelas!.trim(),                  // "10" | "11" | "12"
+        schoolCode: schoolCode,
+        grade: gradeStr, // tetap string; konversi ke int dilakukan di ensureGuestAuthenticated
         deviceId: deviceId,
       );
 
-      // Quick-login → simpan guest_id/token di SessionService
-      await ensureGuestAuthenticated();
+      // 3) Quick-login sesuai kontrak BE:
+      //    Request: {"school_code": "SMATS", "grade": 10, "device_id": "<uuid>"}
+      await ensureGuestAuthenticated(
+        schoolCode: schoolCode,
+        gradeStr: gradeStr,   // akan di-parse ke int di helper
+        deviceId: deviceId,
+      );
 
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -60,6 +69,7 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } on ApiException catch (e) {
+      // Tampilkan field errors bila ada
       final hint = e.errors == null
           ? e.message
           : e.errors!.entries.map((kv) => "${kv.key}: ${kv.value}").join("\n");

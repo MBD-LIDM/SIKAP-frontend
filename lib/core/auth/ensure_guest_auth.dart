@@ -1,34 +1,18 @@
-// lib/core/auth/ensure_guest.dart
+// lib/core/auth/ensure_guest_auth.dart
 import 'package:uuid/uuid.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/auth/session_service.dart';
 
-/// (Opsional) resolve school_code -> school_id.
-/// Untuk sementara pakai fallback seed SMATS -> 12345.
-Future<int> _resolveSchoolIdOrThrow(ApiClient api, String schoolCode) async {
-  if (schoolCode.toUpperCase() == 'SMATS') return 12345;
-  throw ApiException(
-    message: "Belum ada resolver school_code → school_id untuk: $schoolCode",
-    code: 400,
-  );
-}
-
-/// Pastikan ada sesi guest.
-/// - Ambil profil dari SessionService (schoolCode/grade/deviceId).
-/// - Lengkapi schoolId/gradeId kalau perlu.
-/// - Quick-login → simpan guest_id (+ guest_token jika ada).
 Future<void> ensureGuestAuthenticated({
-  int? schoolId,
-  String? schoolCode,
-  int? gradeId,
-  String? gradeStr, // "10" | "11" | "12"
-  String? deviceId,
+  String? schoolCode,   // "SMATS"
+  String? gradeStr,     // "10" | "11" | "12"
+  String? deviceId,     // stabil
 }) async {
   final session = SessionService();
   final profile = await session.loadProfile();
 
-  // Fast path: kalau sudah punya guest_id, selesai.
+  // Fast-path: sudah punya guest_id
   final existingGid = await session.loadGuestId();
   if (existingGid != null) return;
 
@@ -39,40 +23,30 @@ Future<void> ensureGuestAuthenticated({
       ? const Uuid().v4()
       : (deviceId ?? profile.deviceId!);
 
-  // Lengkapi schoolId
-  int? sid = schoolId ?? profile.schoolId;
-  final scode = schoolCode ?? profile.schoolCode;
-  if (sid == null) {
-    if (scode == null || scode.trim().isEmpty) {
-      throw ApiException(message: "Harap isi kode sekolah atau school_id.", code: 400);
-    }
-    sid = await _resolveSchoolIdOrThrow(api, scode.trim());
+  // Validasi school_code
+  final scode = (schoolCode ?? profile.schoolCode ?? '').trim().toUpperCase();
+  if (scode.isEmpty) {
+    throw ApiException(message: "Kode sekolah wajib diisi", code: 400);
   }
 
-  // Lengkapi gradeId
-  int? gid = gradeId ?? profile.gradeId;
-  if (gid == null) {
-    final gs = (gradeStr ?? profile.grade ?? '').trim();
-    if (gs.isEmpty) {
-      throw ApiException(message: "Harap isi grade/grade_id.", code: 400);
-    }
-    gid = int.tryParse(gs);
-    if (gid == null) {
-      throw ApiException(message: "Grade harus numerik (mis. 10/11/12).", code: 400);
-    }
+  // Parse grade
+  final gstr = (gradeStr ?? profile.grade ?? '').trim();
+  final grade = int.tryParse(gstr);
+  if (grade == null) {
+    throw ApiException(message: "Grade harus numerik (10/11/12).", code: 400);
   }
 
-  // Simpan profil yang sudah lengkap
-  await session.saveProfile(schoolId: sid, schoolCode: scode, gradeId: gid, deviceId: dev);
+  // Persist agar konsisten antar layar
+  await session.saveProfile(schoolCode: scode, grade: gstr, deviceId: dev);
 
-  // === QUICK-LOGIN STUDENT ===
+  // Payload sesuai BE-mu
   final payload = {
-    "username": "g-$dev",
-    "school_id": sid,
-    "grade_id": gid,
+    "school_code": scode,
+    "grade": grade,
     "device_id": dev,
   };
 
+  // Panggil API, payload bertipe Map<String,dynamic>
   final res = await api.post<Map<String, dynamic>>(
     "/api/accounts/student/quick-login/",
     payload,
@@ -80,28 +54,21 @@ Future<void> ensureGuestAuthenticated({
       "Accept": "application/json",
       "Content-Type": "application/json",
     },
-    expectEnvelope: false, // respons BE kamu bukan {success,data}
+    expectEnvelope: false, // respons BE langsung objek (bukan envelope)
     transform: (raw) => Map<String, dynamic>.from(raw as Map),
   );
 
-  // Contoh respons BE kamu:
-  // {
-  //   "guest_id": 5, "username": "g-dev-123", "school_id": 12345,
-  //   "grade_id": 10, "device_id": "dev-123", "expires_at": "...",
-  //   (opsional) "guest_token": "..." 
-  // }
-  final rawId = res.data['guest_id'];
-  if (rawId == null) {
-    throw ApiException(message: "guest_id tidak ada di respons BE.", code: 500);
-  }
+  // ⬇️ Ambil dari res.data, BUKAN res['...']
+  final map = res.data;
+  final rawId = map['guest_id'];
   final gId = (rawId is num) ? rawId.toInt() : int.tryParse(rawId.toString());
   if (gId == null) {
-    throw ApiException(message: "guest_id bukan integer: $rawId", code: 500);
+    throw ApiException(message: "guest_id tidak ditemukan/invalid", code: 500);
   }
 
-  final token = res.data['guest_token'] ?? res.data['token'];
-  await session.saveGuest(guestId: gId, token: token is String ? token : null);
+  // BE saat ini tidak memberi token → simpan guest_id saja
+  await session.saveGuest(guestId: gId, token: null);
 
   // ignore: avoid_print
-  print("[GUEST] stored guest_id=$gId (device=$dev, school=$sid, grade=$gid)");
+  print("[GUEST] stored guest_id=$gId (device=$dev, school=$scode, grade=$grade)");
 }
