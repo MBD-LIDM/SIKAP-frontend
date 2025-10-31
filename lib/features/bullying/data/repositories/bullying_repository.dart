@@ -40,6 +40,7 @@ class BullyingRepository {
         '/api/bullying/incident-types/',
         headers: headers,
         transform: (raw) => raw as List<dynamic>,
+        expectEnvelope: false,
       );
       return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     }
@@ -51,6 +52,7 @@ class BullyingRepository {
         '/api/bullying/incident-types/',
         headers: headers,
         transform: (raw) => raw as List<dynamic>,
+        expectEnvelope: false,
       );
       return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     }, gate);
@@ -69,6 +71,7 @@ class BullyingRepository {
         data,
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
+        expectEnvelope: false,
       );
       return BullyingCreateResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -95,11 +98,16 @@ class BullyingRepository {
       payload.removeWhere((key, value) => value == null);
 
       final headers = await auth.guestHeaders();
+      final token = await session.loadGuestToken();
+      final path = (token == null || token.isEmpty)
+          ? '/api/bullying/report/?guest_id=$guestId'
+          : '/api/bullying/report/' ;
       final resp = await apiClient.post<Map<String, dynamic>>(
-        '/api/bullying/report/',
+        path,
         payload,
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
+        expectEnvelope: false,
       );
       return BullyingCreateResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -118,7 +126,13 @@ class BullyingRepository {
       final resp = await apiClient.get<List<dynamic>>(
         '/api/bullying/report/history/$guestId/',
         headers: headers,
-        transform: (raw) => raw as List<dynamic>,
+        transform: (raw) {
+          if (raw is List) return raw;
+          if (raw is Map && raw['results'] is List) return raw['results'];
+          if (raw is Map && raw['data'] is List) return raw['data'];
+          throw const FormatException('Unexpected history shape');
+        },
+        expectEnvelope: false,
       );
       return BullyingListResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -127,11 +141,16 @@ class BullyingRepository {
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
-      final headers = await auth.guestHeaders();
       final resp = await apiClient.get<List<dynamic>>(
         '/api/bullying/report/history/$guestId/',
-        headers: headers,
-        transform: (raw) => raw as List<dynamic>,
+        headers: null,
+        transform: (raw) {
+          if (raw is List) return raw;
+          if (raw is Map && raw['results'] is List) return raw['results'];
+          if (raw is Map && raw['data'] is List) return raw['data'];
+          throw const FormatException('Unexpected history shape');
+        },
+        expectEnvelope: false,
       );
       return BullyingListResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -151,6 +170,7 @@ class BullyingRepository {
         '/api/bullying/report/$id/',
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
+        expectEnvelope: false,
       );
       return BullyingDetailResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -159,11 +179,19 @@ class BullyingRepository {
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
-      final headers = await auth.guestHeaders();
+      final token = await session.loadGuestToken();
+      final guestId = await session.loadGuestId();
+      final suffix = (token == null || token.isEmpty) && guestId != null
+          ? '?guest_id=$guestId'
+          : '';
+      final headers = (token != null && token.isNotEmpty)
+          ? await auth.guestHeaders()
+          : null;
       final resp = await apiClient.get<Map<String, dynamic>>(
-        '/api/bullying/report/$id/',
+        '/api/bullying/report/$id/$suffix',
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
+        expectEnvelope: false,
       );
       return BullyingDetailResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -245,7 +273,13 @@ class BullyingRepository {
       final resp = await apiClient.get<List<dynamic>>(
         '/api/bullying/report/my/',
         headers: headers,
-        transform: (raw) => raw as List<dynamic>,
+        transform: (raw) {
+          if (raw is List) return raw;
+          if (raw is Map && raw['results'] is List) return raw['results'];
+          if (raw is Map && raw['data'] is List) return raw['data'];
+          throw const FormatException('Unexpected my shape');
+        },
+        expectEnvelope: false,
       );
       return BullyingListResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},
@@ -259,14 +293,21 @@ class BullyingRepository {
         throw ApiException(message: "Guest belum terautentikasi", code: 401);
       }
       final headers = await auth.guestHeaders();
-      final path = kIsWeb
+      final token = await session.loadGuestToken();
+      final String path = (token == null || token.isEmpty)
           ? '/api/bullying/report/my/?guest_id=$guestId'
           : '/api/bullying/report/my/';
 
       final resp = await apiClient.get<List<dynamic>>(
         path,
         headers: headers,
-        transform: (raw) => raw as List<dynamic>,
+        transform: (raw) {
+          if (raw is List) return raw;
+          if (raw is Map && raw['results'] is List) return raw['results'];
+          if (raw is Map && raw['data'] is List) return raw['data'];
+          throw const FormatException('Unexpected my shape');
+        },
+        expectEnvelope: false,
       );
       return BullyingListResponse.fromJson(
         {'success': true, 'message': '', 'data': resp.data},

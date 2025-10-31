@@ -93,8 +93,13 @@ Future<void> _quickLogin() async {
           ? tokenFromHeader
           : null;
   if (token == null || token.isEmpty) {
-    // BE tidak mengirim token; simpan guest_id saja.
-    await _sessionService.saveGuest(guestId: guestId, token: null);
+    // BE tidak mengirim token; JANGAN menghapus token lama jika ada.
+    final existingToken = await _sessionService.loadGuestToken();
+    if (existingToken != null && existingToken.isNotEmpty) {
+      await _sessionService.saveGuestAuth(token: existingToken, guestId: guestId);
+    } else {
+      await _sessionService.saveGuest(guestId: guestId, token: null);
+    }
     return;
   }
 

@@ -34,6 +34,7 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
       auth: AuthHeaderProvider(
         loadUserToken: () async => null,
         loadGuestToken: () async => await _session.loadGuestToken(),
+        loadGuestId: () async => await _session.loadGuestId(),
       ),
       gate: guestAuthGateInstance(),
     );
@@ -44,7 +45,11 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
     try {
       await ensureGuestAuthenticated();
       print("[DEBUG] Loading bullying reports");
-      final result = await repo.getMyBullyingReports(asGuest: true);
+      final token = await _session.loadGuestToken();
+      final gid = await _session.loadGuestId();
+      final result = (token != null && token.isNotEmpty)
+          ? await repo.getMyBullyingReports(asGuest: true)
+          : await repo.getGuestHistory(guestId: gid!, asGuest: true);
       print("[DEBUG] Loaded reports: ${result.data}");
       if (result.success && result.data != null) {
         setState(() {

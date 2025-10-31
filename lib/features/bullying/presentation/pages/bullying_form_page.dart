@@ -40,6 +40,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
     _auth = AuthHeaderProvider(
       loadUserToken: () async => null, // guest-only flow
       loadGuestToken: () async => await _session.loadGuestToken(),
+      loadGuestId: () async => await _session.loadGuestId(),
     );
     _repo = BullyingRepository(
       apiClient: _api,
@@ -70,7 +71,10 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
   Future<void> _loadIncidentTypes() async {
     try {
-      final headers = await _auth.buildHeaders(asGuest: true);
+      final token = await _session.loadGuestToken();
+      final headers = (token != null && token.isNotEmpty)
+          ? await _auth.buildHeaders(asGuest: true)
+          : null;
       final resp = await _api.get<dynamic>(
         "/api/bullying/incident-types/",
         headers: headers,
@@ -79,6 +83,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
           if (raw is Map && raw['results'] is List) return raw['results'];
           throw const FormatException("Unexpected incident-types shape");
         },
+        expectEnvelope: false,
       );
 
       final list = (resp.data as List)

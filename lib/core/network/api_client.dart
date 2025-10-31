@@ -130,7 +130,7 @@ class ApiClient {
     final uri = _u(endpoint);
     final base = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      // Note: jangan set Content-Type pada GET untuk hindari preflight CORS
     };
 
     final finalHeaders = {...base, if (headers != null) ...headers};
@@ -195,7 +195,7 @@ class ApiClient {
     final uri = _u(endpoint);
     final base = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      // Note: jangan set Content-Type pada DELETE untuk hindari preflight CORS
     };
     final finalHeaders = {...base, if (headers != null) ...headers};
     _logReq('DELETE', uri, finalHeaders);
