@@ -3,7 +3,7 @@ import 'package:sikap/features/bullying/data/repositories/bullying_repository.da
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
-import 'package:sikap/core/auth/ensure_guest_auth.dart';      // <— penting
+import 'package:sikap/core/auth/ensure_guest_auth.dart'; // <— penting
 import 'package:sikap/core/network/api_exception.dart';
 
 class BullyingFormPage extends StatefulWidget {
@@ -40,8 +40,13 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
     _auth = AuthHeaderProvider(
       loadUserToken: () async => null, // guest-only flow
       loadGuestToken: () async => await _session.loadGuestToken(),
+      loadGuestId: () async => await _session.loadGuestId(),
     );
-    _repo = BullyingRepository(apiClient: _api, auth: _auth);
+    _repo = BullyingRepository(
+      apiClient: _api,
+      session: _session,
+      auth: _auth,
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
@@ -56,7 +61,9 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Inisialisasi gagal: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Inisialisasi gagal: $e'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -78,8 +85,11 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .map((e) {
             final dynamicId = e['incident_type_id'] ?? e['id'];
-            final dynamicName = e['type_name'] ?? e['name'] ?? e['type'] ?? 'Unknown';
-            final id = (dynamicId is num) ? dynamicId.toInt() : int.tryParse('$dynamicId');
+            final dynamicName =
+                e['type_name'] ?? e['name'] ?? e['type'] ?? 'Unknown';
+            final id = (dynamicId is num)
+                ? dynamicId.toInt()
+                : int.tryParse('$dynamicId');
             final name = '$dynamicName';
             return {
               'id': id,
@@ -134,64 +144,82 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       return;
     }
 
-    // Pastikan token ada sebelum mengirim
-    final token = await _session.loadGuestToken();
-    final gid = await _session.loadGuestId();
-    if ((token == null || token.isEmpty) && gid == null) {
-      // coba quick-login sekali lagi
+    // Pastikan sesi tamu tersambung sebelum mengirim laporan.
+    var token = await _session.loadGuestToken();
+    var guestId = await _session.loadGuestId();
+
+    if ((token == null || token.isEmpty) || guestId == null) {
       try {
         await ensureGuestAuthenticated();
-      } catch (_) {}
+      } catch (_) {
+        // Dibiarkan: validasi akan memastikan gid tersedia di bawah.
+      }
+      token = await _session.loadGuestToken();
+      guestId = await _session.loadGuestId();
     }
 
-    final data = {
-      "title": _titleController.text.trim(),
-      "description": _descriptionController.text.trim(),  // ≥ 10
-      "location": _locationController.text.trim(),        // ≥ 2
-      "incident_type_id": _incidentTypeId,                // INT
-      "severity": _selectedSeverity,                      // low|medium|high|critical
+    if (guestId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Sesi tamu hilang. Coba lagi setelah login cepat."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final payload = <String, dynamic>{
+      "incident_type_id": _incidentTypeId, // integer id
+      "description": _descriptionController.text.trim(), // >= 10 chars
+      "location": _locationController.text.trim(), // >= 2 chars
+      "severity": _selectedSeverity, // low|medium|high|critical
       "confirm_truth": true,
-      // jangan kirim guest_id — BE derive dari sesi guest
     };
+
+    final title = _titleController.text.trim();
+    if (title.isNotEmpty) {
+      payload["title"] = title;
+    }
 
     setState(() => _isLoading = true);
     try {
-      final res = await _repo.createBullyingReport(data, asGuest: true);
+      final res = await _repo.createBullyingReport(payload, asGuest: true);
       // ignore: avoid_print
       print("[DEBUG] createBullyingReport OK: ${res.data}");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Laporan berhasil dikirim 🎉"),
+          content: Text("Laporan berhasil dikirim."),
           backgroundColor: Colors.green,
         ),
       );
       Navigator.pop(context);
     } on ApiException catch (e) {
-      // Retry hanya jika 401
       if (e.code == 401) {
         try {
           await ensureGuestAuthenticated();
-          final res2 = await _repo.createBullyingReport(data, asGuest: true);
+          final res2 = await _repo.createBullyingReport(payload, asGuest: true);
           // ignore: avoid_print
           print("[DEBUG] createBullyingReport retry OK: ${res2.data}");
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Laporan berhasil dikirim 🎉"),
+              content: Text("Laporan berhasil dikirim."),
               backgroundColor: Colors.green,
             ),
           );
           Navigator.pop(context);
           return;
         } catch (_) {
-          // fallthrough ke snackbar di bawah
+          // Fallthrough ke snackbar umum di bawah.
         }
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Gagal mengirim laporan (${e.code ?? 'ERR'}): ${e.message}"),
+          content:
+              Text("Gagal mengirim laporan (${e.code ?? 'ERR'}): ${e.message}"),
           backgroundColor: Colors.red,
         ),
       );
@@ -222,12 +250,14 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.bullyingId == null ? 'Laporkan Bullying' : 'Edit Laporan'),
+        title: Text(
+            widget.bullyingId == null ? 'Laporkan Bullying' : 'Edit Laporan'),
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [Color(0xFF7F55B1), Color(0xFFFFDBB6)],
             stops: [0.76, 1.0],
           ),
@@ -242,21 +272,26 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   TextFormField(
                     controller: _titleController,
                     decoration: const InputDecoration(
-                      labelText: 'Judul Laporan', border: OutlineInputBorder(),
+                      labelText: 'Judul Laporan',
+                      border: OutlineInputBorder(),
                     ),
-                    validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Judul tidak boleh kosong' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Judul tidak boleh kosong'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
                     decoration: const InputDecoration(
-                      labelText: 'Deskripsi', border: OutlineInputBorder(),
+                      labelText: 'Deskripsi',
+                      border: OutlineInputBorder(),
                     ),
                     maxLines: 4,
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Deskripsi tidak boleh kosong';
-                      if (v.trim().length < 10) return 'Deskripsi minimal 10 karakter';
+                      if (v == null || v.trim().isEmpty)
+                        return 'Deskripsi tidak boleh kosong';
+                      if (v.trim().length < 10)
+                        return 'Deskripsi minimal 10 karakter';
                       return null;
                     },
                   ),
@@ -264,10 +299,12 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   TextFormField(
                     controller: _locationController,
                     decoration: const InputDecoration(
-                      labelText: 'Lokasi Kejadian', border: OutlineInputBorder(),
+                      labelText: 'Lokasi Kejadian',
+                      border: OutlineInputBorder(),
                     ),
-                    validator: (v) =>
-                      (v == null || v.trim().length < 2) ? 'Lokasi minimal 2 karakter' : null,
+                    validator: (v) => (v == null || v.trim().length < 2)
+                        ? 'Lokasi minimal 2 karakter'
+                        : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -275,7 +312,8 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   DropdownButtonFormField<int>(
                     value: _incidentTypeId,
                     decoration: const InputDecoration(
-                      labelText: 'Jenis Bullying', border: OutlineInputBorder(),
+                      labelText: 'Jenis Bullying',
+                      border: OutlineInputBorder(),
                     ),
                     items: _incidentTypes.map((m) {
                       return DropdownMenuItem<int>(
@@ -283,8 +321,10 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                         child: Text(m['name'] as String),
                       );
                     }).toList(),
-                    onChanged: (value) => setState(() => _incidentTypeId = value),
-                    validator: (_) => _incidentTypeId == null ? 'Pilih jenis bullying' : null,
+                    onChanged: (value) =>
+                        setState(() => _incidentTypeId = value),
+                    validator: (_) =>
+                        _incidentTypeId == null ? 'Pilih jenis bullying' : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -292,13 +332,15 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   DropdownButtonFormField<String>(
                     value: _selectedSeverity,
                     decoration: const InputDecoration(
-                      labelText: 'Tingkat Keparahan', border: OutlineInputBorder(),
+                      labelText: 'Tingkat Keparahan',
+                      border: OutlineInputBorder(),
                     ),
                     items: const [
                       DropdownMenuItem(value: 'low', child: Text('Rendah')),
                       DropdownMenuItem(value: 'medium', child: Text('Sedang')),
                       DropdownMenuItem(value: 'high', child: Text('Tinggi')),
-                      DropdownMenuItem(value: 'critical', child: Text('Kritis')),
+                      DropdownMenuItem(
+                          value: 'critical', child: Text('Kritis')),
                     ],
                     onChanged: (v) => setState(() => _selectedSeverity = v!),
                   ),
@@ -308,7 +350,9 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                     onPressed: canSubmit ? _submitForm : null,
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(widget.bullyingId == null ? 'Kirim Laporan' : 'Update Laporan'),
+                        : Text(widget.bullyingId == null
+                            ? 'Kirim Laporan'
+                            : 'Update Laporan'),
                   ),
                 ],
               ),

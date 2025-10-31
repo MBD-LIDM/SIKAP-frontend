@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 
@@ -14,6 +16,7 @@ class BullyingDetailPage extends StatefulWidget {
 
 class _BullyingDetailPageState extends State<BullyingDetailPage> {
   late final BullyingRepository repo;
+  late final SessionService _session;
   bool _isLoading = true;
   Map<String, dynamic>? _data;
   String? _error;
@@ -21,15 +24,22 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
   @override
   void initState() {
     super.initState();
+    _session = SessionService();
     repo = BullyingRepository(
-        apiClient: ApiClient(),
-        auth: AuthHeaderProvider(
-            loadUserToken: () async => null, loadGuestToken: () async => null));
+      apiClient: ApiClient(),
+      session: _session,
+      auth: AuthHeaderProvider(
+        loadUserToken: () async => null,
+        loadGuestToken: () async => await _session.loadGuestToken(),
+        loadGuestId: () async => await _session.loadGuestId(),
+      ),
+    );
     _loadDetail();
   }
 
   Future<void> _loadDetail() async {
     try {
+      await ensureGuestAuthenticated();
       print("[DEBUG] Loading bullying detail for id: ${widget.id}");
       final result = await repo.getBullyingDetail(widget.id, asGuest: true);
       print("[DEBUG] Loaded detail: ${result.data}");

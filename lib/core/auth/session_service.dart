@@ -79,3 +79,50 @@ class SessionService {
     );
   }
 }
+
+extension SessionDebug on SessionService {
+  static const _kLastAuthLog = 'last_auth_log';
+
+  /// Masking token/agak panjang: abcdefgh…wxyz
+  static String maskToken(String? t, {int head = 8, int tail = 4}) {
+    if (t == null || t.isEmpty) return '∅';
+    if (t.length <= head + tail) return '${t.substring(0, 2)}…';
+    return '${t.substring(0, head)}…${t.substring(t.length - tail)}';
+  }
+
+  /// Simpan log auth terakhir (SUDAH DIMASK). Aman untuk dibaca ulang via UI debug.
+  Future<void> saveLastAuthLog({
+    required String method,
+    required String url,
+    required Map<String, String> headers,
+  }) async {
+    // Buat salinan masked
+    final masked = <String, String>{};
+    headers.forEach((k, v) {
+      final kl = k.toLowerCase();
+      if (kl == 'authorization' || kl == 'x-guest-token') {
+        masked[k] = maskToken(v);
+      } else {
+        masked[k] = v;
+      }
+    });
+
+    final payload = StringBuffer()
+      ..writeln('ts=${DateTime.now().toIso8601String()}')
+      ..writeln('method=$method')
+      ..writeln('url=$url')
+      ..writeln('headers=$masked');
+
+    await _s.write(key: _kLastAuthLog, value: payload.toString());
+  }
+
+  /// Ambil string log auth terakhir (untuk ditampilkan di layar debug).
+  Future<String?> loadLastAuthLog() {
+    return _s.read(key: _kLastAuthLog);
+  }
+
+  /// Hapus log auth terakhir.
+  Future<void> clearLastAuthLog() {
+    return _s.delete(key: _kLastAuthLog);
+  }
+}

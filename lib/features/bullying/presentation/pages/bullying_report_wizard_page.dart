@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
 
 class BullyingReportWizardPage extends StatefulWidget {
   const BullyingReportWizardPage({super.key});
@@ -23,6 +25,26 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   final List<String> evidences = []; // step 3 (placeholder path strings)
   bool anonymous = false; // step 4
   bool confirmTruth = false; // step 4
+
+  final SessionService _session = SessionService();
+  final ApiClient _api = ApiClient();
+  late final AuthHeaderProvider _auth;
+  late final BullyingRepository _repo;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = AuthHeaderProvider(
+      loadUserToken: () async => null,
+      loadGuestToken: () async => await _session.loadGuestToken(),
+      loadGuestId: () async => await _session.loadGuestId(),
+    );
+    _repo = BullyingRepository(
+      apiClient: _api,
+      session: _session,
+      auth: _auth,
+    );
+  }
 
   @override
   void dispose() {
@@ -524,14 +546,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                             try {
                                               print(
                                                   "[DEBUG] Submitting bullying report");
-                                              final repo = BullyingRepository(
-                                                  apiClient: ApiClient(),
-                                                  auth: AuthHeaderProvider(
-                                                      loadUserToken: () async =>
-                                                          null,
-                                                      loadGuestToken:
-                                                          () async => null));
-                                              final result = await repo
+                                              await ensureGuestAuthenticated();
+                                              final result = await _repo
                                                   .createBullyingReport(data,
                                                       asGuest: true);
                                               print(

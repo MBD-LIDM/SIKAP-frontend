@@ -1,5 +1,10 @@
 // lib/features/bullying/data/repositories/bullying_repository.dart
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 
 import '../models/bullying_create_response.dart';
@@ -9,9 +14,14 @@ import '../models/bullying_model.dart';
 
 class BullyingRepository {
   final ApiClient apiClient;
+  final SessionService session;
   final AuthHeaderProvider auth;
 
-  BullyingRepository({required this.apiClient, required this.auth});
+  BullyingRepository({
+    required this.apiClient,
+    required this.session,
+    required this.auth,
+  });
 
   // =========================
   // G U E S T   E N D P O I N T S
@@ -19,7 +29,8 @@ class BullyingRepository {
 
   /// GET /api/bullying/incident-types/
   /// Guest-allowed. Kembalikan list map sederhana (id, type_name, dst).
-  Future<List<Map<String, dynamic>>> getIncidentTypes({bool asGuest = true}) async {
+  Future<List<Map<String, dynamic>>> getIncidentTypes(
+      {bool asGuest = true}) async {
     final headers = await auth.buildHeaders(asGuest: asGuest);
     final resp = await apiClient.get<List<dynamic>>(
       '/api/bullying/incident-types/',
@@ -35,10 +46,41 @@ class BullyingRepository {
     Map<String, dynamic> data, {
     bool asGuest = true,
   }) async {
+    await ensureGuestAuthenticated();
+    final guestId = await session.loadGuestId();
+    if (guestId == null) {
+      throw ApiException(
+        message: "Guest belum terautentikasi",
+        code: 401,
+      );
+    }
+
+    final payload = Map<String, dynamic>.from(data);
+
+    // Pastikan incident_type_id benar-benar numerik.
+    final incidentType = payload['incident_type_id'];
+    if (incidentType is String) {
+      final parsed = int.tryParse(incidentType);
+      if (parsed != null) payload['incident_type_id'] = parsed;
+    }
+    payload['incident_type_id'] = payload['incident_type_id'] is num
+        ? (payload['incident_type_id'] as num).toInt()
+        : payload['incident_type_id'];
+
+    // Sisipkan guest_id agar backend dapat mengenali sesi tanpa header kustom.
+    payload['guest_id'] = guestId;
+
+    // Buang nilai null agar payload rapi saat dikirim.
+    payload.removeWhere((key, value) => value == null);
+
     final headers = await auth.buildHeaders(asGuest: asGuest);
+    // ignore: avoid_print
+    print(
+        "[BULLY] POST /report kIsWeb=$kIsWeb (gid=$guestId) body=${payload.keys}");
+
     final resp = await apiClient.post<Map<String, dynamic>>(
       '/api/bullying/report/',
-      data,
+      payload,
       headers: headers,
       transform: (raw) => raw as Map<String, dynamic>,
     );
@@ -148,10 +190,28 @@ class BullyingRepository {
   // Catatan: hanya bekerja jika backend benar-benar mendukung "my"
   // berbasis guest token. Kalau ragu, pakai getGuestHistory().
   // =========================
-  Future<BullyingListResponse> getMyBullyingReports({bool asGuest = true}) async {
+  Future<BullyingListResponse> getMyBullyingReports(
+      {bool asGuest = true}) async {
+    await ensureGuestAuthenticated();
+    final guestId = await session.loadGuestId();
+    if (guestId == null) {
+      throw ApiException(
+        message: "Guest belum terautentikasi",
+        code: 401,
+      );
+    }
+
     final headers = await auth.buildHeaders(asGuest: asGuest);
+    final path = kIsWeb
+        ? '/api/bullying/report/my/?guest_id=$guestId'
+        : '/api/bullying/report/my/';
+
+    // ignore: avoid_print
+    print(
+        "[BULLY] GET /my kIsWeb=$kIsWeb (gid=$guestId) path=$path headers=$headers");
+
     final resp = await apiClient.get<List<dynamic>>(
-      '/api/bullying/report/my/',
+      path,
       headers: headers,
       transform: (raw) => raw as List<dynamic>,
     );

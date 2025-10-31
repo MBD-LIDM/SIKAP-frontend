@@ -1,10 +1,15 @@
 // lib/core/network/auth_header_provider.dart
+
 class AuthHeaderProvider {
   final Future<String?> Function()? loadUserToken;
   final Future<String?> Function()? loadGuestToken;
-  final Future<int?> Function()? loadGuestId;   // ⬅️ tambahkan
+  final Future<int?> Function()? loadGuestId;
 
-  AuthHeaderProvider({this.loadUserToken, this.loadGuestToken, this.loadGuestId});
+  AuthHeaderProvider({
+    this.loadUserToken,
+    this.loadGuestToken,
+    this.loadGuestId,
+  });
 
   Future<Map<String, String>> buildHeaders({bool asGuest = false}) async {
     final headers = <String, String>{
@@ -13,22 +18,20 @@ class AuthHeaderProvider {
     };
 
     if (asGuest) {
-      final t = await (loadGuestToken?.call());
-      if (t != null && t.isNotEmpty) {
-        headers["X-Guest-Token"] = t;
-        return headers;
+      final guestToken = await (loadGuestToken?.call());
+      if (guestToken != null && guestToken.isNotEmpty) {
+        headers["X-Guest-Token"] = guestToken;
       }
-      // fallback pakai guest_id kalau token tidak ada
-      final gid = await (loadGuestId?.call());
-      if (gid != null) {
-        headers["X-Guest-Id"] = gid.toString();
+      final guestId = await (loadGuestId?.call());
+      if (guestId != null) {
+        headers["X-Guest-Id"] = guestId.toString();
       }
       return headers;
     }
 
-    final userT = await (loadUserToken?.call());
-    if (userT != null && userT.isNotEmpty) {
-      headers["Authorization"] = "Bearer $userT";
+    final userToken = await (loadUserToken?.call());
+    if (userToken != null && userToken.isNotEmpty) {
+      headers["Authorization"] = "Bearer $userToken";
     }
     return headers;
   }
