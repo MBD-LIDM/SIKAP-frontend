@@ -107,39 +107,12 @@ class _LoginPageState extends State<LoginPage> {
                     Container(
                       width: 180,
                       height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFFFDBB6),
-                          width: 4,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/icons/sikap_icon.jpg',
-                          fit: BoxFit.cover,
-                        ),
+                      child: Image.asset(
+                        'assets/icons/sikap_icon.jpg',
+                        fit: BoxFit.cover,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'SIKAP',
-                      style: GoogleFonts.abrilFatface(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF4A4A7D),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sistem Informasi Kelola Asa dan Pelaporan',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.roboto(
-                        fontSize: 12,
-                        color: const Color(0xFFE07B8A),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -150,7 +123,25 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: const BoxDecoration(color: Color(0xFF0066CC)),
                 child: Column(
                   children: [
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Selamat Datang',
+                      style: GoogleFonts.abrilFatface(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Anda sedang login sebagai siswa',
+                      style: GoogleFonts.roboto(
+                        fontSize: 14,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     // Tombol login guru/kepsek
                     Center(
                       child: ElevatedButton(
@@ -182,25 +173,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Selamat Datang',
-                      style: GoogleFonts.abrilFatface(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Anda sedang login sebagai siswa',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Form(
