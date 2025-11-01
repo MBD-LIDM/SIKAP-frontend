@@ -38,6 +38,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFE7CE),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -45,7 +46,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
             end: Alignment.bottomCenter,
             colors: [
               Color(0xFF7F55B1), // Purple at 76%
-              Color(0xFFFFDBB6), // Light peach/orange at 100%
+              Color(0xFFFFE7CE), // Soft cream at 100%
             ],
             stops: [0.76, 1.0],
           ),

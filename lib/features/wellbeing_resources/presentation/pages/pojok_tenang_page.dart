@@ -52,77 +52,74 @@ class _PojokTenangPageState extends State<PojokTenangPage> {
                   ),
                   const SizedBox(height: 40),
                   // Buttons Section
-                  Column(
-                    children: [
-                      // Hubungi Bantuan Button - Full SVG
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HubungiBantuanPage(),
-                            ),
-                          );
-                        },
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: AspectRatio(
-                            aspectRatio: 365 / 83,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: Column(
+                      children: [
+                        // Hubungi Bantuan Button - Full SVG
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HubungiBantuanPage(),
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 100,
                             child: SvgPicture.asset(
                               'assets/images/hubungi_bantuan_button.svg',
-                              fit: BoxFit.contain,
+                              fit: BoxFit.fill,
                               allowDrawingOutsideViewBox: true,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Mood Check Button - Full SVG
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MoodCheckPage(),
-                            ),
-                          );
-                        },
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: AspectRatio(
-                            aspectRatio: 365 / 83,
+                        const SizedBox(height: 16),
+                        // Mood Check Button - Full SVG
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MoodCheckPage(),
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 100,
                             child: SvgPicture.asset(
                               'assets/images/mood_check_button.svg',
-                              fit: BoxFit.contain,
+                              fit: BoxFit.fill,
                               allowDrawingOutsideViewBox: true,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Artikel Info Button - Full SVG
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ArtikelInfoPage(),
-                            ),
-                          );
-                        },
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: AspectRatio(
-                            aspectRatio: 365 / 83,
+                        const SizedBox(height: 16),
+                        // Artikel Info Button - Full SVG
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ArtikelInfoPage(),
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 100,
                             child: SvgPicture.asset(
                               'assets/images/artikel_info_button.svg',
-                              fit: BoxFit.contain,
+                              fit: BoxFit.fill,
                               allowDrawingOutsideViewBox: true,
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 40),
                   // Bottom Section - Copyright
