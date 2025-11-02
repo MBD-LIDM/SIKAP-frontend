@@ -20,6 +20,7 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
   bool _isLoading = true;
   Map<String, dynamic>? _data;
   String? _error;
+  List<Map<String, dynamic>> _attachments = [];
 
   @override
   void initState() {
@@ -50,10 +51,25 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
         final inner = (raw is Map && raw['data'] is Map)
             ? Map<String, dynamic>.from(raw['data'] as Map)
             : Map<String, dynamic>.from(raw as Map);
+        // Try inline attachments if present
+        List<Map<String, dynamic>> inlineAtt = [];
+        final inline = inner['attachments'] ?? inner['evidences'] ?? inner['files'];
+        if (inline is List) {
+          inlineAtt = inline.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
         setState(() {
           _data = inner;
+          _attachments = inlineAtt;
           _isLoading = false;
         });
+        // If no inline attachments, fetch via endpoint
+        if (_attachments.isEmpty) {
+          final rid = int.tryParse(inner['id']?.toString() ?? widget.id);
+          if (rid != null) {
+            final list = await repo.getReportAttachments(reportId: rid, asGuest: true);
+            if (mounted) setState(() => _attachments = list);
+          }
+        }
       } else {
         setState(() {
           _error = result.message;
@@ -137,7 +153,9 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
           ''
         )
         .toString();
-    final evidences = List<String>.from(_data!['evidences'] ?? []);
+    final evidences = _attachments.isNotEmpty
+        ? _attachments.map((a) => _filenameFromUrl(a['file_url']?.toString() ?? '')).toList()
+        : List<String>.from(_data!['evidences'] ?? []);
     final teacherComment = _data!['teacher_comment'];
     final teacherCommentDate = _data!['teacher_comment_date'] != null
         ? DateTime.tryParse(_data!['teacher_comment_date'])
@@ -388,28 +406,13 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
 
   String _mapIncidentTypeKeyToName(String key) {
     final k = key.toLowerCase();
-    switch (k) {
-      case 'physical':
-      case 'fisik':
-        return 'Secara fisik';
-      case 'verbal':
-        return 'Secara verbal';
-      case 'cyber':
-      case 'cyberbullying':
-        return 'Cyberbullying';
-      case 'social':
-      case 'sosial':
-      case 'pengucilan':
-        return 'Pengucilan';
-      case 'sexual':
-      case 'seksual':
-        return 'Lainnya';
-      case 'other':
-      case 'lainnya':
-        return 'Lainnya';
-      default:
-        return '';
-    }
+    if (k.contains('fisik') || k.contains('physical')) return 'Secara fisik';
+    if (k.contains('verbal')) return 'Secara verbal';
+    if (k.contains('cyber')) return 'Cyberbullying';
+    if (k.contains('sosial') || k.contains('social') || k.contains('pengucilan')) return 'Pengucilan';
+    if (k.contains('seksual') || k.contains('sexual')) return 'Lainnya';
+    if (k.contains('lain') || k.contains('other')) return 'Lainnya';
+    return '';
   }
 
   IconData _iconForCategory(String name) {
@@ -427,5 +430,14 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
       return Icons.group_off;
     }
     return Icons.more_horiz;
+  }
+
+  String _filenameFromUrl(String url) {
+    if (url.isEmpty) return '-';
+    try {
+      final segs = Uri.parse(url).pathSegments;
+      if (segs.isNotEmpty) return segs.last;
+    } catch (_) {}
+    return url;
   }
 }

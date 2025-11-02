@@ -283,8 +283,22 @@ class _ReportItem {
 
   factory _ReportItem.fromJson(Map<String, dynamic> json) {
     String category =
-        (json['incident_type_name'] ?? json['incident_type'] ?? '')
+        (json['incident_type_name'] ?? json['incident_type'] ?? json['type'] ?? '')
             .toString();
+    if (category.isEmpty) {
+      final dynamic t = json['incident_type_id'] ?? json['incident_type'];
+      int? id;
+      if (t is num) id = t.toInt();
+      if (t is String) id = int.tryParse(t);
+      if (id != null) category = _mapIncidentTypeIdToName(id);
+    } else {
+      final lower = category.toLowerCase();
+      if (lower.contains('fisik') || lower.contains('physical')) category = 'Secara fisik';
+      else if (lower.contains('verbal')) category = 'Secara verbal';
+      else if (lower.contains('cyber')) category = 'Cyberbullying';
+      else if (lower.contains('sosial') || lower.contains('social') || lower.contains('pengucilan')) category = 'Pengucilan';
+      else if (lower.contains('lain') || lower.contains('other') || lower.contains('seksual') || lower.contains('sexual')) category = 'Lainnya';
+    }
     if (category.isEmpty) {
       // Try mapping from id or numeric type
       final dynamic t = json['incident_type_id'] ?? json['incident_type'];

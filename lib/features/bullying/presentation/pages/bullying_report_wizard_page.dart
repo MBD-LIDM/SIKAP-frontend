@@ -6,6 +6,10 @@ import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/network/api_exception.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:sikap/core/network/multipart_client.dart';
 
 class BullyingReportWizardPage extends StatefulWidget {
   const BullyingReportWizardPage({super.key});
@@ -23,7 +27,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   String? selectedCategory; // step 1
   final TextEditingController descriptionController =
       TextEditingController(); // step 2
-  final List<String> evidences = []; // step 3 (placeholder path strings)
+  final List<PlatformFile> evidences = []; // step 3: picked files
   bool anonymous = false; // step 4
   bool confirmTruth = false; // step 4
 
@@ -340,7 +344,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         _stepTitle('Apakah kamu punya bukti yang bisa dibagikan?'),
         const SizedBox(height: 8),
         const Text(
-            'Bukti dapat berupa foto, video, atau dokumen PDF. (Placeholder daftar)',
+            'Bukti dapat berupa gambar (jpg/jpeg/png/gif/webp) dan PDF. Maks 10 file, ≤ 20MB/file.',
             style: TextStyle(color: Colors.white70)),
         const SizedBox(height: 12),
         ...evidences.map((e) => Padding(
@@ -356,7 +360,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                     const Icon(Icons.insert_drive_file,
                         color: Color(0xFF7F55B1)),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(e)),
+                    Expanded(child: Text(e.name)),
                     IconButton(
                         onPressed: () => setState(() => evidences.remove(e)),
                         icon: const Icon(Icons.close))
@@ -365,13 +369,41 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
               ),
             )),
         OutlinedButton.icon(
-          onPressed: () {
+          onPressed: () async {
+            final result = await FilePicker.platform.pickFiles(
+              allowMultiple: true,
+              withData: true,
+              type: FileType.custom,
+              allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+            );
+            if (result == null) return;
+            final picked = <PlatformFile>[];
+            for (final f in result.files) {
+              // per-file size limit 20 MB
+              final sz = f.size; // bytes
+              if (sz > 20 * 1024 * 1024) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Melebihi 20MB: ${f.name}')), 
+                  );
+                }
+                continue;
+              }
+              picked.add(f);
+            }
+            if (picked.isEmpty) return;
             setState(() {
-              evidences.add('Bukti ${evidences.length + 1}');
+              evidences.addAll(picked);
+              if (evidences.length > 10) {
+                evidences.removeRange(10, evidences.length); // limit 10
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Maksimal 10 file per laporan.')), 
+                );
+              }
             });
           },
           icon: const Icon(Icons.add),
-          label: const Text('Tambah bukti (placeholder)'),
+          label: const Text('Tambah bukti'),
           style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white70)),
@@ -405,7 +437,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children:
-                      evidences.map((e) => Chip(label: Text(e))).toList()),
+                      evidences.map((e) => Chip(label: Text(e.name))).toList()),
             ],
           ),
         ),
@@ -563,9 +595,41 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                             };
                                             try {
                                               await ensureGuestAuthenticated();
-                                              final result = await _repo.createBullyingReport(data, asGuest: true);
+                                            final result = await _repo.createBullyingReport(data, asGuest: true);
                                               if (!mounted) return;
                                               if (result.success) {
+                                                // Upload attachments if any
+                                                final rid = result.reportId;
+                                                if (rid != null && evidences.isNotEmpty) {
+                                                  final failed = <String>[];
+                                                  // For single file, backend expects field name 'file'
+                                                  final files = await _toMultipartFiles(
+                                                    evidences,
+                                                    fieldName: evidences.length == 1 ? 'file' : 'files',
+                                                  );
+                                                  // chunk by 10 to respect backend limit per request
+                                                  for (int i = 0; i < files.length; i += 10) {
+                                                    final int end = (i + 10) > files.length ? files.length : (i + 10);
+                                                    final chunk = files.sublist(i, end);
+                                                    try {
+                                                      await _repo.uploadAttachments(reportId: rid, files: chunk, asGuest: true);
+                                                    } catch (_) {
+                                                      // If batch fails, try per-file to salvage successes
+                                                      for (int j = i; j < end; j++) {
+                                                        try {
+                                                          await _repo.uploadAttachments(reportId: rid, files: [files[j]], asGuest: true);
+                                                        } catch (_) {
+                                                          failed.add(evidences[j].name);
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                  if (failed.isNotEmpty) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text('Sebagian bukti gagal: ${failed.join(', ')}')),
+                                                    );
+                                                  }
+                                                }
                                                 Navigator.of(context).pushReplacement(
                                                   MaterialPageRoute(
                                                     builder: (_) => const BullyingReportSuccessPage(),
@@ -576,6 +640,11 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                                   SnackBar(content: Text('Gagal mengirim: ${result.message}')),
                                                 );
                                               }
+                                            } on ApiException catch (e) {
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Gagal: ${e.code ?? ''} ${e.message}')),
+                                              );
                                             } catch (e) {
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
@@ -620,6 +689,29 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       ),
     );
   }
+}
+
+Future<List<http.MultipartFile>> _toMultipartFiles(List<PlatformFile> picked, {required String fieldName}) async {
+  final out = <http.MultipartFile>[];
+  for (final f in picked) {
+    bool added = false;
+    if (f.path != null) {
+      try {
+        out.add(await MultipartClient.fromPath(fieldName, f.path!, filename: f.name));
+        added = true;
+      } catch (_) {
+        // fall back to bytes below
+      }
+    }
+    if (!added && f.bytes != null) {
+      try {
+        out.add(MultipartClient.fromBytes(fieldName, f.bytes!, filename: f.name));
+        added = true;
+      } catch (_) {}
+    }
+    // if not added -> skip invalid file silently
+  }
+  return out;
 }
 
 class BullyingReportSuccessPage extends StatelessWidget {
