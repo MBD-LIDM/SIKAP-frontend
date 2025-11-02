@@ -45,8 +45,13 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
       final result = await repo.getBullyingDetail(widget.id, asGuest: true);
       print("[DEBUG] Loaded detail: ${result.data}");
       if (result.success && result.data != null) {
+        // Some backends wrap payload under an extra 'data' key
+        final raw = result.data!;
+        final inner = (raw is Map && raw['data'] is Map)
+            ? Map<String, dynamic>.from(raw['data'] as Map)
+            : Map<String, dynamic>.from(raw as Map);
         setState(() {
-          _data = result.data;
+          _data = inner;
           _isLoading = false;
         });
       } else {
@@ -96,12 +101,42 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
       );
     }
 
-    final title = _data!['title'] ?? '';
-    final status = _data!['status'] ?? '';
+    final rawTitle = (_data!['title'] ?? '').toString();
+    // Determine category display name robustly from various possible fields
+    String categoryName =
+        (_data!['incident_type_name'] ?? _data!['incident_type'] ?? '')
+            .toString();
+    if (categoryName.isEmpty) {
+      // Try ID-based mapping
+      final dynamic t = _data!['incident_type_id'] ?? _data!['incident_type'];
+      int? id;
+      if (t is num) id = t.toInt();
+      if (t is String) id = int.tryParse(t);
+      if (id != null) categoryName = _mapIncidentTypeIdToName(id);
+    }
+    if (categoryName.isEmpty) {
+      // Try slug/key mapping (english/indonesian)
+      final dynamic k = _data!['incident_type'] ?? _data!['type'];
+      if (k is String && k.trim().isNotEmpty) {
+        categoryName = _mapIncidentTypeKeyToName(k.trim());
+      }
+    }
+    final title = rawTitle.isNotEmpty
+        ? rawTitle
+        : (categoryName.isNotEmpty ? categoryName : 'Laporan Bullying');
+    final status = (_data!['status'] ?? '').toString();
     final createdAt =
         DateTime.tryParse(_data!['created_at'] ?? '') ?? DateTime.now();
-    final category = _data!['incident_type'] ?? '';
-    final description = _data!['description'] ?? '';
+    final category = categoryName;
+    final description = (
+          _data!['description'] ??
+          _data!['desc'] ??
+          _data!['report_description'] ??
+          _data!['details'] ??
+          _data!['content'] ??
+          ''
+        )
+        .toString();
     final evidences = List<String>.from(_data!['evidences'] ?? []);
     final teacherComment = _data!['teacher_comment'];
     final teacherCommentDate = _data!['teacher_comment_date'] != null
@@ -194,8 +229,10 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.record_voice_over,
-                                    color: Color(0xFF7F55B1)),
+                                Icon(
+                                  _iconForCategory(category),
+                                  color: const Color(0xFF7F55B1),
+                                ),
                                 const SizedBox(width: 8),
                                 Text(category,
                                     style:
@@ -330,5 +367,65 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
   String _formatDate(DateTime dt) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
+  }
+
+  String _mapIncidentTypeIdToName(int id) {
+    switch (id) {
+      case 1:
+        return 'Secara fisik';
+      case 2:
+        return 'Secara verbal';
+      case 3:
+        return 'Cyberbullying';
+      case 4:
+        return 'Pengucilan';
+      case 5:
+        return 'Lainnya';
+      default:
+        return '';
+    }
+  }
+
+  String _mapIncidentTypeKeyToName(String key) {
+    final k = key.toLowerCase();
+    switch (k) {
+      case 'physical':
+      case 'fisik':
+        return 'Secara fisik';
+      case 'verbal':
+        return 'Secara verbal';
+      case 'cyber':
+      case 'cyberbullying':
+        return 'Cyberbullying';
+      case 'social':
+      case 'sosial':
+      case 'pengucilan':
+        return 'Pengucilan';
+      case 'sexual':
+      case 'seksual':
+        return 'Lainnya';
+      case 'other':
+      case 'lainnya':
+        return 'Lainnya';
+      default:
+        return '';
+    }
+  }
+
+  IconData _iconForCategory(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('fisik') || n.contains('physical')) {
+      return Icons.pan_tool;
+    }
+    if (n.contains('verbal')) {
+      return Icons.record_voice_over;
+    }
+    if (n.contains('cyber')) {
+      return Icons.computer;
+    }
+    if (n.contains('sosial') || n.contains('pengucilan') || n.contains('social')) {
+      return Icons.group_off;
+    }
+    return Icons.more_horiz;
   }
 }

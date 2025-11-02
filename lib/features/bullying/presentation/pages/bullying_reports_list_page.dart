@@ -282,13 +282,38 @@ class _ReportItem {
   final DateTime? teacherCommentDate;
 
   factory _ReportItem.fromJson(Map<String, dynamic> json) {
+    String category =
+        (json['incident_type_name'] ?? json['incident_type'] ?? '')
+            .toString();
+    if (category.isEmpty) {
+      // Try mapping from id or numeric type
+      final dynamic t = json['incident_type_id'] ?? json['incident_type'];
+      int? id;
+      if (t is num) id = t.toInt();
+      if (t is String) id = int.tryParse(t);
+      if (id != null) {
+        category = _mapIncidentTypeIdToName(id);
+      }
+    }
+    final String description = (json['description'] ?? '').toString();
+    final String computedTitle =
+        (json['title'] ?? '').toString().trim().isNotEmpty
+            ? (json['title'] as String)
+            : (category.isNotEmpty
+                ? category
+                : (description.isNotEmpty
+                    ? (description.length > 60
+                        ? '${description.substring(0, 60)}…'
+                        : description)
+                    : ''));
+
     return _ReportItem(
       id: json['id']?.toString() ?? '',
-      status: json['status'] ?? '',
-      title: json['title'] ?? '',
+      status: (json['status'] ?? '').toString(),
+      title: computedTitle,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
-      category: json['incident_type'] ?? '',
-      description: json['description'] ?? '',
+      category: category,
+      description: description,
       evidences: List<String>.from(json['evidences'] ?? []),
       anonymous: json['anonymous'] ?? false,
       confirmTruth: json['confirm_truth'] ?? false,
@@ -297,6 +322,23 @@ class _ReportItem {
           ? DateTime.tryParse(json['teacher_comment_date'])
           : null,
     );
+  }
+
+  static String _mapIncidentTypeIdToName(int id) {
+    switch (id) {
+      case 1:
+        return 'Secara fisik';
+      case 2:
+        return 'Secara verbal';
+      case 3:
+        return 'Cyberbullying';
+      case 4:
+        return 'Pengucilan';
+      case 5:
+        return 'Lainnya';
+      default:
+        return '';
+    }
   }
 }
 
@@ -364,7 +406,7 @@ class _ReportCard extends StatelessWidget {
                         fontSize: 12)),
               ),
               const SizedBox(height: 8),
-              Text(item.title,
+              Text(item.title.isNotEmpty ? item.title : item.category,
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
