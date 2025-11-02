@@ -70,16 +70,20 @@ class MoodCheckResultPage extends StatelessWidget {
                                       value: 0.7,
                                       strokeWidth: 10,
                                       color: const Color(0xFFFFDBB6),
-                                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                      backgroundColor:
+                                          Colors.white.withValues(alpha: 0.15),
                                     ),
                                   ),
                                   Container(
                                     width: 56,
                                     height: 56,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.1),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                      border: Border.all(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.2)),
                                     ),
                                   ),
                                 ],
@@ -92,7 +96,8 @@ class MoodCheckResultPage extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.insights, color: Color(0xFFFFDBB6), size: 18),
+                                      const Icon(Icons.insights,
+                                          color: Color(0xFFFFDBB6), size: 18),
                                       const SizedBox(width: 8),
                                       Text(
                                         _primaryLabel(result),
@@ -119,12 +124,17 @@ class MoodCheckResultPage extends StatelessWidget {
 
                       Text(
                         _summaryText(result),
-                        style: const TextStyle(fontSize: 14, color: Colors.white, height: 1.6),
+                        style: const TextStyle(
+                            fontSize: 14, color: Colors.white, height: 1.6),
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Hasil ini hanyalah wawasan teknis berdasarkan analisis suara, bukan diagnosis medis. Jika Anda merasa tertekan, kami sangat menganjurkan untuk berbicara dengan profesional kesehatan mental.',
-                        style: TextStyle(fontSize: 13, color: Colors.white, height: 1.6, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
+                            height: 1.6,
+                            fontWeight: FontWeight.w700),
                       ),
 
                       const SizedBox(height: 24),
@@ -132,11 +142,13 @@ class MoodCheckResultPage extends StatelessWidget {
                         child: SizedBox(
                           width: 280,
                           child: ElevatedButton(
-                            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                            onPressed: () => Navigator.of(context)
+                                .popUntil((route) => route.isFirst),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: const Color(0xFF7F55B1),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
@@ -152,7 +164,8 @@ class MoodCheckResultPage extends StatelessWidget {
                           child: Text(
                             '© 2025 SIKAP. All rights reserved.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: Colors.white70),
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white70),
                           ),
                         ),
                       ),
@@ -175,7 +188,8 @@ class MoodCheckResultPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                        icon: const Icon(Icons.chevron_left,
+                            color: Colors.white, size: 28),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
@@ -199,7 +213,10 @@ class _Legend extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
         Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
       ],
@@ -228,7 +245,8 @@ class _SectionTitle extends StatelessWidget {
 String _primaryLabel(Map<String, dynamic> result) {
   // Try common shapes: {primary_emotion, scores: {sad:0.7,...}} or flat {emotion:'sadness', score:0.7}
   final primary = result['primary_emotion'] ?? result['emotion'];
-  final score = result['score'] ?? (result['primary_score'] ?? _maxScore(result['scores']));
+  final score = result['score'] ??
+      (result['primary_score'] ?? _maxScore(result['scores']));
   if (primary != null && score != null) {
     final pct = ((score as num) * 100).toStringAsFixed(0);
     return '$pct% ${_title(primary.toString())}';
@@ -241,13 +259,23 @@ List<Widget> _legendFromResult(Map<String, dynamic> result) {
   if (scores is Map) {
     final entries = scores.entries
         .where((e) => e.value is num)
-        .cast<MapEntry<dynamic, num>>()
+        .map((e) => MapEntry(e.key.toString(), (e.value as num).toDouble()))
         .toList()
-      ..sort((a, b) => (b.value).compareTo(a.value));
-    final colors = [Colors.white, const Color(0xFFBFD4FF), Colors.white70, Colors.white60];
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final colors = [
+      Colors.white,
+      const Color(0xFFBFD4FF),
+      Colors.white70,
+      Colors.white60
+    ];
     return [
       for (var i = 0; i < entries.length && i < 4; i++)
-        _Legend(color: colors[i % colors.length], label: '${((entries[i].value) * 100).toStringAsFixed(0)}% ${_title(entries[i].key.toString())}')
+        _Legend(
+          color: colors[i % colors.length],
+          label:
+              '${(entries[i].value * 100).toStringAsFixed(0)}% ${_title(entries[i].key)}',
+        ),
     ];
   }
   return const [];
@@ -256,7 +284,8 @@ List<Widget> _legendFromResult(Map<String, dynamic> result) {
 double? _maxScore(dynamic scores) {
   if (scores is Map) {
     final values = scores.values.whereType<num>();
-    if (values.isNotEmpty) return values.reduce((a, b) => a > b ? a : b).toDouble();
+    if (values.isNotEmpty)
+      return values.reduce((a, b) => a > b ? a : b).toDouble();
   }
   return null;
 }
@@ -264,6 +293,10 @@ double? _maxScore(dynamic scores) {
 String _title(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 String _summaryText(Map<String, dynamic> result) {
+  if (result['summary'] != null && result['summary'].toString().isNotEmpty) {
+    return result['summary'].toString();
+  }
+
   final primary = result['primary_emotion'] ?? result['emotion'];
   final scores = result['scores'];
   if (primary != null) {
@@ -283,5 +316,3 @@ String _summaryText(Map<String, dynamic> result) {
   }
   return 'Analisis berhasil. Detail lengkap ditampilkan di atas.';
 }
-
-

@@ -284,10 +284,12 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
         return;
       }
       final dir = await getTemporaryDirectory();
-      final filename = 'venting_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final filename = 'venting_${DateTime.now().millisecondsSinceEpoch}.wav';
       final path = '${dir.path}/$filename';
-      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: path);
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: path,
+      );
       // ignore: avoid_print
       print('[DEBUG] Recording started');
     } catch (e) {

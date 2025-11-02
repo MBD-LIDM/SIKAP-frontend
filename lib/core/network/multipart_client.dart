@@ -28,11 +28,11 @@ class MultipartClient {
 
   /// Upload **1 file** (nama field default: 'file').
   Future<ApiResponse<dynamic>> postFile({
-    required String endpoint,                 // e.g. '/api/venting/analyze/'
-    required http.MultipartFile file,         // file tunggal
+    required String endpoint,
+    required http.MultipartFile file,
     Map<String, String>? headers,
-    String fieldName = 'file',                // sesuaikan dg BE
-    Map<String, String>? fields,              // extra form fields jika perlu
+    String fieldName = 'file',
+    Map<String, String>? fields,
   }) async {
     final uri = _build(endpoint);
     final requestId = DateTime.now().microsecondsSinceEpoch.toString();
@@ -40,8 +40,6 @@ class MultipartClient {
 
     final req = http.MultipartRequest('POST', uri);
 
-    // Default headers untuk multipart: **jangan** set Content-Type di sini,
-    // biarkan MultipartRequest yang set boundary-nya.
     final merged = <String, String>{
       'Accept': 'application/json',
       ...?headers,
@@ -52,7 +50,6 @@ class MultipartClient {
       req.fields.addAll(fields);
     }
 
-    // Pastikan nama field sesuai param 'fieldName'
     req.files.add(http.MultipartFile(
       fieldName,
       file.finalize(),
@@ -85,61 +82,38 @@ class MultipartClient {
       );
 
       final json = jsonDecode(resp.body);
-      if (resp.statusCode >= 200 &&
-          resp.statusCode < 300 &&
-          json is Map &&
-          json['success'] == true) {
-        return ApiResponse(json['data']);
+
+      // ✅ Fix: anggap semua status 2xx sebagai sukses
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        return ApiResponse(
+          json is Map ? (json['data'] ?? json) : json,
+        );
       }
+
       throw ApiException(
         message:
             json is Map ? (json['message'] ?? 'Upload gagal') : 'Upload gagal',
         code: resp.statusCode,
-        errors:
-            json is Map ? (json['errors'] as Map<String, dynamic>?) : null,
+        errors: json is Map ? (json['errors'] as Map<String, dynamic>?) : null,
       );
     } on SocketException {
       sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'POST-MULTIPART',
-        uri: uri,
-        error: 'No internet',
-        duration: sw.elapsed,
-      );
       throw NetworkException('Tidak ada koneksi internet');
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'POST-MULTIPART',
-        uri: uri,
-        error: e,
-        duration: sw.elapsed,
-      );
       throw TimeoutExceptionApi('Waktu koneksi habis');
     } on FormatException {
       sw.stop();
-      logHttp(
-        phase: 'ERR',
-        requestId: requestId,
-        method: 'POST-MULTIPART',
-        uri: uri,
-        error: 'Bad JSON',
-        duration: sw.elapsed,
-      );
       throw ApiException(message: 'Format respons tidak valid');
     }
   }
 
   /// Upload **banyak file** (nama field default: 'files[]').
   Future<ApiResponse<dynamic>> postFiles({
-    required String endpoint,                  // e.g. '/api/bullying/report/123/attachments/'
-    required List<http.MultipartFile> files,   // list file
+    required String endpoint, // e.g. '/api/bullying/report/123/attachments/'
+    required List<http.MultipartFile> files, // list file
     Map<String, String>? headers,
-    String fieldName = 'files[]',              // sesuaikan dg BE
+    String fieldName = 'files[]', // sesuaikan dg BE
     Map<String, String>? fields,
   }) async {
     final uri = _build(endpoint);
@@ -192,18 +166,19 @@ class MultipartClient {
       );
 
       final json = jsonDecode(resp.body);
-      if (resp.statusCode >= 200 &&
-          resp.statusCode < 300 &&
-          json is Map &&
-          json['success'] == true) {
-        return ApiResponse(json['data']);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        // Kalau backend tidak kirim `success`, tetap anggap sukses
+        if (json is Map) {
+          return ApiResponse(json['data'] ?? json);
+        } else {
+          return ApiResponse(json);
+        }
       }
       throw ApiException(
         message:
             json is Map ? (json['message'] ?? 'Upload gagal') : 'Upload gagal',
         code: resp.statusCode,
-        errors:
-            json is Map ? (json['errors'] as Map<String, dynamic>?) : null,
+        errors: json is Map ? (json['errors'] as Map<String, dynamic>?) : null,
       );
     } on SocketException {
       sw.stop();
