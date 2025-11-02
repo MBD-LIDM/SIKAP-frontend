@@ -5,10 +5,18 @@ import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/auth/ensure_guest_auth.dart'; // <— penting
 import 'package:sikap/core/network/api_exception.dart';
+import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart' show BullyingReportSuccessPage;
 
 class BullyingFormPage extends StatefulWidget {
   final String? bullyingId; // null for create, not null for edit
-  const BullyingFormPage({super.key, this.bullyingId});
+  final int? prefillIncidentTypeId;
+  final String? prefillDescription;
+  const BullyingFormPage({
+    super.key,
+    this.bullyingId,
+    this.prefillIncidentTypeId,
+    this.prefillDescription,
+  });
 
   @override
   State<BullyingFormPage> createState() => _BullyingFormPageState();
@@ -16,9 +24,8 @@ class BullyingFormPage extends StatefulWidget {
 
 class _BullyingFormPageState extends State<BullyingFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
+  // location removed (not used)
 
   final _session = SessionService();
   final _api = ApiClient();
@@ -27,7 +34,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
   late final BullyingRepository _repo;
 
   // UI state
-  String _selectedSeverity = 'medium';
+  // severity removed (not used)
   bool _isLoading = false;
 
   // Data incident types dari server: [{id, name, slug}]
@@ -49,6 +56,11 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       gate: guestAuthGateInstance(),
     );
 
+    // Prefill description from wizard if provided
+    final initialDesc = widget.prefillDescription;
+    if (initialDesc != null && initialDesc.trim().isNotEmpty) {
+      _descriptionController.text = initialDesc.trim();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
@@ -107,7 +119,9 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
       int? pickedId;
       if (list.isNotEmpty) {
-        pickedId = list.first['id'] as int;
+        final pre = widget.prefillIncidentTypeId;
+        final hasPrefill = pre != null && list.any((m) => m['id'] == pre);
+        pickedId = hasPrefill ? pre : list.first['id'] as int;
       }
 
       if (!mounted) return;
@@ -177,15 +191,10 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
     final payload = <String, dynamic>{
       "incident_type_id": _incidentTypeId, // integer id
       "description": _descriptionController.text.trim(), // >= 10 chars
-      "location": _locationController.text.trim(), // >= 2 chars
-      "severity": _selectedSeverity, // low|medium|high|critical
       "confirm_truth": true,
     };
 
-    final title = _titleController.text.trim();
-    if (title.isNotEmpty) {
-      payload["title"] = title;
-    }
+    // title dihapus dari payload
 
     setState(() => _isLoading = true);
     try {
@@ -193,13 +202,11 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       // ignore: avoid_print
       print("[DEBUG] createBullyingReport OK: ${res.data}");
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Laporan berhasil dikirim."),
-          backgroundColor: Colors.green,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const BullyingReportSuccessPage(),
         ),
       );
-      Navigator.pop(context);
     } on ApiException catch (e) {
       if (e.code == 401) {
         try {
@@ -208,13 +215,11 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
           // ignore: avoid_print
           print("[DEBUG] createBullyingReport retry OK: ${res2.data}");
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Laporan berhasil dikirim."),
-              backgroundColor: Colors.green,
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const BullyingReportSuccessPage(),
             ),
           );
-          Navigator.pop(context);
           return;
         } catch (_) {
           // Fallthrough ke snackbar umum di bawah.
@@ -243,9 +248,8 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
   @override
   void dispose() {
-    _titleController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
+    // no location controller to dispose
     super.dispose();
   }
 
@@ -274,17 +278,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Judul Laporan',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Judul tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
+                  // field Judul dihapus
                   TextFormField(
                     controller: _descriptionController,
                     decoration: const InputDecoration(
@@ -301,17 +295,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _locationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Lokasi Kejadian',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) => (v == null || v.trim().length < 2)
-                        ? 'Lokasi minimal 2 karakter'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
+                  // lokasi dihapus
 
                   // Dropdown "Jenis Bullying"
                   DropdownButtonFormField<int>(
@@ -333,23 +317,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Severity
-                  DropdownButtonFormField<String>(
-                    value: _selectedSeverity,
-                    decoration: const InputDecoration(
-                      labelText: 'Tingkat Keparahan',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'low', child: Text('Rendah')),
-                      DropdownMenuItem(value: 'medium', child: Text('Sedang')),
-                      DropdownMenuItem(value: 'high', child: Text('Tinggi')),
-                      DropdownMenuItem(
-                          value: 'critical', child: Text('Kritis')),
-                    ],
-                    onChanged: (v) => setState(() => _selectedSeverity = v!),
-                  ),
-
+                  // severity dihapus
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: canSubmit ? _submitForm : null,

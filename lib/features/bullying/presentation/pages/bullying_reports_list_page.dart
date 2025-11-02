@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_detail_page.dart';
+import 'package:sikap/features/bullying/presentation/pages/bullying_form_page.dart';
 import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart';
 import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
 import 'package:sikap/core/auth/ensure_guest_auth.dart';
@@ -46,10 +47,10 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
       await ensureGuestAuthenticated();
       print("[DEBUG] Loading bullying reports");
       final token = await _session.loadGuestToken();
-      final gid = await _session.loadGuestId();
-      final result = (token != null && token.isNotEmpty)
-          ? await repo.getMyBullyingReports(asGuest: true)
-          : await repo.getGuestHistory(guestId: gid!, asGuest: true);
+      if (token == null || token.isEmpty) {
+        await ensureGuestAuthenticated();
+      }
+      final result = await repo.getMyBullyingReports(asGuest: true);
       print("[DEBUG] Loaded reports: ${result.data}");
       if (result.success && result.data != null) {
         setState(() {

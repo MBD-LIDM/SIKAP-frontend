@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
+import 'package:sikap/features/bullying/presentation/pages/bullying_reports_list_page.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
@@ -54,6 +55,23 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   }
 
   double get progress => currentStep / totalSteps;
+
+  int? _mapCategoryToId(String? key) {
+    switch (key) {
+      case 'cyber':
+        return 3;
+      case 'lainnya':
+        return 5;
+      case 'sosial':
+        return 4;
+      case 'fisik':
+        return 1;
+      case 'verbal':
+        return 2;
+      default:
+        return null;
+    }
+  }
 
   void next() {
     if (currentStep < totalSteps) {
@@ -536,48 +554,33 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                       }
                                     : (confirmTruth
                                         ? () async {
+                                            final id = _mapCategoryToId(selectedCategory);
+                                            if (id == null) return;
                                             final data = {
-                                              'incident_type': selectedCategory,
-                                              'description':
-                                                  descriptionController.text,
-                                              'evidences': evidences,
-                                              'anonymous': anonymous,
-                                              'confirm_truth': confirmTruth,
+                                              'incident_type_id': id,
+                                              'description': descriptionController.text,
+                                              'confirm_truth': true,
                                             };
                                             try {
-                                              print(
-                                                  "[DEBUG] Submitting bullying report");
                                               await ensureGuestAuthenticated();
-                                              final result = await _repo
-                                                  .createBullyingReport(data,
-                                                      asGuest: true);
-                                              print(
-                                                  "[DEBUG] Submit result: ${result.data}");
+                                              final result = await _repo.createBullyingReport(data, asGuest: true);
+                                              if (!mounted) return;
                                               if (result.success) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(const SnackBar(
-                                                        content: Text(
-                                                            'Report submitted successfully')));
-                                                Navigator.of(context)
-                                                    .pushReplacement(
+                                                Navigator.of(context).pushReplacement(
                                                   MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const BullyingReportSuccessPage(),
+                                                    builder: (_) => const BullyingReportSuccessPage(),
                                                   ),
                                                 );
                                               } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(SnackBar(
-                                                        content: Text(
-                                                            'Failed to submit report: ${result.message}')));
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Gagal mengirim: ${result.message}')),
+                                                );
                                               }
                                             } catch (e) {
-                                              print(
-                                                  "[DEBUG] Error submitting report: $e");
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(SnackBar(
-                                                      content: Text(
-                                                          'Error submitting report: $e')));
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Error: $e')),
+                                              );
                                             }
                                           }
                                         : null),
@@ -676,7 +679,14 @@ class BullyingReportSuccessPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (_) => const BullyingReportsListPage(),
+                        ),
+                        (route) => false,
+                      );
+                    },
                     child: const Padding(
                       padding:
                           EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),

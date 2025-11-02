@@ -37,6 +37,7 @@ void logHttp({
     // Mask token
     if (redacted.containsKey('Authorization')) redacted['Authorization'] = '<redacted>';
     if (redacted.containsKey('X-Guest-Token')) redacted['X-Guest-Token'] = '<redacted>';
+    if (redacted.containsKey('X-Token')) redacted['X-Token'] = '<redacted>';
     b.writeln('  headers: $redacted');
   }
   if (body != null) {

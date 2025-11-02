@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
 import 'package:sikap/core/network/multipart_client.dart';
 import 'package:sikap/features/venting/data/repositories/venting_repository.dart';
 import 'mood_check_result_page.dart';
@@ -26,9 +28,11 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
   void initState() {
     super.initState();
     final multipart = MultipartClient();
+    final session = SessionService();
     final auth = AuthHeaderProvider(
       loadUserToken: () async => null,
-      loadGuestToken: () async => null,
+      loadGuestToken: () async => await session.loadGuestToken(),
+      loadGuestId: () async => await session.loadGuestId(),
     );
     _repo = VentingRepository(multipartClient: multipart, auth: auth);
     _recorder = AudioRecorder();
@@ -219,6 +223,9 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
     if (_uploading) return;
     setState(() => _uploading = true);
     try {
+      // Pastikan sesi guest siap agar X-Guest-Token tersedia
+      await ensureGuestAuthenticated();
+
       final path = await _stopRecording();
       if (path == null || path.isEmpty) {
         throw Exception('Gagal mendapatkan file rekaman');

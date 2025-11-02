@@ -24,6 +24,20 @@ class BullyingCreateResponse {
       'data': data,
     };
   }
+
+  int? get reportId {
+    final value = data == null ? null : data!['report_id'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  String? get timestampIso8601 {
+    final value = data == null ? null : data!['timestamp'];
+    if (value is String) return value;
+    return value?.toString();
+  }
 }
 
 

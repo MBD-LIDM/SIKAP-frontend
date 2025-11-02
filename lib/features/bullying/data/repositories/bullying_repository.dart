@@ -59,7 +59,7 @@ class BullyingRepository {
   }
 
   /// POST /api/bullying/report/
-  /// HARUS menyertakan: guest_id, incident_type_id (INT), description(>=10), location(>=2), severity, confirm_truth
+  /// HARUS menyertakan: incident_type_id (INT), description(>=10), confirm_truth
   Future<BullyingCreateResponse> createBullyingReport(
     Map<String, dynamic> data, {
     bool asGuest = true,
@@ -68,51 +68,73 @@ class BullyingRepository {
       final headers = await auth.buildHeaders(asGuest: false);
       final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/bullying/report/',
-        data,
+        _sanitizeCreatePayload(data),
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      return BullyingCreateResponse.fromJson(
-        {'success': true, 'message': '', 'data': resp.data},
-      );
+      return BullyingCreateResponse.fromJson(resp.data);
     }
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
-      final guestId = await session.loadGuestId();
-      if (guestId == null) {
-        throw ApiException(message: "Guest belum terautentikasi", code: 401);
-      }
-
-      final payload = Map<String, dynamic>.from(data);
-      final incidentType = payload['incident_type_id'];
-      if (incidentType is String) {
-        final parsed = int.tryParse(incidentType);
-        if (parsed != null) payload['incident_type_id'] = parsed;
-      }
-      payload['incident_type_id'] = payload['incident_type_id'] is num
-          ? (payload['incident_type_id'] as num).toInt()
-          : payload['incident_type_id'];
-      payload['guest_id'] = guestId;
-      payload.removeWhere((key, value) => value == null);
+      final payload = _sanitizeCreatePayload(data);
 
       final headers = await auth.guestHeaders();
-      final token = await session.loadGuestToken();
-      final path = (token == null || token.isEmpty)
-          ? '/api/bullying/report/?guest_id=$guestId'
-          : '/api/bullying/report/' ;
       final resp = await apiClient.post<Map<String, dynamic>>(
-        path,
+        '/api/bullying/report/',
         payload,
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      return BullyingCreateResponse.fromJson(
-        {'success': true, 'message': '', 'data': resp.data},
-      );
+      return BullyingCreateResponse.fromJson(resp.data);
     }, gate);
+  }
+
+  Map<String, dynamic> _sanitizeCreatePayload(Map<String, dynamic> input) {
+    final payload = Map<String, dynamic>.from(input);
+
+    // Coerce incident_type_id to int if possible
+    final incidentType = payload['incident_type_id'];
+    if (incidentType is String) {
+      final parsed = int.tryParse(incidentType);
+      if (parsed != null) payload['incident_type_id'] = parsed;
+    }
+    if (payload['incident_type_id'] is num) {
+      payload['incident_type_id'] =
+          (payload['incident_type_id'] as num).toInt();
+    }
+
+    // Keep only the allowed keys
+    final allowedKeys = {
+      'description',
+      'incident_type_id',
+      'confirm_truth',
+    };
+    payload.removeWhere((key, value) => !allowedKeys.contains(key));
+
+    // Basic presence checks
+    if (payload['incident_type_id'] == null) {
+      throw ApiException(
+        code: 400,
+        message: 'incident_type_id is required',
+      );
+    }
+    if (payload['description'] == null) {
+      throw ApiException(
+        code: 400,
+        message: 'description is required',
+      );
+    }
+    if (payload['confirm_truth'] == null) {
+      throw ApiException(
+        code: 400,
+        message: 'confirm_truth is required',
+      );
+    }
+
+    return payload;
   }
 
   /// GET /api/bullying/report/history/{guest_id}/
@@ -141,9 +163,10 @@ class BullyingRepository {
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
+      final headers = await auth.guestHeaders();
       final resp = await apiClient.get<List<dynamic>>(
         '/api/bullying/report/history/$guestId/',
-        headers: null,
+        headers: headers,
         transform: (raw) {
           if (raw is List) return raw;
           if (raw is Map && raw['results'] is List) return raw['results'];
@@ -179,16 +202,9 @@ class BullyingRepository {
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
-      final token = await session.loadGuestToken();
-      final guestId = await session.loadGuestId();
-      final suffix = (token == null || token.isEmpty) && guestId != null
-          ? '?guest_id=$guestId'
-          : '';
-      final headers = (token != null && token.isNotEmpty)
-          ? await auth.guestHeaders()
-          : null;
+      final headers = await auth.guestHeaders();
       final resp = await apiClient.get<Map<String, dynamic>>(
-        '/api/bullying/report/$id/$suffix',
+        '/api/bullying/report/$id/',
         headers: headers,
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
@@ -288,18 +304,9 @@ class BullyingRepository {
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
-      final guestId = await session.loadGuestId();
-      if (guestId == null) {
-        throw ApiException(message: "Guest belum terautentikasi", code: 401);
-      }
       final headers = await auth.guestHeaders();
-      final token = await session.loadGuestToken();
-      final String path = (token == null || token.isEmpty)
-          ? '/api/bullying/report/my/?guest_id=$guestId'
-          : '/api/bullying/report/my/';
-
       final resp = await apiClient.get<List<dynamic>>(
-        path,
+        '/api/bullying/report/my/',
         headers: headers,
         transform: (raw) {
           if (raw is List) return raw;

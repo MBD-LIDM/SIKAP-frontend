@@ -76,7 +76,12 @@ Future<void> _quickLogin() async {
     transform: (raw) => Map<String, dynamic>.from(raw as Map),
   );
 
-  final data = response.data;
+  // Dukung respons envelope atau plain: {data:{...}} atau {...}
+  final root = response.data;
+  final Map<String, dynamic> data = (root is Map && root['data'] is Map)
+      ? Map<String, dynamic>.from(root['data'] as Map)
+      : Map<String, dynamic>.from(root as Map);
+
   final rawId = data['guest_id'];
   final guestId =
       (rawId is num) ? rawId.toInt() : int.tryParse(rawId?.toString() ?? '');
@@ -85,7 +90,7 @@ Future<void> _quickLogin() async {
   }
 
   // Prefer token dari body jika ada, fallback ke header (x-guest-token/x-token)
-  final tokenFromBody = data['guest_token']?.toString();
+  final tokenFromBody = (data['token'] ?? data['guest_token'])?.toString();
   final tokenFromHeader = response.headers?['x-guest-token'] ?? response.headers?['x-token'];
   final token = (tokenFromBody != null && tokenFromBody.isNotEmpty)
       ? tokenFromBody
