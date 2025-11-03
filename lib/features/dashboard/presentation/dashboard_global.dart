@@ -221,7 +221,7 @@ class _DashboardGlobalPageState extends State<DashboardGlobalPage> {
             children: [
               Icon(growthIcon, size: 16, color: growthColor),
               const SizedBox(width: 4),
-              Text('Pertumbuhan vs periode sebelumnya: $growthText', style: TextStyle(color: growthColor)),
+              Text('$growthText', style: TextStyle(color: growthColor)),
             ],
           ),
           const SizedBox(height: 12),

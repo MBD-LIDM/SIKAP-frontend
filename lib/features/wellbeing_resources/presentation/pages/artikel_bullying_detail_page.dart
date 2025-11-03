@@ -70,10 +70,9 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                         padding: const EdgeInsets.all(16),
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: SvgPicture.asset(
-                            'assets/images/lapor_bullying.svg',
+                          child: Image.asset(
+                            'assets/images/arabica-3.png',
                             fit: BoxFit.contain,
-                            allowDrawingOutsideViewBox: true,
                           ),
                         ),
                       ),

@@ -129,41 +129,12 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                     Container(
                       width: 180,
                       height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFFFDBB6),
-                          width: 4,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/icons/sikap_icon.jpg',
-                          fit: BoxFit.cover,
-                        ),
+                      child: Image.asset(
+                        'assets/icons/sikap_icon.jpg',
+                        fit: BoxFit.cover,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // SIKAP text
-                    Text(
-                      'SIKAP',
-                      style: GoogleFonts.abrilFatface(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF4A4A7D),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Subtitle
-                    Text(
-                      'Sistem Informasi Kelola Asa dan Pelaporan',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.roboto(
-                        fontSize: 12,
-                        color: const Color(0xFFE07B8A),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -175,37 +146,6 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                 ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 32),
-                    // Toggle ke Siswa dipindah ke atas
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFB678FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        child: Text(
-                          'Login sebagai\nSiswa',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
                     // Selamat Datang text
                     Text(
@@ -226,6 +166,36 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                         fontWeight: FontWeight.w400,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFB678FF),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        child: Text(
+                          'Login sebagai Siswa',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.roboto(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),                    
                     const SizedBox(height: 24),
                     // Form fields
                     Padding(
