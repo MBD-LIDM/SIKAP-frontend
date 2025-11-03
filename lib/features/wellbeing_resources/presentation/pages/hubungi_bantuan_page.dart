@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sikap/core/theme/app_theme.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/network/multipart_client.dart';
 
 /// Simple DTO for counselor contact returned by the backend.
 class CounselorContact {
@@ -58,19 +60,66 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
 
     try {
       final profile = await _session.loadProfile();
-      final schoolId = profile.schoolId;
-      if (schoolId == null) {
+      final schoolCode = profile.schoolCode;
+      print('[DEBUG] School code: $schoolCode');
+      if (schoolCode == null || schoolCode.isEmpty) {
         setState(() {
-          _error = 'School ID not set for current user.';
+          _error = 'School code not set for current user.';
           _loading = false;
         });
         return;
       }
 
-      // The backend returns a plain JSON object like {"results": [...]},
-      // so use expectEnvelope=false and transform the response to a list.
+      final auth = AuthHeaderProvider(
+        loadUserToken: () => _session.getToken(),
+        loadGuestToken: () => _session.getGuestToken(),
+        loadGuestId: () => _session.getGuestId(),
+      );
+
+      final headers =
+          await auth.buildHeaders(asGuest: false); // pakai user login
+
+      //  Ambil daftar sekolah dulu dengan headers
+      final schoolResp = await _api.get<List<Map<String, dynamic>>>(
+        '/api/accounts/schools/',
+        headers: headers,
+        expectEnvelope: false,
+        transform: (json) {
+          if (json is Map && json['results'] is List) {
+            final raw = json['results'] as List;
+            return raw.map((e) => Map<String, dynamic>.from(e)).toList();
+          }
+          return <Map<String, dynamic>>[];
+        },
+      );
+
+      print(
+          '[DEBUG] Parsed school codes: ${schoolResp.data.map((s) => s['school_code']).toList()}');
+      print('[DEBUG] Total schools: ${schoolResp.data.length}');
+
+      //  Cari sekolah yang cocok dengan schoolCode
+      final matched = schoolResp.data.firstWhere(
+        (s) =>
+            s['school_code'].toString().toLowerCase() ==
+            schoolCode.toLowerCase(),
+        orElse: () => {},
+      );
+
+      if (matched.isEmpty) {
+        setState(() {
+          _error = 'Sekolah dengan kode $schoolCode tidak ditemukan.';
+          _loading = false;
+        });
+        return;
+      }
+
+      final schoolId = matched['school_id'];
+      print('[DEBUG] Ditemukan school_id: $schoolId untuk code $schoolCode');
+
+      // Ambil data konselor berdasarkan school_id
       final resp = await _api.get<List<CounselorContact>>(
-        '/counselors/contact-info/?school_id=$schoolId',
+        '/api/accounts/counselors/contact-info/?school_id=$schoolId',
+        headers: headers, // pake headers auth
         expectEnvelope: false,
         transform: (json) {
           if (json is Map && json['results'] is List) {
@@ -88,7 +137,8 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
         _counselors = resp.data;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      print('[ERROR] $e\n$st');
       setState(() {
         _error = e.toString();
         _loading = false;

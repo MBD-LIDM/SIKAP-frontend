@@ -205,3 +205,18 @@ extension SessionDebug on SessionService {
     return _s.delete(key: _kLastAuthLog);
   }
 }
+
+extension SessionGetters on SessionService {
+  /// Ambil token user login
+  Future<String?> getToken() async {
+    final profile = await loadProfile();
+    // Misal profile belum ada field token, bisa return null atau implementasi lain
+    return null; // ganti kalau ada token user
+  }
+
+  /// Ambil token guest
+  Future<String?> getGuestToken() => loadGuestToken();
+
+  /// Ambil guestId
+  Future<int?> getGuestId() => loadGuestId();
+}

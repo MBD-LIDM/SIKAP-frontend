@@ -274,9 +274,6 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
 
                       final int? remoteId = widget.item.remoteId;
                       if (remoteId == null) {
-                        // No mapping to backend available: save locally as fallback
-                        // For now we store a simple local cache in-memory via ScaffoldMessenger message.
-                        // TODO: persist to SharedPreferences or local DB if desired.
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text(
@@ -299,26 +296,31 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
                         );
                         final repo =
                             ScenarioRepository(apiClient: api, auth: auth);
-                        final payload = {'text': text};
+
+                        // --- payload sesuai format baru ---
+                        final payload = {
+                          'scenario_id': remoteId,
+                          'jenjang': 'SD', // ganti sesuai jenjang user
+                          'jawaban': text,
+                          'timestamp': DateTime.now().toIso8601String(),
+                        };
+                        print('DEBUG: payload = $payload');
+
                         final reflId = await repo.submitReflection(
                             scenarioId: remoteId,
                             reflection: payload,
                             asGuest: true);
+                        print('DEBUG: reflId = $reflId');
+
                         if (!mounted) return;
-                        if (reflId != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content:
-                                    Text('Refleksi terkirim (id: $reflId)')),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Refleksi terkirim')),
-                          );
-                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Refleksi terkirim (id: $reflId)')),
+                        );
                         Navigator.of(context)
                             .popUntil((route) => route.isFirst);
-                      } catch (e) {
+                      } catch (e, st) {
+                        print('DEBUG: submit error = $e\n$st');
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
