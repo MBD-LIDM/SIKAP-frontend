@@ -148,17 +148,36 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
 
     // Extract data with fallbacks
     final rawTitle = (_data!['title'] ?? '').toString();
-    final categoryName = (_data!['incident_type_name'] ?? _data!['incident_type'] ?? '').toString();
+    final typeField = (_data!['type'] ?? '').toString(); // Use 'type' field
     final description = (_data!['description'] ?? '').toString();
     final status = (_data!['status'] ?? '').toString();
     final createdAt = DateTime.tryParse(_data!['created_at']?.toString() ?? '') ?? DateTime.now();
     
+    // Map type to display name
+    String categoryName = '-';
+    if (typeField.isNotEmpty) {
+      final t = typeField.toLowerCase();
+      if (t.contains('fisik')) categoryName = 'Secara fisik';
+      else if (t.contains('verbal')) categoryName = 'Secara verbal';
+      else if (t.contains('cyber')) categoryName = 'Cyberbullying';
+      else if (t.contains('sosial') || t.contains('pengucilan')) categoryName = 'Pengucilan';
+      else if (t.contains('lainnya') || t.contains('other')) categoryName = 'Lainnya';
+      else categoryName = typeField; // fallback to raw value
+    }
+    
     final title = rawTitle.isNotEmpty
         ? rawTitle
-        : (categoryName.isNotEmpty ? categoryName : 'Laporan Bullying');
+        : (categoryName != '-' ? categoryName : 'Laporan Bullying');
     
-    final category = categoryName.isNotEmpty ? categoryName : '-';
-    final evidences = _attachments.map((a) => _filenameFromUrl(a['file_url']?.toString() ?? '')).toList();
+    final category = categoryName;
+    
+    print('[DEBUG] Attachments: ${_attachments.length} items');
+    print('[DEBUG] Attachments data: $_attachments');
+    final evidences = _attachments.map((a) {
+      final fileUrl = a['file_url']?.toString() ?? '';
+      print('[DEBUG] Processing attachment: $fileUrl');
+      return _filenameFromUrl(fileUrl);
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(

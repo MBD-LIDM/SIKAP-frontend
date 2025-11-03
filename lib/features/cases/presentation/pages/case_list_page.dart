@@ -46,10 +46,22 @@ class _CasesListPageState extends State<CasesListPage> {
           final status = (item['status'] ?? '').toString();
           final createdAt = DateTime.tryParse(item['created_at']?.toString() ?? '') ?? DateTime.now();
           
-          // Extract title from various possible fields
+          // Extract title and category from 'type' field
           final rawTitle = (item['title'] ?? '').toString();
-          final categoryName = (item['incident_type_name'] ?? item['incident_type'] ?? '') .toString();
+          final typeField = (item['type'] ?? '').toString();
           final description = (item['description'] ?? '').toString();
+          
+          // Map type to display name
+          String categoryName = '';
+          if (typeField.isNotEmpty) {
+            final t = typeField.toLowerCase();
+            if (t.contains('fisik')) categoryName = 'Secara fisik';
+            else if (t.contains('verbal')) categoryName = 'Secara verbal';
+            else if (t.contains('cyber')) categoryName = 'Cyberbullying';
+            else if (t.contains('sosial') || t.contains('pengucilan')) categoryName = 'Pengucilan';
+            else if (t.contains('lainnya') || t.contains('other')) categoryName = 'Lainnya';
+            else categoryName = typeField;
+          }
           
           final title = rawTitle.isNotEmpty
               ? rawTitle

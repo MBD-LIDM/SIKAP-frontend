@@ -49,13 +49,19 @@ class CaseRepository {
       path,
       headers: headers,
       transform: (raw) => raw as Map<String, dynamic>,
-      expectEnvelope: true, // Backend uses envelope wrapper
+      expectEnvelope: false, // Ignore envelope for cases
     );
 
-    // Parse envelope: {success, message, data: {results: [...]}}
-    if (resp.data['success'] == true && resp.data['results'] is List) {
-      return List<Map<String, dynamic>>.from(resp.data['results'] as List);
+    print('[DEBUG] getCases raw response: ${resp.data}');
+
+    // Parse: {results: [...]} - langsung tanpa wrapper 'data'
+    if (resp.data['results'] is List) {
+      final caseList = List<Map<String, dynamic>>.from(resp.data['results'] as List);
+      print('[DEBUG] getCases returning ${caseList.length} items');
+      return caseList;
     }
+
+    print('[DEBUG] getCases returning empty list');
     return [];
   }
 
@@ -68,11 +74,11 @@ class CaseRepository {
       '/api/bullying/cases/$reportId/',
       headers: headers,
       transform: (raw) => raw as Map<String, dynamic>,
-      expectEnvelope: true,
+      expectEnvelope: false, // Ignore envelope for cases
     );
 
-    // Parse envelope: {success, message, data: {...}}
-    if (resp.data['success'] == true && resp.data['data'] is Map) {
+    // Parse: {data: {...}} - langsung
+    if (resp.data['data'] is Map) {
       return Map<String, dynamic>.from(resp.data['data'] as Map);
     }
     throw ApiException(
@@ -86,18 +92,26 @@ class CaseRepository {
   Future<List<Map<String, dynamic>>> getCaseAttachments(int reportId) async {
     final headers = await auth.buildHeaders(asGuest: false);
     
-    final resp = await apiClient.get<Map<String, dynamic>>(
+    final resp = await apiClient.get<dynamic>(
       '/api/bullying/report/$reportId/attachments/',
       headers: headers,
-      transform: (raw) => raw as Map<String, dynamic>,
-      expectEnvelope: true,
+      transform: (raw) {
+        if (raw is List) return raw;
+        if (raw is Map && raw['results'] is List) return raw['results'];
+        if (raw is Map && raw['data'] is List) return raw['data'];
+        return <dynamic>[];
+      },
+      expectEnvelope: false,
     );
 
-    // Parse envelope: {success, message, results: [...]}
-    if (resp.data['success'] == true && resp.data['results'] is List) {
-      return List<Map<String, dynamic>>.from(resp.data['results'] as List);
-    }
-    return [];
+    print('[DEBUG] getCaseAttachments raw response: ${resp.data}');
+    
+    final attachmentList = (resp.data as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    
+    print('[DEBUG] getCaseAttachments returning ${attachmentList.length} items');
+    return attachmentList;
   }
 
   /// PATCH /api/bullying/cases/{report_id}/status/
@@ -112,7 +126,7 @@ class CaseRepository {
       payload,
       headers: headers,
       transform: (raw) => raw as Map<String, dynamic>,
-      expectEnvelope: true,
+      expectEnvelope: false, // Ignore envelope for cases
     );
   }
 }

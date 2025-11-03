@@ -38,11 +38,10 @@ class AuthHeaderProvider {
     }
 
     final userToken = await (loadUserToken?.call());
-    if (userToken != null && userToken.isNotEmpty && userToken != 'session') {
-      // Only add Bearer token if it's a real token (not cookie-based session)
-      headers['Authorization'] = 'Bearer $userToken';
+    if (userToken != null && userToken.isNotEmpty) {
+      // Send sessionid as Cookie header for Django session-based auth
+      headers['Cookie'] = 'sessionid=$userToken';
     }
-    // Note: For cookie-based sessions, http.Client automatically handles Set-Cookie/Cookie headers
     return headers;
   }
 

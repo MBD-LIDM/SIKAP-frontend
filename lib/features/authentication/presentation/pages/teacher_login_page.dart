@@ -65,9 +65,23 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
         final fullName = userData['full_name']?.toString();
         final schoolId = userData['school_id'];
 
-        // Save session with dummy token since auth is cookie-based
+        // Extract sessionid from Set-Cookie header
+        final setCookieHeader = response.headers?['set-cookie'];
+        String? sessionId;
+        
+        if (setCookieHeader != null) {
+          // Parse: "sessionid=abc123; Path=/; HttpOnly"
+          final sessionIdMatch = RegExp(r'sessionid=([^;]+)').firstMatch(setCookieHeader);
+          sessionId = sessionIdMatch?.group(1);
+        }
+        
+        if (sessionId == null || sessionId.isEmpty) {
+          throw ApiException(message: 'Session ID tidak ditemukan di response', code: 500);
+        }
+
+        // Save sessionid as token for Android cookie management
         await _session.saveUserAuth(
-          token: 'session', // Dummy token for cookie-based auth
+          token: sessionId,
           userId: userId is num ? userId.toInt() : int.tryParse(userId?.toString() ?? ''),
           role: roleName,
           userName: fullName,
