@@ -1,4 +1,5 @@
 // lib/core/auth/session_service.dart
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class UserProfile {
@@ -21,12 +22,14 @@ class SessionService {
   static const _kGuestId = 'guest_id';
   static const _kGuestToken = 'guest_token';
   static const _kGuestTokenVersion = 'guest_token_version';
+  static const _kGuestScopeMap =
+      'guest_scope_map'; // JSON map of scoped guest creds
   static const _kSchoolId = 'school_id';
   static const _kSchoolCode = 'school_code';
   static const _kGradeId = 'grade_id';
   static const _kGrade = 'grade_str';
   static const _kDeviceId = 'device_id';
-  
+
   // User (staff) auth keys
   static const _kUserToken = 'user_token';
   static const _kUserId = 'user_id';
@@ -76,6 +79,85 @@ class SessionService {
     await _s.delete(key: _kGuestTokenVersion);
   }
 
+  // ===== Scoped guest creds (per school_code/grade/device) =====
+  String _scopeKey(String schoolCode, String? grade, String? deviceId) {
+    final sc = schoolCode.trim().toUpperCase();
+    final gr = (grade ?? '').trim();
+    final dev = (deviceId ?? '').trim();
+    return '$sc|$gr|$dev';
+  }
+
+  Future<Map<String, dynamic>> _loadScopeMap() async {
+    final raw = await _s.read(key: _kGuestScopeMap);
+    if (raw == null || raw.isEmpty) return <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(raw);
+      return (decoded is Map<String, dynamic>) ? decoded : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  Future<void> _saveScopeMap(Map<String, dynamic> m) async {
+    await _s.write(key: _kGuestScopeMap, value: jsonEncode(m));
+  }
+
+  Future<void> saveScopedGuest({
+    required String schoolCode,
+    String? grade,
+    String? deviceId,
+    required int guestId,
+    String? token,
+  }) async {
+    final key = _scopeKey(schoolCode, grade, deviceId);
+    final map = await _loadScopeMap();
+    map[key] = {
+      'guest_id': guestId,
+      if (token != null && token.isNotEmpty) 'token': token,
+      'ts': DateTime.now().toIso8601String(),
+    };
+    await _saveScopeMap(map);
+  }
+
+  Future<(int guestId, String? token)?> loadScopedGuest({
+    required String schoolCode,
+    String? grade,
+    String? deviceId,
+  }) async {
+    final key = _scopeKey(schoolCode, grade, deviceId);
+    final map = await _loadScopeMap();
+    final entry = map[key];
+    if (entry is Map) {
+      final gidRaw = entry['guest_id'];
+      final gid = gidRaw is num ? gidRaw.toInt() : int.tryParse('$gidRaw');
+      final token = entry['token']?.toString();
+      if (gid != null) return (gid, token);
+    }
+    return null;
+  }
+
+  /// If a scoped guest exists, set it as the current active guest creds.
+  Future<bool> applyScopedGuest({
+    required String schoolCode,
+    String? grade,
+    String? deviceId,
+  }) async {
+    final scoped = await loadScopedGuest(
+      schoolCode: schoolCode,
+      grade: grade,
+      deviceId: deviceId,
+    );
+    if (scoped == null) return false;
+    final (gid, token) = scoped;
+    // Only apply when we have a token; many guest endpoints require X-Guest-Token.
+    // If token is missing, let caller proceed to quick-login to fetch a fresh token.
+    if (token != null && token.isNotEmpty) {
+      await saveGuestAuth(token: token, guestId: gid);
+      return true;
+    }
+    return false;
+  }
+
   // ===== User (staff) creds =====
   Future<void> saveUserAuth({
     required String token,
@@ -89,7 +171,8 @@ class SessionService {
       if (userId != null) _s.write(key: _kUserId, value: userId.toString()),
       if (role != null) _s.write(key: _kUserRole, value: role),
       if (userName != null) _s.write(key: _kUserName, value: userName),
-      if (schoolId != null) _s.write(key: _kUserSchoolId, value: schoolId.toString()),
+      if (schoolId != null)
+        _s.write(key: _kUserSchoolId, value: schoolId.toString()),
     ]);
   }
 
@@ -209,9 +292,8 @@ extension SessionDebug on SessionService {
 extension SessionGetters on SessionService {
   /// Ambil token user login
   Future<String?> getToken() async {
-    final profile = await loadProfile();
-    // Misal profile belum ada field token, bisa return null atau implementasi lain
-    return null; // ganti kalau ada token user
+    // Implement if user token is stored elsewhere; currently not used
+    return null;
   }
 
   /// Ambil token guest

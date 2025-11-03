@@ -14,26 +14,67 @@ late final GuestAuthGate _guestAuthGate =
 GuestAuthGate guestAuthGateInstance() => _guestAuthGate;
 SessionService guestSession() => _sessionService;
 
+/// Ensure a valid guest token exists. When schoolCode/grade/deviceId changes,
+/// the existing guest credentials are invalidated so the new guest identity
+/// is scoped to the new profile (prevents cross-school report mixing).
 Future<void> ensureGuestAuthenticated({
   String? schoolCode,
   String? gradeStr,
   String? deviceId,
   bool forceRefresh = false,
 }) async {
-  if (schoolCode != null ||
-      gradeStr != null ||
-      deviceId != null ||
-      forceRefresh) {
+  // Load current profile to detect changes that should invalidate guest creds
+  final current = await _sessionService.loadProfile();
+
+  // Normalize incoming inputs similarly to _quickLogin
+  final newSchool = schoolCode?.trim().toUpperCase();
+  final newGrade = gradeStr?.trim();
+  final newDevice = deviceId?.trim();
+
+  final currSchool = (current.schoolCode ?? '').trim().toUpperCase();
+  final currGrade = (current.grade ?? '').trim();
+  final currDevice = (current.deviceId ?? '').trim();
+
+  final changedSchool =
+      newSchool != null && newSchool.isNotEmpty && newSchool != currSchool;
+  final changedGrade =
+      newGrade != null && newGrade.isNotEmpty && newGrade != currGrade;
+  final changedDevice =
+      newDevice != null && newDevice.isNotEmpty && newDevice != currDevice;
+
+  final shouldInvalidate =
+      forceRefresh || changedSchool || changedGrade || changedDevice;
+
+  // If any identity-affecting field changes, invalidate guest so next ensure() re-logins
+  if (shouldInvalidate) {
+    await _sessionService.clearGuest();
+  }
+
+  // Persist provided profile updates (if any)
+  if (schoolCode != null || gradeStr != null || deviceId != null) {
     await _sessionService.saveProfile(
       schoolCode: schoolCode,
       grade: gradeStr,
       deviceId: deviceId,
     );
-    if (forceRefresh) {
-      await _sessionService.clearGuest();
-    }
   }
 
+  // Try to reuse previously cached scoped guest creds for this profile (if any)
+  final effectiveSchool =
+      (newSchool != null && newSchool.isNotEmpty) ? newSchool : currSchool;
+  final effectiveGrade =
+      (newGrade != null && newGrade.isNotEmpty) ? newGrade : currGrade;
+  final effectiveDevice =
+      (newDevice != null && newDevice.isNotEmpty) ? newDevice : currDevice;
+  if (effectiveSchool.isNotEmpty) {
+    await _sessionService.applyScopedGuest(
+      schoolCode: effectiveSchool,
+      grade: effectiveGrade.isEmpty ? null : effectiveGrade,
+      deviceId: effectiveDevice.isEmpty ? null : effectiveDevice,
+    );
+  }
+
+  // Ensure we have a valid guest token for the (possibly new) school/grade/device
   await _guestAuthGate.ensure();
 }
 
@@ -91,7 +132,8 @@ Future<void> _quickLogin() async {
 
   // Prefer token dari body jika ada, fallback ke header (x-guest-token/x-token)
   final tokenFromBody = (data['token'] ?? data['guest_token'])?.toString();
-  final tokenFromHeader = response.headers?['x-guest-token'] ?? response.headers?['x-token'];
+  final tokenFromHeader =
+      response.headers?['x-guest-token'] ?? response.headers?['x-token'];
   final token = (tokenFromBody != null && tokenFromBody.isNotEmpty)
       ? tokenFromBody
       : (tokenFromHeader != null && tokenFromHeader.isNotEmpty)
@@ -101,12 +143,34 @@ Future<void> _quickLogin() async {
     // BE tidak mengirim token; JANGAN menghapus token lama jika ada.
     final existingToken = await _sessionService.loadGuestToken();
     if (existingToken != null && existingToken.isNotEmpty) {
-      await _sessionService.saveGuestAuth(token: existingToken, guestId: guestId);
+      await _sessionService.saveGuestAuth(
+          token: existingToken, guestId: guestId);
+      await _sessionService.saveScopedGuest(
+        schoolCode: scode,
+        grade: gradeStr,
+        deviceId: normalizedDevice,
+        guestId: guestId,
+        token: existingToken,
+      );
     } else {
       await _sessionService.saveGuest(guestId: guestId, token: null);
+      await _sessionService.saveScopedGuest(
+        schoolCode: scode,
+        grade: gradeStr,
+        deviceId: normalizedDevice,
+        guestId: guestId,
+        token: null,
+      );
     }
     return;
   }
 
   await _sessionService.saveGuestAuth(token: token, guestId: guestId);
+  await _sessionService.saveScopedGuest(
+    schoolCode: scode,
+    grade: gradeStr,
+    deviceId: normalizedDevice,
+    guestId: guestId,
+    token: token,
+  );
 }
