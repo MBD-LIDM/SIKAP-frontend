@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'features/authentication/authentication.dart';
 import 'core/theme/app_theme.dart';
+import 'core/auth/ensure_guest_auth.dart';
 
-void main() {
-  runApp(const MainApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MainApp());
 }
 
 class MainApp extends StatelessWidget {

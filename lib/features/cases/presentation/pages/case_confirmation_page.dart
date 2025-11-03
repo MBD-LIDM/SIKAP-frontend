@@ -52,12 +52,14 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
         ? 'Tulis alasan penolakan atau instruksi lanjutan...'
         : 'Tulis pesan pemrosesan atau langkah tindak lanjut...';
     return Scaffold(
+      backgroundColor: const Color(0xFF7F55B1),
       appBar: AppBar(
         title: const Text('Konfirmasi Kasus'),
         backgroundColor: const Color(0xFF7F55B1),
         foregroundColor: Colors.white,
       ),
       body: Container(
+        constraints: const BoxConstraints.expand(),
         color: const Color(0xFF7F55B1),
         child: SafeArea(
           child: SingleChildScrollView(

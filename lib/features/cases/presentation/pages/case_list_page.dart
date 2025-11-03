@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'case_detail_page.dart';
+import 'package:sikap/features/cases/data/repositories/case_repository.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
 
 class CasesListPage extends StatefulWidget {
   const CasesListPage({super.key});
@@ -9,14 +13,82 @@ class CasesListPage extends StatefulWidget {
 }
 
 class _CasesListPageState extends State<CasesListPage> {
-  final List<_CaseItem> _all = [
-    _CaseItem(status: 'Baru', title: 'Bullying Verbal', createdAt: DateTime(2025, 8, 22, 9, 18)),
-    _CaseItem(status: 'Diproses', title: 'Pengucilan', createdAt: DateTime(2025, 8, 21, 15, 10)),
-    _CaseItem(status: 'Selesai', title: 'Cyberbullying', createdAt: DateTime(2025, 8, 18, 8, 30)),
-  ];
+  late final CaseRepository _repo;
+  late final SessionService _session;
+  List<_CaseItem> _all = [];
+  bool _isLoading = true;
 
   String _filter = 'Semua';
   String _sort = 'Terbaru';
+
+  @override
+  void initState() {
+    super.initState();
+    _session = SessionService();
+    _repo = CaseRepository(
+      apiClient: ApiClient(),
+      session: _session,
+      auth: AuthHeaderProvider(
+        loadUserToken: () async => await _session.loadUserToken(),
+        loadGuestToken: () async => null,
+        loadGuestId: () async => null,
+      ),
+    );
+    _loadCases();
+  }
+
+  Future<void> _loadCases() async {
+    setState(() => _isLoading = true);
+    try {
+      final cases = await _repo.getCases();
+      setState(() {
+        _all = cases.map((item) {
+          final status = (item['status'] ?? '').toString();
+          final createdAt = DateTime.tryParse(item['created_at']?.toString() ?? '') ?? DateTime.now();
+          
+          // Extract title and category from 'type' field
+          final rawTitle = (item['title'] ?? '').toString();
+          final typeField = (item['type'] ?? '').toString();
+          final description = (item['description'] ?? '').toString();
+          
+          // Map type to display name
+          String categoryName = '';
+          if (typeField.isNotEmpty) {
+            final t = typeField.toLowerCase();
+            if (t.contains('fisik')) categoryName = 'Secara fisik';
+            else if (t.contains('verbal')) categoryName = 'Secara verbal';
+            else if (t.contains('cyber')) categoryName = 'Cyberbullying';
+            else if (t.contains('sosial') || t.contains('pengucilan')) categoryName = 'Pengucilan';
+            else if (t.contains('lainnya') || t.contains('other')) categoryName = 'Lainnya';
+            else categoryName = typeField;
+          }
+          
+          final title = rawTitle.isNotEmpty
+              ? rawTitle
+              : (categoryName.isNotEmpty
+                  ? categoryName
+                  : (description.isNotEmpty
+                      ? description.substring(0, description.length.clamp(0, 60))
+                      : 'Laporan Bullying'));
+
+          return _CaseItem(
+            reportId: item['report_id'] ?? item['id'],
+            status: status,
+            title: title,
+            createdAt: createdAt,
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("[DEBUG] Error loading cases: $e");
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading cases: $e')),
+      );
+    }
+  }
 
   List<_CaseItem> get _filteredSorted {
     List<_CaseItem> list = _all.where((c) => _filter == 'Semua' || c.status == _filter).toList();
@@ -56,13 +128,15 @@ class _CasesListPageState extends State<CasesListPage> {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: _filteredSorted.length,
-                    itemBuilder: (context, index) {
-                      final item = _filteredSorted[index];
-                      return _CaseCard(item: item);
-                    },
-                  ),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          itemCount: _filteredSorted.length,
+                          itemBuilder: (context, index) {
+                            final item = _filteredSorted[index];
+                            return _CaseCard(item: item);
+                          },
+                        ),
                 ),
               ],
             ),
@@ -114,7 +188,7 @@ class _CasesListPageState extends State<CasesListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ...['Semua', 'Baru', 'Diproses', 'Selesai'].map(
+                  ...['Semua', 'Baru', 'Diproses', 'Ditolak'].map(
                     (s) => RadioListTile<String>(
                       title: Text(s),
                       value: s,
@@ -163,7 +237,8 @@ class _CasesListPageState extends State<CasesListPage> {
 }
 
 class _CaseItem {
-  _CaseItem({required this.status, required this.title, required this.createdAt});
+  _CaseItem({required this.reportId, required this.status, required this.title, required this.createdAt});
+  final dynamic reportId; // Can be int or string
   final String status;
   final String title;
   final DateTime createdAt;
@@ -179,8 +254,8 @@ class _CaseCard extends StatelessWidget {
         return const Color(0xFF2196F3);
       case 'Diproses':
         return const Color(0xFFFF9800);
-      case 'Selesai':
-        return const Color(0xFF2E7D32);
+      case 'Ditolak':
+        return const Color(0xFFD32F2F);
       default:
         return Colors.grey;
     }
@@ -223,24 +298,17 @@ class _CaseCard extends StatelessWidget {
       ),
     );
 
-    if (item.title == 'Bullying Verbal') {
+    if (item.reportId != null) {
       return GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => CaseDetailPage(
-                title: item.title,
-                status: item.status,
-                createdAt: item.createdAt,
-                category: 'Secara verbal',
-                description:
-                    'Terjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsung. Terjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsungTerjadi tindakan bullying secara verbal seperti mengejek dan menghina saat pelajaran berlangsung',
-                evidences: const ['Screenshot chat', 'Catatan kronologi'],
-                anonymous: false,
-                confirmTruth: true,
+          final reportId = item.reportId is int ? item.reportId : int.tryParse(item.reportId.toString());
+          if (reportId != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => CaseDetailPage(reportId: reportId),
               ),
-            ),
-          );
+            );
+          }
         },
         child: card,
       );

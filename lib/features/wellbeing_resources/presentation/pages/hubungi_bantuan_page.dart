@@ -1,8 +1,150 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:sikap/core/theme/app_theme.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/network/multipart_client.dart';
 
-class HubungiBantuanPage extends StatelessWidget {
+/// Simple DTO for counselor contact returned by the backend.
+class CounselorContact {
+  final int userId;
+  final String fullName;
+  final String whatsappNumber;
+  final String schedule;
+
+  CounselorContact({
+    required this.userId,
+    required this.fullName,
+    required this.whatsappNumber,
+    required this.schedule,
+  });
+
+  factory CounselorContact.fromJson(Map<String, dynamic> json) {
+    return CounselorContact(
+      userId: json['user_id'] is int
+          ? json['user_id'] as int
+          : int.tryParse('${json['user_id']}') ?? 0,
+      fullName: json['full_name']?.toString() ?? '',
+      whatsappNumber: json['whatsapp_number']?.toString() ?? '',
+      schedule: json['schedule']?.toString() ?? '',
+    );
+  }
+}
+
+class HubungiBantuanPage extends StatefulWidget {
   const HubungiBantuanPage({super.key});
+
+  @override
+  State<HubungiBantuanPage> createState() => _HubungiBantuanPageState();
+}
+
+class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
+  final ApiClient _api = ApiClient();
+  final SessionService _session = SessionService();
+
+  bool _loading = true;
+  String? _error;
+  List<CounselorContact> _counselors = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounselors();
+  }
+
+  Future<void> _loadCounselors() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final profile = await _session.loadProfile();
+      final schoolCode = profile.schoolCode;
+      print('[DEBUG] School code: $schoolCode');
+      if (schoolCode == null || schoolCode.isEmpty) {
+        setState(() {
+          _error = 'School code not set for current user.';
+          _loading = false;
+        });
+        return;
+      }
+
+      final auth = AuthHeaderProvider(
+        loadUserToken: () => _session.getToken(),
+        loadGuestToken: () => _session.getGuestToken(),
+        loadGuestId: () => _session.getGuestId(),
+      );
+
+      final headers =
+          await auth.buildHeaders(asGuest: false); // pakai user login
+
+      //  Ambil daftar sekolah dulu dengan headers
+      final schoolResp = await _api.get<List<Map<String, dynamic>>>(
+        '/api/accounts/schools/',
+        headers: headers,
+        expectEnvelope: false,
+        transform: (json) {
+          if (json is Map && json['results'] is List) {
+            final raw = json['results'] as List;
+            return raw.map((e) => Map<String, dynamic>.from(e)).toList();
+          }
+          return <Map<String, dynamic>>[];
+        },
+      );
+
+      print(
+          '[DEBUG] Parsed school codes: ${schoolResp.data.map((s) => s['school_code']).toList()}');
+      print('[DEBUG] Total schools: ${schoolResp.data.length}');
+
+      //  Cari sekolah yang cocok dengan schoolCode
+      final matched = schoolResp.data.firstWhere(
+        (s) =>
+            s['school_code'].toString().toLowerCase() ==
+            schoolCode.toLowerCase(),
+        orElse: () => {},
+      );
+
+      if (matched.isEmpty) {
+        setState(() {
+          _error = 'Sekolah dengan kode $schoolCode tidak ditemukan.';
+          _loading = false;
+        });
+        return;
+      }
+
+      final schoolId = matched['school_id'];
+      print('[DEBUG] Ditemukan school_id: $schoolId untuk code $schoolCode');
+
+      // Ambil data konselor berdasarkan school_id
+      final resp = await _api.get<List<CounselorContact>>(
+        '/api/accounts/counselors/contact-info/?school_id=$schoolId',
+        headers: headers, // pake headers auth
+        expectEnvelope: false,
+        transform: (json) {
+          if (json is Map && json['results'] is List) {
+            final raw = json['results'] as List;
+            return raw
+                .map((e) =>
+                    CounselorContact.fromJson(Map<String, dynamic>.from(e)))
+                .toList();
+          }
+          return <CounselorContact>[];
+        },
+      );
+
+      setState(() {
+        _counselors = resp.data;
+        _loading = false;
+      });
+    } catch (e, st) {
+      print('[ERROR] $e\n$st');
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
 
   void _showComingSoon(BuildContext context) {
     showDialog(
@@ -49,21 +191,34 @@ class HubungiBantuanPage extends StatelessWidget {
                   const _SectionTitle('Kontak Konselor Sekolah'),
                   const SizedBox(height: 12),
 
-                  _CounselorCard(
-                    name: 'Gianpiero Lambiase',
-                    role: 'Konselor SMP 5 Monte Carlo',
-                    schedule: 'Jadwal: Senin 15.00–16.40\nKamis 15.00–16.40',
-                    avatarAsset: 'assets/icons/sikap_icon.jpg',
-                    onChatTap: () => _showComingSoon(context),
-                  ),
-                  const SizedBox(height: 16),
-                  _CounselorCard(
-                    name: 'Laura Mueller',
-                    role: 'Konselor SMP 5 Monte Carlo',
-                    schedule: 'Jadwal: Selasa 08.00–11.40\nJumat 15.00–16.40',
-                    avatarAsset: 'assets/icons/sikap_icon.jpg',
-                    onChatTap: () => _showComingSoon(context),
-                  ),
+                  // Loading / Error / List
+                  if (_loading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('Error: $_error',
+                          style: const TextStyle(color: Colors.redAccent)),
+                    )
+                  else if (_counselors.isEmpty)
+                    const Text('Tidak ada konselor tersedia untuk sekolah ini.',
+                        style: TextStyle(color: Colors.white))
+                  else
+                    Column(
+                      children: _counselors
+                          .map((c) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: _CounselorCard(
+                                  name: c.fullName,
+                                  role:
+                                      'Konselor Sekolah', // role not provided by endpoint
+                                  schedule: c.schedule,
+                                  avatarAsset: 'assets/icons/sikap_icon.jpg',
+                                  onChatTap: () => _showComingSoon(context),
+                                ),
+                              ))
+                          .toList(),
+                    ),
 
                   const SizedBox(height: 24),
                   const _SectionTitle('Layanan Nasional'),
@@ -163,12 +318,14 @@ class _CounselorCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   role,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF7F55B1)),
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF7F55B1)),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   schedule,
-                  style: const TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.black87, height: 1.4),
                 ),
                 const SizedBox(height: 12),
                 Align(
@@ -253,5 +410,3 @@ class _NationalServiceCard extends StatelessWidget {
     );
   }
 }
-
-

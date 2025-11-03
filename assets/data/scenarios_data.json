@@ -2,6 +2,7 @@
     {
       "jenjang": "SD",
       "skenario": "Kasus Hilangnya Kotak Pensil & Ejekan",
+      "scenario_id": 101,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai tindakan berani yang aman. Selain itu, kamu juga akan mengidentifikasi bullying sederhana. Kamu akan tahu cara tepat meminta bantuan orang dewasa.",
       "tahapan": [
         {
@@ -76,6 +77,7 @@
     {
       "jenjang": "SD",
       "skenario": "Merasa Sedih Karena Gagal Gambar",
+      "scenario_id": 102,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara mengelola perasaan frustrasi. Selain itu, kamu juga akan mencari bantuan saat kesulitan belajar. Kamu akan fokus pada proses usaha, bukan hanya hasil akhir.",
       "tahapan": [
         {
@@ -150,6 +152,7 @@
     {
       "jenjang": "SD",
       "skenario": "Melihat Teman Didorong di Lapangan",
+      "scenario_id": 103,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara aman menjadi upstander. Selain itu, kamu juga akan mengutamakan keselamatan saat menolong. Kamu akan memahami bahwa melapor adalah tindakan keberanian.",
       "tahapan": [
         {
@@ -224,6 +227,7 @@
     {
       "jenjang": "SMP",
       "skenario": "Dikeluarkan dari Grup WA & Rumor",
+      "scenario_id": 104,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai mengendalikan emosi saat krisis daring. Selain itu, kamu juga akan memilih strategi pelaporan yang efektif. Kamu akan melindungi diri dari cyberbullying yang meluas.",
       "tahapan": [
         {
@@ -298,6 +302,7 @@
     {
       "jenjang": "SMP",
       "skenario": "Tekanan Cepat Menyelesaikan Tugas Kelompok",
+      "scenario_id": 105,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai komunikasi asertif. Selain itu, kamu juga akan menyusun perencanaan kerja yang realistis. Kamu akan menyelesaikan konflik akademik dengan kepala dingin.",
       "tahapan": [
         {
@@ -372,6 +377,7 @@
     {
       "jenjang": "SMP",
       "skenario": "Melihat Siswa Lain Memaksa Junior Membayar Jajan",
+      "scenario_id": 106,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai pengambilan keputusan etis. Selain itu, kamu juga akan menyelamatkan korban tanpa konfrontasi. Kamu akan mempertahankan nilai keadilan di sekolah.",
       "tahapan": [
         {
@@ -446,6 +452,7 @@
     {
       "jenjang": "SMA",
       "skenario": "Perselisihan Posting Medsos & Cancel Culture",
+      "scenario_id": 107,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai berpikir kritis saat krisis daring. Selain itu, kamu juga akan melindungi diri dari tekanan groupthink. Kamu akan menerapkan strategi manajemen krisis media sosial.",
       "tahapan": [
         {
@@ -520,6 +527,7 @@
     {
       "jenjang": "SMA",
       "skenario": "Dilema Menjadi Saksi Kecurangan Ujian",
+      "scenario_id": 108,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai pentingnya integritas akademik. Selain itu, kamu juga akan memilih saluran pelaporan anonim yang tepat. Kamu akan mengelola tekanan sosial setelah mengambil sikap jujur.",
       "tahapan": [
         {
@@ -594,6 +602,7 @@
     {
       "jenjang": "SMA",
       "skenario": "Menghadapi Guru yang Memberikan Komentar Merendahkan",
+      "scenario_id": 109,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara berkomunikasi secara asertif dengan figur otoritas. Selain itu, kamu juga akan mencari dukungan profesional di sekolah. Kamu akan memisahkan komentar destruktif dari nilai dirimu.",
       "tahapan": [
         {

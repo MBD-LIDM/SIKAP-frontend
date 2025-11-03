@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/network/multipart_client.dart';
+import 'package:sikap/features/venting/data/repositories/venting_repository.dart';
 import 'mood_check_result_page.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 class MoodCheckRecordingPage extends StatefulWidget {
   const MoodCheckRecordingPage({super.key});
@@ -10,9 +20,29 @@ class MoodCheckRecordingPage extends StatefulWidget {
 }
 
 class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
+  bool _uploading = false;
+  late final VentingRepository _repo;
+  late final AudioRecorder _recorder;
+
+  @override
+  void initState() {
+    super.initState();
+    final multipart = MultipartClient();
+    final session = SessionService();
+    final auth = AuthHeaderProvider(
+      loadUserToken: () async => null,
+      loadGuestToken: () async => await session.loadGuestToken(),
+      loadGuestId: () async => await session.loadGuestId(),
+    );
+    _repo = VentingRepository(multipartClient: multipart, auth: auth);
+    _recorder = AudioRecorder();
+    _startRecording();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFE7CE),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -20,7 +50,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
             end: Alignment.bottomCenter,
             colors: [
               Color(0xFF7F55B1), // Purple at 76%
-              Color(0xFFFFDBB6), // Light peach/orange at 100%
+              Color(0xFFFFE7CE), // Soft cream at 100%
             ],
             stops: [0.76, 1.0],
           ),
@@ -77,9 +107,8 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(60),
-                              onTap: () {
-                                _showStopRecordingDialog();
-                              },
+                              onTap:
+                                  _uploading ? null : _showStopRecordingDialog,
                               child: Center(
                                 child: SizedBox(
                                   width: 40,
@@ -142,6 +171,21 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                   ),
                 ),
               ),
+              if (_uploading)
+                Container(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: 12),
+                        Text('Mengunggah dan menganalisis...',
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -166,13 +210,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigasi ke halaman hasil dummy
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MoodCheckResultPage(),
-                  ),
-                );
+                _stopAndAnalyze();
               },
               child: const Text('Hentikan'),
             ),
@@ -182,5 +220,95 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
     );
   }
 
-  // Coming soon dialog dihapus karena tidak digunakan lagi.
+  Future<void> _stopAndAnalyze() async {
+    if (_uploading) return;
+    setState(() => _uploading = true);
+    try {
+      // Pastikan sesi guest siap agar X-Guest-Token tersedia
+      await ensureGuestAuthenticated();
+
+      final path = await _stopRecording();
+      if (path == null || path.isEmpty) {
+        throw Exception('Gagal mendapatkan file rekaman');
+      }
+      final audioFile = File(path);
+
+      // [DEBUG]
+      // ignore: avoid_print
+      print('[DEBUG] Start analyze upload: ${audioFile.path}');
+
+      final result = await _repo.analyzeAudio(audioFile, asGuest: true);
+
+      // [DEBUG]
+      // ignore: avoid_print
+      print('[DEBUG] Analyze result received: keys=${result.keys.toList()}');
+      if (kDebugMode) {
+        try {
+          // ignore: avoid_print
+          print('[DEBUG] Analyze result full: ${jsonEncode(result)}');
+        } catch (_) {
+          // Fallback if result is not pure JSON-serializable
+          // ignore: avoid_print
+          print('[DEBUG] Analyze result full (toString): $result');
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MoodCheckResultPage(result: result),
+        ),
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('[DEBUG] Analyze failed: $e');
+        // ignore: avoid_print
+        print(st);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menganalisis: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      final hasPerm = await _recorder.hasPermission();
+      if (!hasPerm) {
+        // ignore: avoid_print
+        print('[DEBUG] Microphone permission denied');
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final filename = 'venting_${DateTime.now().millisecondsSinceEpoch}.wav';
+      final path = '${dir.path}/$filename';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: path,
+      );
+      // ignore: avoid_print
+      print('[DEBUG] Recording started');
+    } catch (e) {
+      // ignore: avoid_print
+      print('[DEBUG] Failed to start recording: $e');
+    }
+  }
+
+  Future<String?> _stopRecording() async {
+    try {
+      final path = await _recorder.stop();
+      // ignore: avoid_print
+      print('[DEBUG] Recording stopped: $path');
+      return path;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[DEBUG] Failed to stop recording: $e');
+      return null;
+    }
+  }
 }
