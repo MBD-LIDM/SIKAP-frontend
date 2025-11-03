@@ -23,7 +23,17 @@ class _LoginPageState extends State<LoginPage> {
   String? _selectedKelas;
   bool _loading = false;
 
-  final List<String> _kelasList = const ['10', '11', '12'];
+  final List<String> _kelasList = const [
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '10',
+    '11',
+    '12'
+  ];
 
   @override
   void dispose() {
@@ -46,12 +56,13 @@ class _LoginPageState extends State<LoginPage> {
           (prof.deviceId ?? '').isNotEmpty ? prof.deviceId! : const Uuid().v4();
 
       final schoolCode = _kodeSekolahController.text.trim(); // ex: "SMATS"
-      final gradeStr = _selectedKelas!.trim();               // "10" | "11" | "12"
+      final gradeStr = _selectedKelas!.trim(); // "10" | "11" | "12"
 
       // 2) Simpan profil (opsional tapi berguna untuk layar lain)
       await session.saveProfile(
         schoolCode: schoolCode,
-        grade: gradeStr, // tetap string; konversi ke int dilakukan di ensureGuestAuthenticated
+        grade:
+            gradeStr, // tetap string; konversi ke int dilakukan di ensureGuestAuthenticated
         deviceId: deviceId,
       );
 
@@ -59,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       //    Request: {"school_code": "SMATS", "grade": 10, "device_id": "<uuid>"}
       await ensureGuestAuthenticated(
         schoolCode: schoolCode,
-        gradeStr: gradeStr,   // akan di-parse ke int di helper
+        gradeStr: gradeStr, // akan di-parse ke int di helper
         deviceId: deviceId,
       );
 
@@ -100,7 +111,8 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                 child: Column(
                   children: [
                     // Logo
@@ -160,7 +172,8 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
                         ),
                         child: Text(
                           'Login sebagai\nGuru/Kepala Sekolah',
@@ -230,7 +243,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: DropdownButtonFormField<String>(
                                 value: _selectedKelas,
-                                validator: (v) => v == null ? 'Wajib diisi' : null,
+                                validator: (v) =>
+                                    v == null ? 'Wajib diisi' : null,
                                 decoration: InputDecoration(
                                   filled: true,
                                   fillColor: Colors.white,
@@ -250,7 +264,8 @@ class _LoginPageState extends State<LoginPage> {
                                     color: Colors.black54,
                                   ),
                                 ),
-                                icon: const Icon(Icons.arrow_drop_down, size: 30),
+                                icon:
+                                    const Icon(Icons.arrow_drop_down, size: 30),
                                 dropdownColor: Colors.white,
                                 style: GoogleFonts.roboto(
                                   fontSize: 16,
@@ -262,7 +277,8 @@ class _LoginPageState extends State<LoginPage> {
                                           child: Text('Kelas $kelas'),
                                         ))
                                     .toList(),
-                                onChanged: (val) => setState(() => _selectedKelas = val),
+                                onChanged: (val) =>
+                                    setState(() => _selectedKelas = val),
                               ),
                             ),
                             const SizedBox(height: 32),
@@ -281,7 +297,8 @@ class _LoginPageState extends State<LoginPage> {
                                   elevation: 0,
                                 ),
                                 child: _loading
-                                    ? const CircularProgressIndicator(color: Color(0xFF0066CC))
+                                    ? const CircularProgressIndicator(
+                                        color: Color(0xFF0066CC))
                                     : Text(
                                         'Login',
                                         style: GoogleFonts.roboto(
