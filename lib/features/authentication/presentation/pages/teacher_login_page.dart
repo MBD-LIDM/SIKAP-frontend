@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../home/presentation/pages/home_teacher_page.dart';
 import 'login_page.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/api_exception.dart';
 
 class TeacherLoginPage extends StatefulWidget {
   const TeacherLoginPage({super.key});
@@ -13,12 +16,85 @@ class TeacherLoginPage extends StatefulWidget {
 class _TeacherLoginPageState extends State<TeacherLoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final SessionService _session = SessionService();
+  final ApiClient _api = ApiClient();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitLogin() async {
+    if (_usernameController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username dan password wajib diisi')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final payload = {
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text.trim(),
+      };
+
+      final response = await _api.post<Map<String, dynamic>>(
+        '/api/accounts/user/login/',
+        payload,
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        expectEnvelope: false, // Backend returns direct response, no envelope
+        transform: (raw) => raw as Map<String, dynamic>,
+      );
+
+      // Parse direct response: {user_id, full_name, username, role_name, school_id, whatsapp_number}
+      if (response.data is Map<String, dynamic>) {
+        final userData = Map<String, dynamic>.from(response.data);
+        
+        // Extract fields
+        final userId = userData['user_id'];
+        final roleName = userData['role_name']?.toString();
+        final fullName = userData['full_name']?.toString();
+        final schoolId = userData['school_id'];
+
+        // Save session with dummy token since auth is cookie-based
+        await _session.saveUserAuth(
+          token: 'session', // Dummy token for cookie-based auth
+          userId: userId is num ? userId.toInt() : int.tryParse(userId?.toString() ?? ''),
+          role: roleName,
+          userName: fullName,
+          schoolId: schoolId is num ? schoolId.toInt() : int.tryParse(schoolId?.toString() ?? ''),
+        );
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeTeacherPage()),
+        );
+      } else {
+        throw ApiException(message: 'Response data tidak valid', code: 500);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal: ${e.message}'), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -210,15 +286,7 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton(
-                              onPressed: () {
-                                // Navigate to HomeTeacherPage
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const HomeTeacherPage(),
-                                  ),
-                                );
-                              },
+                              onPressed: _isLoading ? null : _submitLogin,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFDBB6),
                                 shape: RoundedRectangleBorder(
@@ -226,14 +294,23 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                                 ),
                                 elevation: 0,
                               ),
-                              child: Text(
-                                'Login',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF0066CC),
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0066CC)),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Login',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF0066CC),
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 40),

@@ -1,48 +1,165 @@
 import 'package:flutter/material.dart';
 import 'case_confirmation_page.dart';
+import 'package:sikap/features/cases/data/repositories/case_repository.dart';
+import 'package:sikap/core/auth/session_service.dart';
+import 'package:sikap/core/network/api_client.dart';
+import 'package:sikap/core/network/auth_header_provider.dart';
 
-class CaseDetailPage extends StatelessWidget {
+class CaseDetailPage extends StatefulWidget {
   const CaseDetailPage({
     super.key,
-    required this.title,
-    required this.status,
-    required this.createdAt,
-    required this.category,
-    required this.description,
-    required this.evidences,
-    required this.anonymous,
-    required this.confirmTruth,
+    required this.reportId,
   });
 
-  final String title;
-  final String status;
-  final DateTime createdAt;
-  final String category; // e.g., "Secara verbal"
-  final String description;
-  final List<String> evidences; // simple labels for now
-  final bool anonymous;
-  final bool confirmTruth;
+  final int reportId;
 
-  Color get statusColor {
+  @override
+  State<CaseDetailPage> createState() => _CaseDetailPageState();
+}
+
+class _CaseDetailPageState extends State<CaseDetailPage> {
+  late final CaseRepository _repo;
+  late final SessionService _session;
+  bool _isLoading = true;
+  Map<String, dynamic>? _data;
+  List<Map<String, dynamic>> _attachments = [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _session = SessionService();
+    _repo = CaseRepository(
+      apiClient: ApiClient(),
+      session: _session,
+      auth: AuthHeaderProvider(
+        loadUserToken: () async => await _session.loadUserToken(),
+        loadGuestToken: () async => null,
+        loadGuestId: () async => null,
+      ),
+    );
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    try {
+      // Load case detail
+      final detail = await _repo.getCaseDetail(widget.reportId);
+      
+      // Load attachments
+      final attachments = await _repo.getCaseAttachments(widget.reportId);
+      
+      setState(() {
+        _data = detail;
+        _attachments = attachments;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("[DEBUG] Error loading case detail: $e");
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading detail: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleStatusUpdate(String newStatus) async {
+    try {
+      await _repo.updateCaseStatus(widget.reportId, newStatus);
+      if (!mounted) return;
+      
+      // Reload detail
+      await _loadDetail();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Status berhasil diupdate'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal update status: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Color _getStatusColor(String status) {
     switch (status) {
       case 'Baru':
         return const Color(0xFF2196F3);
       case 'Diproses':
         return const Color(0xFFFF9800);
-      case 'Selesai':
-        return const Color(0xFF2E7D32);
+      case 'Ditolak':
+        return const Color(0xFFD32F2F);
       default:
         return Colors.grey;
     }
   }
 
-  static String _formatDate(DateTime dt) {
+  String _formatDate(DateTime dt) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
 
+  String _filenameFromUrl(String url) {
+    if (url.isEmpty) return '-';
+    try {
+      final segs = Uri.parse(url).pathSegments;
+      if (segs.isNotEmpty) return segs.last;
+    } catch (_) {}
+    return url;
+  }
+
+  IconData _iconForCategory(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('fisik')) return Icons.pan_tool;
+    if (n.contains('verbal')) return Icons.record_voice_over;
+    if (n.contains('cyber')) return Icons.computer;
+    if (n.contains('sosial') || n.contains('pengucilan')) return Icons.group_off;
+    return Icons.more_horiz;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Detail Kasus'),
+          backgroundColor: const Color(0xFF7F55B1),
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null || _data == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Detail Kasus'),
+          backgroundColor: const Color(0xFF7F55B1),
+          foregroundColor: Colors.white,
+        ),
+        body: Center(child: Text('Error: $_error')),
+      );
+    }
+
+    // Extract data with fallbacks
+    final rawTitle = (_data!['title'] ?? '').toString();
+    final categoryName = (_data!['incident_type_name'] ?? _data!['incident_type'] ?? '').toString();
+    final description = (_data!['description'] ?? '').toString();
+    final status = (_data!['status'] ?? '').toString();
+    final createdAt = DateTime.tryParse(_data!['created_at']?.toString() ?? '') ?? DateTime.now();
+    
+    final title = rawTitle.isNotEmpty
+        ? rawTitle
+        : (categoryName.isNotEmpty ? categoryName : 'Laporan Bullying');
+    
+    final category = categoryName.isNotEmpty ? categoryName : '-';
+    final evidences = _attachments.map((a) => _filenameFromUrl(a['file_url']?.toString() ?? '')).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Kasus'),
@@ -73,8 +190,8 @@ class CaseDetailPage extends StatelessWidget {
                           // Status
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                            child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 12)),
+                            decoration: BoxDecoration(color: _getStatusColor(status).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+                            child: Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.w700, fontSize: 12)),
                           ),
                           const SizedBox(height: 8),
                           // Title
@@ -89,7 +206,7 @@ class CaseDetailPage extends StatelessWidget {
                             ],
                           ),
                           const Divider(height: 32),
-                          // Category (Step 1)
+                          // Category
                           const Text('Kategori Bullying', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
                           const SizedBox(height: 8),
                           Container(
@@ -104,19 +221,19 @@ class CaseDetailPage extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.record_voice_over, color: Color(0xFF7F55B1)),
+                                Icon(_iconForCategory(category), color: const Color(0xFF7F55B1)),
                                 const SizedBox(width: 8),
                                 Text(category, style: const TextStyle(color: Colors.black87)),
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // Description (Step 2)
+                          // Description
                           const Text('Penjelasan', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
                           const SizedBox(height: 8),
                           Text(description.isEmpty ? '-' : description),
                           const SizedBox(height: 16),
-                          // Evidences (Step 3)
+                          // Evidences
                           const Text('Bukti', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
                           const SizedBox(height: 8),
                           if (evidences.isEmpty)
@@ -124,22 +241,37 @@ class CaseDetailPage extends StatelessWidget {
                           else
                             Column(
                               children: evidences
-                                  .map((e) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 8),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [
-                                            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                                          ]),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.insert_drive_file, color: Color(0xFF7F55B1)),
-                                              const SizedBox(width: 8),
-                                              Expanded(child: Text(e)),
-                                            ],
-                                          ),
+                                  .map((e) {
+                                    final idx = evidences.indexOf(e);
+                                    final attachment = _attachments[idx];
+                                    final fileUrl = attachment['file_url']?.toString() ?? '';
+                                    final kind = attachment['kind']?.toString() ?? '';
+                                    
+                                    // Dynamic icon based on kind
+                                    IconData fileIcon = Icons.insert_drive_file;
+                                    if (kind == 'image') {
+                                      fileIcon = Icons.image;
+                                    } else if (kind == 'pdf') {
+                                      fileIcon = Icons.picture_as_pdf;
+                                    }
+                                    
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [
+                                          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                                        ]),
+                                        child: Row(
+                                          children: [
+                                            Icon(fileIcon, color: const Color(0xFF7F55B1)),
+                                            const SizedBox(width: 8),
+                                            Expanded(child: Text(e)),
+                                          ],
                                         ),
-                                      ))
+                                      ),
+                                    );
+                                  })
                                   .toList(),
                             ),
                           const SizedBox(height: 8),
@@ -161,6 +293,7 @@ class CaseDetailPage extends StatelessWidget {
                           );
                           if (!context.mounted) return;
                           if (result != null) {
+                            await _handleStatusUpdate('Ditolak');
                             Navigator.of(context).pop(result);
                           }
                         },
@@ -179,6 +312,7 @@ class CaseDetailPage extends StatelessWidget {
                           );
                           if (!context.mounted) return;
                           if (result != null) {
+                            await _handleStatusUpdate('Diproses');
                             Navigator.of(context).pop(result);
                           }
                         },
@@ -195,5 +329,4 @@ class CaseDetailPage extends StatelessWidget {
     );
   }
 }
-
 

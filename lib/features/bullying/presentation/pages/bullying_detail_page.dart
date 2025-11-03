@@ -64,10 +64,21 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
         });
         // If no inline attachments, fetch via endpoint
         if (_attachments.isEmpty) {
+          print("[DEBUG] No inline attachments, fetching via API");
           final rid = int.tryParse(inner['id']?.toString() ?? widget.id);
+          print("[DEBUG] Report ID for attachments: $rid");
           if (rid != null) {
             final list = await repo.getReportAttachments(reportId: rid, asGuest: true);
+            print("[DEBUG] Fetched ${list.length} attachments from API");
+            for (var i = 0; i < list.length; i++) {
+              print("[DEBUG] Attachment $i: ${list[i]}");
+            }
             if (mounted) setState(() => _attachments = list);
+          }
+        } else {
+          print("[DEBUG] Found ${_attachments.length} inline attachments");
+          for (var i = 0; i < _attachments.length; i++) {
+            print("[DEBUG] Inline attachment $i: ${_attachments[i]}");
           }
         }
       } else {
@@ -279,35 +290,61 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
                           else
                             Column(
                               children: evidences
-                                  .map((e) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 8),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 14),
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    color: Colors.black
-                                                        .withValues(
-                                                            alpha: 0.05),
-                                                    blurRadius: 4,
-                                                    offset: const Offset(0, 2)),
-                                              ]),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                  Icons.insert_drive_file,
-                                                  color: Color(0xFF7F55B1)),
-                                              const SizedBox(width: 8),
-                                              Expanded(child: Text(e)),
-                                            ],
-                                          ),
+                                  .asMap()
+                                  .entries
+                                  .map((entry) {
+                                    final idx = entry.key;
+                                    final fileName = entry.value;
+                                    final attachment = _attachments.isNotEmpty && idx < _attachments.length 
+                                        ? _attachments[idx] 
+                                        : null;
+                                    final fileUrl = attachment?['file_url']?.toString() ?? '';
+                                    final kind = attachment?['kind']?.toString() ?? '';
+                                    
+                                    // Debug logging
+                                    print('[BullyingDetail] Attachment #$idx:');
+                                    print('[BullyingDetail]   fileName: $fileName');
+                                    print('[BullyingDetail]   fileUrl: $fileUrl');
+                                    print('[BullyingDetail]   kind: $kind');
+                                    print('[BullyingDetail]   attachment data: $attachment');
+                                    
+                                    // Dynamic icon based on kind
+                                    IconData fileIcon = Icons.insert_drive_file;
+                                    if (kind == 'image') {
+                                      fileIcon = Icons.image;
+                                    } else if (kind == 'pdf') {
+                                      fileIcon = Icons.picture_as_pdf;
+                                    }
+                                    
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 14),
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(
+                                                          alpha: 0.05),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2)),
+                                            ]),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                                fileIcon,
+                                                color: const Color(0xFF7F55B1)),
+                                            const SizedBox(width: 8),
+                                            Expanded(child: Text(fileName)),
+                                          ],
                                         ),
-                                      ))
+                                      ),
+                                    );
+                                  })
                                   .toList(),
                             ),
                           const SizedBox(height: 8),
