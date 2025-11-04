@@ -16,6 +16,7 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
   String selectedCategory = 'Kesehatan Mental dan Kesejahteraan';
 
   final List<String> categories = [
+    'Semua',
     'Kesehatan Mental dan Kesejahteraan',
     'Memahami Bullying',
     'Mendapatkan Bantuan',
@@ -136,9 +137,30 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
               
               // Article Cards Section
               Expanded(
-                child: ListView(
-                  children: [
-                    _buildArticleCard(
+                child: Builder(
+                  builder: (context) {
+                    final List<Widget> items = <Widget>[];
+
+                    void addItem({
+                      required String title,
+                      required String category,
+                      required String date,
+                      required Widget illustration,
+                      required VoidCallback onTap,
+                    }) {
+                      if (selectedCategory == 'Semua' || selectedCategory == category) {
+                        items.add(_buildArticleCard(
+                          title: title,
+                          category: category,
+                          date: date,
+                          illustration: illustration,
+                          onTap: onTap,
+                        ));
+                        items.add(const SizedBox(height: 16));
+                      }
+                    }
+
+                    addItem(
                       title: 'Bukan Salahmu: Memahami Apa Itu Bullying dan Mengapa Itu Terjadi',
                       category: 'Memahami Bullying',
                       date: 'Diposting pada 6 Agustus 2025',
@@ -151,9 +173,9 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildArticleCard(
+                    );
+
+                    addItem(
                       title: 'Saat Dunia Terlalu Ramai: Mengenal dan Mengatasi Kecemasan Sehari-hari.',
                       category: 'Kesehatan Mental dan Kesejahteraan',
                       date: 'Diposting pada 18 Agustus 2025',
@@ -166,9 +188,9 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildArticleCard(
+                    );
+
+                    addItem(
                       title: 'Menjadi Teman yang Baik: Bagaimana Dukungan Antar Teman Bisa Menjaga Kesehatan Mental',
                       category: 'Kesehatan Mental dan Kesejahteraan',
                       date: 'Diposting pada 10 Agustus 2025',
@@ -181,9 +203,9 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildArticleCard(
+                    );
+
+                    addItem(
                       title: 'Berani Bicara: Mengapa Cerita Kecil tentang Perasaan Bisa Membuatmu Lebih Kuat',
                       category: 'Kesehatan Mental dan Kesejahteraan',
                       date: 'Diposting pada 12 Agustus 2025',
@@ -196,9 +218,9 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildArticleCard(
+                    );
+
+                    addItem(
                       title: 'Kapan dan Bagaimana Mencari Bantuan Profesional',
                       category: 'Mendapatkan Bantuan',
                       date: 'Diposting pada 20 Juli 2025',
@@ -211,8 +233,14 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                           ),
                         );
                       },
-                    ),
-                  ],
+                    );
+
+                    if (items.isNotEmpty) {
+                      items.removeLast();
+                    }
+
+                    return ListView(children: items);
+                  },
                 ),
               ),
             ],
