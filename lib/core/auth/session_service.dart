@@ -79,8 +79,16 @@ class SessionService {
     await _s.delete(key: _kGuestTokenVersion);
   }
 
-  // ===== Scoped guest creds (per school_code/grade/device) =====
-  String _scopeKey(String schoolCode, String? grade, String? deviceId) {
+  // ===== Scoped guest creds (prefer school_id; fallback to school_code) =====
+  String _scopeKeyFromIds(int? schoolId, int? gradeId) {
+    if (schoolId != null) {
+      final gid = gradeId == null ? '' : gradeId.toString();
+      return 'SID:$schoolId|GID:$gid';
+    }
+    return '';
+  }
+
+  String _scopeKeyFromCode(String schoolCode, String? grade, String? deviceId) {
     final sc = schoolCode.trim().toUpperCase();
     final gr = (grade ?? '').trim();
     final dev = (deviceId ?? '').trim();
@@ -103,30 +111,59 @@ class SessionService {
   }
 
   Future<void> saveScopedGuest({
-    required String schoolCode,
+    int? schoolId,
+    int? gradeId,
+    String? schoolCode,
     String? grade,
     String? deviceId,
     required int guestId,
     String? token,
   }) async {
-    final key = _scopeKey(schoolCode, grade, deviceId);
+    String key = _scopeKeyFromIds(schoolId, gradeId);
+    if (key.isEmpty && (schoolCode != null && schoolCode.trim().isNotEmpty)) {
+      key = _scopeKeyFromCode(schoolCode, grade, deviceId);
+    }
+    if (key.isEmpty) return; // nothing to index by
     final map = await _loadScopeMap();
     map[key] = {
       'guest_id': guestId,
       if (token != null && token.isNotEmpty) 'token': token,
+      if (schoolId != null) 'school_id': schoolId,
+      if (gradeId != null) 'grade_id': gradeId,
+      if (schoolCode != null) 'school_code': schoolCode.trim().toUpperCase(),
+      if (grade != null) 'grade': grade,
+      if (deviceId != null) 'device_id': deviceId,
       'ts': DateTime.now().toIso8601String(),
     };
     await _saveScopeMap(map);
   }
 
   Future<(int guestId, String? token)?> loadScopedGuest({
-    required String schoolCode,
+    int? schoolId,
+    int? gradeId,
+    String? schoolCode,
     String? grade,
     String? deviceId,
   }) async {
-    final key = _scopeKey(schoolCode, grade, deviceId);
+    // Prefer lookup by numeric ids
+    String key = _scopeKeyFromIds(schoolId, gradeId);
+    if (key.isEmpty && (schoolCode != null && schoolCode.trim().isNotEmpty)) {
+      key = _scopeKeyFromCode(schoolCode, grade, deviceId);
+    }
     final map = await _loadScopeMap();
-    final entry = map[key];
+    dynamic entry;
+    if (key.isNotEmpty) {
+      entry = map[key];
+    } else if (schoolCode != null && schoolCode.trim().isNotEmpty) {
+      // Fallback: scan by school_code if we couldn't build a key
+      final sc = schoolCode.trim().toUpperCase();
+      for (final v in map.values) {
+        if (v is Map && (v['school_code']?.toString().toUpperCase() == sc)) {
+          entry = v;
+          break;
+        }
+      }
+    }
     if (entry is Map) {
       final gidRaw = entry['guest_id'];
       final gid = gidRaw is num ? gidRaw.toInt() : int.tryParse('$gidRaw');
@@ -138,11 +175,15 @@ class SessionService {
 
   /// If a scoped guest exists, set it as the current active guest creds.
   Future<bool> applyScopedGuest({
-    required String schoolCode,
+    int? schoolId,
+    int? gradeId,
+    String? schoolCode,
     String? grade,
     String? deviceId,
   }) async {
     final scoped = await loadScopedGuest(
+      schoolId: schoolId,
+      gradeId: gradeId,
       schoolCode: schoolCode,
       grade: grade,
       deviceId: deviceId,

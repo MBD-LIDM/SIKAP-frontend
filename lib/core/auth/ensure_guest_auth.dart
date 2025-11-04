@@ -66,13 +66,14 @@ Future<void> ensureGuestAuthenticated({
       (newGrade != null && newGrade.isNotEmpty) ? newGrade : currGrade;
   final effectiveDevice =
       (newDevice != null && newDevice.isNotEmpty) ? newDevice : currDevice;
-  if (effectiveSchool.isNotEmpty) {
-    await _sessionService.applyScopedGuest(
-      schoolCode: effectiveSchool,
-      grade: effectiveGrade.isEmpty ? null : effectiveGrade,
-      deviceId: effectiveDevice.isEmpty ? null : effectiveDevice,
-    );
-  }
+  final refreshedProfile = await _sessionService.loadProfile();
+  await _sessionService.applyScopedGuest(
+    schoolId: refreshedProfile.schoolId,
+    gradeId: refreshedProfile.gradeId,
+    schoolCode: effectiveSchool.isEmpty ? null : effectiveSchool,
+    grade: effectiveGrade.isEmpty ? null : effectiveGrade,
+    deviceId: effectiveDevice.isEmpty ? null : effectiveDevice,
+  );
 
   // Ensure we have a valid guest token for the (possibly new) school/grade/device
   await _guestAuthGate.ensure();
@@ -119,7 +120,7 @@ Future<void> _quickLogin() async {
 
   // Dukung respons envelope atau plain: {data:{...}} atau {...}
   final root = response.data;
-  final Map<String, dynamic> data = (root is Map && root['data'] is Map)
+  final Map<String, dynamic> data = (root['data'] is Map)
       ? Map<String, dynamic>.from(root['data'] as Map)
       : Map<String, dynamic>.from(root as Map);
 
@@ -139,6 +140,18 @@ Future<void> _quickLogin() async {
       : (tokenFromHeader != null && tokenFromHeader.isNotEmpty)
           ? tokenFromHeader
           : null;
+  // Extract school_id dan grade_id jika ada, untuk menyelaraskan profil dan scoping berbasis id
+  final rawSchoolId = data['school_id'];
+  final schoolId = (rawSchoolId is num)
+      ? rawSchoolId.toInt()
+      : int.tryParse(rawSchoolId?.toString() ?? '');
+  final rawGradeId = data['grade_id'];
+  final gradeId = (rawGradeId is num)
+      ? rawGradeId.toInt()
+      : int.tryParse(rawGradeId?.toString() ?? '');
+  if (schoolId != null || gradeId != null) {
+    await _sessionService.saveProfile(schoolId: schoolId, gradeId: gradeId);
+  }
   if (token == null || token.isEmpty) {
     // BE tidak mengirim token; JANGAN menghapus token lama jika ada.
     final existingToken = await _sessionService.loadGuestToken();
@@ -146,6 +159,8 @@ Future<void> _quickLogin() async {
       await _sessionService.saveGuestAuth(
           token: existingToken, guestId: guestId);
       await _sessionService.saveScopedGuest(
+        schoolId: schoolId,
+        gradeId: gradeId,
         schoolCode: scode,
         grade: gradeStr,
         deviceId: normalizedDevice,
@@ -155,6 +170,8 @@ Future<void> _quickLogin() async {
     } else {
       await _sessionService.saveGuest(guestId: guestId, token: null);
       await _sessionService.saveScopedGuest(
+        schoolId: schoolId,
+        gradeId: gradeId,
         schoolCode: scode,
         grade: gradeStr,
         deviceId: normalizedDevice,
@@ -167,6 +184,8 @@ Future<void> _quickLogin() async {
 
   await _sessionService.saveGuestAuth(token: token, guestId: guestId);
   await _sessionService.saveScopedGuest(
+    schoolId: schoolId,
+    gradeId: gradeId,
     schoolCode: scode,
     grade: gradeStr,
     deviceId: normalizedDevice,

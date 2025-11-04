@@ -7,8 +7,10 @@ import 'package:http/http.dart' as http;
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:sikap/core/network/api_env.dart';
 
+// Enable HTTP logging if either LOG_HTTP or API_HTTP_DEBUG is set via --dart-define
 const bool kApiDebugLog =
-    bool.fromEnvironment('API_HTTP_DEBUG', defaultValue: false);
+    bool.fromEnvironment('LOG_HTTP', defaultValue: false) ||
+        bool.fromEnvironment('API_HTTP_DEBUG', defaultValue: false);
 
 Map<String, dynamic>? _tryDecodeJson(String s) {
   try {
@@ -48,6 +50,17 @@ T _handle<T>(
     errs ??= Map<String, dynamic>.from(jsonMap);
   }
 
+  if (kApiDebugLog) {
+    // ignore: avoid_print
+    print('[API] ERROR ${res.request?.method} ${res.request?.url} -> $status');
+    // ignore: avoid_print
+    print(
+        '[API] Body: ${bodyStr.length > 2000 ? bodyStr.substring(0, 2000) + '…' : bodyStr}');
+    if (errs != null) {
+      // ignore: avoid_print
+      print('[API] Errors: $errs');
+    }
+  }
   throw ApiException(message: msg, code: status, errors: errs);
 }
 
@@ -91,6 +104,17 @@ class ApiClient {
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
       // Guard: HTML error page (e.g., 404/500 from proxy)
       if (contentType.contains('text/html')) {
+        if (kApiDebugLog) {
+          // ignore: avoid_print
+          print(
+              '[API] ERROR ${resp.request?.method} ${resp.request?.url} -> ${resp.statusCode} (HTML)');
+          final bodyStr = resp.body;
+          final preview =
+              bodyStr.length > 800 ? bodyStr.substring(0, 800) + '…' : bodyStr;
+          // ignore: avoid_print
+          print(
+              '[API] HTML Preview: ${preview.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ').trim()}');
+        }
         throw ApiException(
           message: "HTTP ${resp.statusCode} (HTML error page)",
           code: resp.statusCode,
@@ -103,6 +127,18 @@ class ApiClient {
         if (decoded['detail'] is String) msg = decoded['detail'];
         if (decoded['errors'] is Map)
           errs = Map<String, dynamic>.from(decoded['errors']);
+      }
+      if (kApiDebugLog) {
+        // ignore: avoid_print
+        print(
+            '[API] ERROR ${resp.request?.method} ${resp.request?.url} -> ${resp.statusCode}');
+        // ignore: avoid_print
+        print(
+            '[API] Body: ${resp.body.length > 2000 ? resp.body.substring(0, 2000) + '…' : resp.body}');
+        if (errs != null) {
+          // ignore: avoid_print
+          print('[API] Errors: $errs');
+        }
       }
       throw ApiException(message: msg, code: resp.statusCode, errors: errs);
     }
@@ -155,6 +191,13 @@ class ApiClient {
     final finalHeaders = {...base, if (headers != null) ...headers};
     final encodedBody = body is String ? body : jsonEncode(body);
     _logReq('POST', uri, finalHeaders);
+    if (kApiDebugLog) {
+      final preview = encodedBody.length > 800
+          ? encodedBody.substring(0, 800) + '…'
+          : encodedBody;
+      // ignore: avoid_print
+      print('[API] POST Body: $preview');
+    }
     final r = await _client.post(
       uri,
       headers: finalHeaders,
