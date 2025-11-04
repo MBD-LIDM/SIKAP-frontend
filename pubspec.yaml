@@ -35,6 +35,7 @@ flutter:
     - assets/others/
     - assets/data/
     - assets/images/scenario_illustration/
+    - assets/images/article_images/
 
 flutter_launcher_icons:
   image_path: "assets/icons/sikap_icon.jpg"
