@@ -13,7 +13,7 @@ class ArtikelInfoPage extends StatefulWidget {
 }
 
 class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
-  String selectedCategory = 'Kesehatan Mental dan Kesejahteraan';
+  String selectedCategory = 'Semua';
 
   final List<String> categories = [
     'Semua',
