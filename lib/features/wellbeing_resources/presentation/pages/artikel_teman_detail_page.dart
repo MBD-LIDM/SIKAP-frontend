@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ArtikelBullyingDetailPage extends StatelessWidget {
-  const ArtikelBullyingDetailPage({super.key});
+class ArtikelTemanDetailPage extends StatelessWidget {
+  const ArtikelTemanDetailPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top bar
                     Row(
                       children: [
                         IconButton(
@@ -36,10 +35,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-
-                    // Title
                     const Text(
-                      'Bukan Salahmu: Memahami Apa Itu Bullying dan Mengapa Itu Terjadi',
+                      'Menjadi Teman yang Baik: Bagaimana Dukungan Antar Teman Bisa Menjaga Kesehatan Mental',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
@@ -49,9 +46,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     const Text(
-                      '15 Agustus 2025',
+                      '10 Agustus 2025',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -59,8 +55,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Illustration card
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -70,7 +64,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
                           child: Image.asset(
-                            'assets/images/article_images/Bukan Salahmu Memahami Apa Itu Bullying.jpg',
+                            'assets/images/article_images/Menjadi Teman yang Baik Dukungan Antar Teman.jpg',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -78,7 +72,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Foto: Mikhail Nilov / Pexels',
+                      'Foto: Pixabay / Pexels',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -86,8 +80,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Author row
                     Row(
                       children: [
                         const CircleAvatar(
@@ -99,7 +91,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
                             Text(
-                              'Gianpiero Lambiase',
+                              'Tim SIKAP',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -107,7 +99,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Psikolog Anak',
+                              'Kesehatan Jiwa Remaja',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF8A7B6A),
@@ -118,57 +110,41 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Article content
                     const Text(
-                      'Bullying, atau perundungan, adalah tindakan agresif dan berulang yang dilakukan oleh seseorang atau sekelompok orang kepada orang lain. Perilaku ini bukan hanya sekadar iseng atau candaan, karena tujuannya adalah untuk menyakiti atau membuat seseorang merasa tidak nyaman. Penting untuk diingat: apa pun alasannya, bullying tidak pernah menjadi kesalahan korban.',
+                      'Teman yang baik berperan penting dalam menjaga kesehatan mental anak dan remaja. Dukungan emosional dari teman sebaya bisa membuat seseorang merasa lebih tenang dan dihargai. Penelitian menunjukkan bahwa remaja yang merasa didukung oleh teman-temannya cenderung mengalami lebih sedikit masalah psikologis seperti kecemasan dan depresi.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
                     const SizedBox(height: 16),
-
                     const Text(
-                      'Apa yang Termasuk Bullying?',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 8),
-
-                    _Bullet(text: 'Verbal: Mengejek, menyebarkan gosip, atau memanggil nama yang tidak pantas.'),
-                    _Bullet(text: 'Fisik: Mendorong, memukul, menendang, atau merusak barang.'),
-                    _Bullet(text: 'Sosial: Mengucilkan dari kelompok atau menyebarkan rumor.'),
-                    _Bullet(text: 'Siber: Mengirim pesan yang mengancam, menyebarkan foto memalukan, atau mengolok-olok di media sosial.'),
-
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Mengapa Bullying Terjadi?',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Bullying bisa terjadi karena banyak faktor, seperti kebutuhan pelaku untuk merasa berkuasa, tekanan dari teman sebaya, atau masalah pribadi yang tidak terselesaikan. Apapun penyebabnya, bullying tidak bisa dibenarkan.',
+                      'Saling mendukung dan menjadi pendengar yang baik adalah ciri utama teman yang positif. Ketika seorang teman mau mendengarkan dengan sabar tanpa menghakimi, hal ini memberi kelegaan emosional. Dukungan teman memberikan rasa empati dan pengertian sehingga seorang anak merasa tidak sendirian menghadapi kecemasannya.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
-
                     const SizedBox(height: 16),
                     const Text(
-                      'Apa yang Bisa Kamu Lakukan?',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
+                      'Di samping memberi dukungan positif, teman yang baik tidak akan menjerumuskan. Ini berarti penting bagi anak dan remaja untuk menghindari tekanan kelompok negatif. Tekanan negatif terjadi ketika teman sebaya mendorong hal-hal merugikan, seperti membolos sekolah, mencoba rokok atau perilaku berisiko lain.',
+                      style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
-                    const SizedBox(height: 8),
-                    _Bullet(text: 'Jika kamu menjadi korban: ceritakan pada orang dewasa yang dipercaya.'),
-                    _Bullet(text: 'Jika kamu melihat bullying: bantu dengan cara aman atau laporkan.'),
-                    _Bullet(text: 'Simpan bukti jika terjadi secara online, dan hindari membalas.'),
-
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Menjalin pertemanan yang positif dan saling mendukung sejak dini adalah investasi bagi kesehatan mental jangka panjang. Dengan teman-teman yang baik di sisi kita, masa tumbuh kembang dapat dilalui dengan lebih gembira dan aman.',
+                      style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
+                    ),
                     const SizedBox(height: 24),
                     const Text(
                       'Sumber',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    const _Bullet(text: 'UNESCO: One out of three teens is bullied worldwide\nhttps://www.unesco.org/en/articles/new-data-reveal-one-out-three-teens-bullied-worldwide'),
-                    const _Bullet(text: 'NCBI Bookshelf: Overview of Bullying and Victimization\nhttps://www.ncbi.nlm.nih.gov/books/NBK241577/'),
-                    const _Bullet(text: 'StopBullying.gov: Why Some Youth Bully\nhttps://www.stopbullying.gov/bullying/why-some-youth-bully'),
-                    const _Bullet(text: 'UW News: Violence in the home & childhood bullying\nhttps://www.washington.edu/news/2006/09/12/violence-in-the-home-leads-to-higher-rates-of-childhood-bullying/'),
-                    const _Bullet(text: 'SIU News: Bullies often victims of bullying themselves\nhttps://news.siu.edu/2018/09/090518-research-shows-bullies-often-victims-of-bullying.php'),
+                    const _Bullet(text: '''JAMA Network Open: Social Support & Adolescent Mental Health
+https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2773539'''),
+                    const _Bullet(text: '''BMC Public Health: Friendship quality & wellbeing
+https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-022-14776-4'''),
+                    const _Bullet(text: '''BMC Psychiatry: Peer support effectiveness
+https://bmcpsychiatry.biomedcentral.com/articles/10.1186/s12888-023-04578-2'''),
+                    const _Bullet(text: '''Nature HSS Communications: Peer support reduces math anxiety
+https://www.nature.com/articles/s41599-025-05075-5'''),
+                    const _Bullet(text: '''Adolescent Research Review: Peers & social anxiety development
+https://link.springer.com/article/10.1007/s40894-019-00117-x'''),
                     const SizedBox(height: 32),
                     const Center(
                       child: Text(

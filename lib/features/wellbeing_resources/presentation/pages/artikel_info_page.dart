@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'artikel_bullying_detail_page.dart';
+import 'artikel_kecemasan_detail_page.dart';
+import 'artikel_teman_detail_page.dart';
+import 'artikel_berani_bicara_detail_page.dart';
+import 'artikel_bantuan_profesional_detail_page.dart';
 
 class ArtikelInfoPage extends StatefulWidget {
   const ArtikelInfoPage({super.key});
@@ -148,19 +152,65 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                         );
                       },
                     ),
-                    const SizedBox(height: 16),                    
+                    const SizedBox(height: 16),
                     _buildArticleCard(
-                      title: '10 Cara Mengendalikan Stres Saat Sekolah Terasa Berat',
+                      title: 'Saat Dunia Terlalu Ramai: Mengenal dan Mengatasi Kecemasan Sehari-hari.',
                       category: 'Kesehatan Mental dan Kesejahteraan',
-                      date: 'Diposting pada 15 Agustus 2025',
-                      illustration: _buildStressIllustration(),
-                    ),                    
+                      date: 'Diposting pada 18 Agustus 2025',
+                      illustration: _buildAnxietyIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelKecemasanDetailPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildArticleCard(
+                      title: 'Menjadi Teman yang Baik: Bagaimana Dukungan Antar Teman Bisa Menjaga Kesehatan Mental',
+                      category: 'Kesehatan Mental dan Kesejahteraan',
+                      date: 'Diposting pada 10 Agustus 2025',
+                      illustration: _buildFriendIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelTemanDetailPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildArticleCard(
+                      title: 'Berani Bicara: Mengapa Cerita Kecil tentang Perasaan Bisa Membuatmu Lebih Kuat',
+                      category: 'Kesehatan Mental dan Kesejahteraan',
+                      date: 'Diposting pada 12 Agustus 2025',
+                      illustration: _buildTalkIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelBeraniBicaraDetailPage(),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 16),
                     _buildArticleCard(
                       title: 'Kapan dan Bagaimana Mencari Bantuan Profesional',
                       category: 'Mendapatkan Bantuan',
                       date: 'Diposting pada 20 Juli 2025',
                       illustration: _buildHelpIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelBantuanProfesionalDetailPage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -266,18 +316,52 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
     );
   }
 
-  Widget _buildStressIllustration() {
+  
+
+  Widget _buildAnxietyIllustration() {
     return Container(
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(
-        Icons.psychology,
+        Icons.self_improvement,
         size: 40,
-        color: Colors.red,
+        color: Colors.blue,
+      ),
+    );
+  }
+
+  Widget _buildFriendIllustration() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.purple.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.groups,
+        size: 40,
+        color: Colors.purple,
+      ),
+    );
+  }
+
+  Widget _buildTalkIllustration() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.teal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.record_voice_over,
+        size: 40,
+        color: Colors.teal,
       ),
     );
   }

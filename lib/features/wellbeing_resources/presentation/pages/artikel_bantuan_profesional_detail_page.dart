@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ArtikelBullyingDetailPage extends StatelessWidget {
-  const ArtikelBullyingDetailPage({super.key});
+class ArtikelBantuanProfesionalDetailPage extends StatelessWidget {
+  const ArtikelBantuanProfesionalDetailPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top bar
                     Row(
                       children: [
                         IconButton(
@@ -36,10 +35,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-
-                    // Title
                     const Text(
-                      'Bukan Salahmu: Memahami Apa Itu Bullying dan Mengapa Itu Terjadi',
+                      'Kapan dan Bagaimana Mencari Bantuan Profesional',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
@@ -49,9 +46,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     const Text(
-                      '15 Agustus 2025',
+                      '20 Juli 2025',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -59,8 +55,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Illustration card
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -70,7 +64,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
                           child: Image.asset(
-                            'assets/images/article_images/Bukan Salahmu Memahami Apa Itu Bullying.jpg',
+                            'assets/images/article_images/Kapan dan Bagaimana Mencari Bantuan Profesional.jpg',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -78,7 +72,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Foto: Mikhail Nilov / Pexels',
+                      'Foto: Alex Green / Pexels',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -86,8 +80,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Author row
                     Row(
                       children: [
                         const CircleAvatar(
@@ -99,7 +91,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
                             Text(
-                              'Gianpiero Lambiase',
+                              'Tim SIKAP',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -107,7 +99,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Psikolog Anak',
+                              'Kesehatan Jiwa Remaja',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF8A7B6A),
@@ -118,57 +110,63 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Article content
                     const Text(
-                      'Bullying, atau perundungan, adalah tindakan agresif dan berulang yang dilakukan oleh seseorang atau sekelompok orang kepada orang lain. Perilaku ini bukan hanya sekadar iseng atau candaan, karena tujuannya adalah untuk menyakiti atau membuat seseorang merasa tidak nyaman. Penting untuk diingat: apa pun alasannya, bullying tidak pernah menjadi kesalahan korban.',
+                      'Masalah kesehatan mental pada anak dan remaja cukup umum. Namun, banyak yang belum mendapatkan bantuan yang dibutuhkan karena gejala tidak disadari atau stigma. Jika tidak ditangani, dampaknya dapat mengganggu kehidupan di rumah dan sekolah.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
                     const SizedBox(height: 16),
-
                     const Text(
-                      'Apa yang Termasuk Bullying?',
+                      'Kapan harus mencari bantuan?',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-
-                    _Bullet(text: 'Verbal: Mengejek, menyebarkan gosip, atau memanggil nama yang tidak pantas.'),
-                    _Bullet(text: 'Fisik: Mendorong, memukul, menendang, atau merusak barang.'),
-                    _Bullet(text: 'Sosial: Mengucilkan dari kelompok atau menyebarkan rumor.'),
-                    _Bullet(text: 'Siber: Mengirim pesan yang mengancam, menyebarkan foto memalukan, atau mengolok-olok di media sosial.'),
-
+                    const _Bullet(text: 'Perasaan sedih, cemas, atau menarik diri berlangsung lebih dari dua minggu.'),
+                    const _Bullet(text: 'Muncul keinginan menyakiti diri sendiri atau pikiran bunuh diri.'),
+                    const _Bullet(text: 'Perubahan perilaku drastis, ketakutan berlebihan tanpa sebab jelas, atau gangguan fungsi harian.'),
                     const SizedBox(height: 16),
                     const Text(
-                      'Mengapa Bullying Terjadi?',
+                      'Bagaimana cara mencari bantuan?',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    const _Bullet(text: 'Mulailah bercerita pada orang dewasa yang dipercaya (orang tua, wali, guru, atau kakak).'),
+                    const _Bullet(text: 'Minta bantuan profesional: psikolog atau psikiater terbiasa membantu anak dan remaja.'),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Hindari mendiagnosis diri sendiri',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Bullying bisa terjadi karena banyak faktor, seperti kebutuhan pelaku untuk merasa berkuasa, tekanan dari teman sebaya, atau masalah pribadi yang tidak terselesaikan. Apapun penyebabnya, bullying tidak bisa dibenarkan.',
+                      'Hanya profesional terlatih yang dapat memastikan kondisi dan penanganan yang tepat. Hindari menyimpulkan diagnosis dari media sosial atau sumber internet acak.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
-
                     const SizedBox(height: 16),
                     const Text(
-                      'Apa yang Bisa Kamu Lakukan?',
+                      'Tidak perlu malu meminta bantuan',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    _Bullet(text: 'Jika kamu menjadi korban: ceritakan pada orang dewasa yang dipercaya.'),
-                    _Bullet(text: 'Jika kamu melihat bullying: bantu dengan cara aman atau laporkan.'),
-                    _Bullet(text: 'Simpan bukti jika terjadi secara online, dan hindari membalas.'),
-
+                    const Text(
+                      'Masalah kesehatan mental sama seriusnya dengan masalah fisik. Konseling atau terapi adalah langkah berani untuk menjaga kesehatan diri dan kembali fokus pada hal-hal yang disukai.',
+                      style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
+                    ),
                     const SizedBox(height: 24),
                     const Text(
                       'Sumber',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    const _Bullet(text: 'UNESCO: One out of three teens is bullied worldwide\nhttps://www.unesco.org/en/articles/new-data-reveal-one-out-three-teens-bullied-worldwide'),
-                    const _Bullet(text: 'NCBI Bookshelf: Overview of Bullying and Victimization\nhttps://www.ncbi.nlm.nih.gov/books/NBK241577/'),
-                    const _Bullet(text: 'StopBullying.gov: Why Some Youth Bully\nhttps://www.stopbullying.gov/bullying/why-some-youth-bully'),
-                    const _Bullet(text: 'UW News: Violence in the home & childhood bullying\nhttps://www.washington.edu/news/2006/09/12/violence-in-the-home-leads-to-higher-rates-of-childhood-bullying/'),
-                    const _Bullet(text: 'SIU News: Bullies often victims of bullying themselves\nhttps://news.siu.edu/2018/09/090518-research-shows-bullies-often-victims-of-bullying.php'),
+                    const _Bullet(text: '''WHO: Mental health of adolescents
+https://www.who.int/news-room/fact-sheets/detail/adolescent-mental-health'''),
+                    const _Bullet(text: '''NAMI: Nearly 1 in 7 US Kids and Teens have a Mental Health Condition
+https://www.nami.org/in-the-news/nearly-1-in-7-us-kids-and-teens-have-a-mental-health-condition-half-go-untreated-study-says/'''),
+                    const _Bullet(text: '''CDC: About Children’s Mental Health
+https://www.cdc.gov/children-mental-health/about/index.html'''),
+                    const _Bullet(text: '''UNICEF Parenting: When to help your teen find mental health support
+https://www.unicef.org/parenting/mental-health/when-help-your-teen-find-mental-health-support'''),
+                    const _Bullet(text: '''University of Utah Health: Teens, Social Media, and Self-Diagnosis
+https://healthcare.utah.edu/the-scope/kids-zone/all/2023/10/teens-social-media-and-trouble-self-diagnosis'''),
                     const SizedBox(height: 32),
                     const Center(
                       child: Text(

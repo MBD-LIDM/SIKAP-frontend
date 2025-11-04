@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ArtikelBullyingDetailPage extends StatelessWidget {
-  const ArtikelBullyingDetailPage({super.key});
+class ArtikelKecemasanDetailPage extends StatelessWidget {
+  const ArtikelKecemasanDetailPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top bar
                     Row(
                       children: [
                         IconButton(
@@ -36,10 +35,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-
-                    // Title
                     const Text(
-                      'Bukan Salahmu: Memahami Apa Itu Bullying dan Mengapa Itu Terjadi',
+                      'Saat Dunia Terlalu Ramai: Mengenal dan Mengatasi Kecemasan Sehari-hari.',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
@@ -49,9 +46,8 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     const Text(
-                      '15 Agustus 2025',
+                      '18 Agustus 2025',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -59,8 +55,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Illustration card
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -70,7 +64,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                         child: AspectRatio(
                           aspectRatio: 16 / 9,
                           child: Image.asset(
-                            'assets/images/article_images/Bukan Salahmu Memahami Apa Itu Bullying.jpg',
+                            'assets/images/article_images/Saat Dunia Terlalu Ramai Kecemasan Sehari-hari.jpg',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -78,7 +72,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Foto: Mikhail Nilov / Pexels',
+                      'Foto: Karola G / Pexels',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
@@ -86,8 +80,6 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Author row
                     Row(
                       children: [
                         const CircleAvatar(
@@ -99,7 +91,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
                             Text(
-                              'Gianpiero Lambiase',
+                              'Tim SIKAP',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -107,7 +99,7 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Psikolog Anak',
+                              'Kesehatan Jiwa Remaja',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF8A7B6A),
@@ -118,57 +110,56 @@ class ArtikelBullyingDetailPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Article content
                     const Text(
-                      'Bullying, atau perundungan, adalah tindakan agresif dan berulang yang dilakukan oleh seseorang atau sekelompok orang kepada orang lain. Perilaku ini bukan hanya sekadar iseng atau candaan, karena tujuannya adalah untuk menyakiti atau membuat seseorang merasa tidak nyaman. Penting untuk diingat: apa pun alasannya, bullying tidak pernah menjadi kesalahan korban.',
+                      'Saat dunia terasa terlalu ramai, anak-anak dan remaja dapat mudah merasa cemas. Kecemasan adalah perasaan khawatir atau takut yang normal dialami sesekali. Misalnya, sebelum ujian atau berbicara di depan kelas, wajar jika merasa gugup. Rasa cemas seperti ini biasanya hilang setelah situasinya lewat. Namun, kecemasan bisa menjadi masalah jika muncul terlalu sering atau terasa sangat kuat.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
                     const SizedBox(height: 16),
-
                     const Text(
-                      'Apa yang Termasuk Bullying?',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 8),
-
-                    _Bullet(text: 'Verbal: Mengejek, menyebarkan gosip, atau memanggil nama yang tidak pantas.'),
-                    _Bullet(text: 'Fisik: Mendorong, memukul, menendang, atau merusak barang.'),
-                    _Bullet(text: 'Sosial: Mengucilkan dari kelompok atau menyebarkan rumor.'),
-                    _Bullet(text: 'Siber: Mengirim pesan yang mengancam, menyebarkan foto memalukan, atau mengolok-olok di media sosial.'),
-
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Mengapa Bullying Terjadi?',
+                      'Tanda-tanda kecemasan',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Bullying bisa terjadi karena banyak faktor, seperti kebutuhan pelaku untuk merasa berkuasa, tekanan dari teman sebaya, atau masalah pribadi yang tidak terselesaikan. Apapun penyebabnya, bullying tidak bisa dibenarkan.',
+                      'Ketika seseorang merasa cemas, tubuh dan pikirannya memberikan sinyal tertentu. Secara fisik, cemas bisa membuat napas terasa cepat atau pendek, jantung berdebar kencang, tubuh gemetar atau gelisah, perut terasa tidak nyaman (misalnya mual atau mulas), hingga sulit tidur. Secara emosional dan mental, orang yang cemas mungkin sulit fokus atau kehilangan konsentrasi, merasa panik atau ketakutan tanpa alasan jelas, mudah merasa kewalahan, atau jadi lekas marah. Tentu setiap individu mungkin mengalami gejala yang sedikit berbeda.',
                       style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
                     ),
-
                     const SizedBox(height: 16),
                     const Text(
-                      'Apa yang Bisa Kamu Lakukan?',
+                      'Cemas normal vs. cemas berlebihan',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    _Bullet(text: 'Jika kamu menjadi korban: ceritakan pada orang dewasa yang dipercaya.'),
-                    _Bullet(text: 'Jika kamu melihat bullying: bantu dengan cara aman atau laporkan.'),
-                    _Bullet(text: 'Simpan bukti jika terjadi secara online, dan hindari membalas.'),
-
+                    const Text(
+                      'Tidak semua kecemasan itu buruk. Rasa khawatir dalam kadar ringan dapat membantu kita waspada atau memotivasi belajar. Cemas yang normal biasanya sementara dan karena penyebab yang jelas. Di sisi lain, cemas berlebihan cenderung berlangsung terus-menerus atau muncul tanpa penyebab jelas, dan rasanya sangat intens hingga mengganggu aktivitas sehari-hari. Jika kekhawatiran tidak hilang-hilang dan mulai mengganggu kehidupan, itu tanda membutuhkan dukungan profesional.',
+                      style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Latihan untuk menenangkan diri',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    const _Bullet(text: 'Pernapasan dalam: tarik napas perlahan lewat hidung, tahan sejenak, hembuskan lewat mulut.'),
+                    const _Bullet(text: 'Relaksasi otot progresif: kencangkan lalu kendurkan kelompok otot dari kaki hingga kepala.'),
+                    const _Bullet(text: 'Aktivitas fisik ringan: berjalan santai, peregangan, atau bersepeda santai untuk melepas ketegangan.'),
+                    const _Bullet(text: 'Alihkan perhatian: menggambar, musik tenang, membaca cerita, atau bercerita pada orang tepercaya.'),
                     const SizedBox(height: 24),
                     const Text(
                       'Sumber',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    const _Bullet(text: 'UNESCO: One out of three teens is bullied worldwide\nhttps://www.unesco.org/en/articles/new-data-reveal-one-out-three-teens-bullied-worldwide'),
-                    const _Bullet(text: 'NCBI Bookshelf: Overview of Bullying and Victimization\nhttps://www.ncbi.nlm.nih.gov/books/NBK241577/'),
-                    const _Bullet(text: 'StopBullying.gov: Why Some Youth Bully\nhttps://www.stopbullying.gov/bullying/why-some-youth-bully'),
-                    const _Bullet(text: 'UW News: Violence in the home & childhood bullying\nhttps://www.washington.edu/news/2006/09/12/violence-in-the-home-leads-to-higher-rates-of-childhood-bullying/'),
-                    const _Bullet(text: 'SIU News: Bullies often victims of bullying themselves\nhttps://news.siu.edu/2018/09/090518-research-shows-bullies-often-victims-of-bullying.php'),
+                    const _Bullet(text: '''HealthyChildren.org: Anxiety in Teens
+https://www.healthychildren.org/English/health-issues/conditions/emotional-problems/Pages/Anxiety-Disorders.aspx'''),
+                    const _Bullet(text: '''UNICEF Indonesia: Apa itu kecemasan?
+https://www.unicef.org/indonesia/id/kesehatan-mental/artikel/kecemasan'''),
+                    const _Bullet(text: '''WHO Fact Sheet: Anxiety disorders
+https://www.who.int/news-room/fact-sheets/detail/anxiety-disorders'''),
+                    const _Bullet(text: '''Relaxasi otot progresif pada remaja (PubMed)
+https://pubmed.ncbi.nlm.nih.gov/38905787/'''),
+                    const _Bullet(text: '''Olahraga bantu kurangi kecemasan pada anak dan remaja (UniSA)
+https://unisa.edu.au/media-centre/Releases/2025/move-to-improve-exercise-eases-depression-and-anxiety-in-kids/'''),
                     const SizedBox(height: 32),
                     const Center(
                       child: Text(
