@@ -5,17 +5,21 @@ class AuthHeaderProvider {
   final Future<String?> Function()? loadUserToken;
   final Future<String?> Function()? loadGuestToken;
   final Future<int?> Function()? loadGuestId;
+  final Future<String?> Function()? loadCsrfToken;
 
   AuthHeaderProvider({
     this.loadUserToken,
     this.loadGuestToken,
     this.loadGuestId,
+    this.loadCsrfToken,
   });
 
   Future<Map<String, String>> buildHeaders({bool asGuest = false}) async {
     final headers = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      // Hint for some CSRF middlewares/backends
+      'X-Requested-With': 'XMLHttpRequest',
     };
 
     if (asGuest) {
@@ -39,8 +43,14 @@ class AuthHeaderProvider {
 
     final userToken = await (loadUserToken?.call());
     if (userToken != null && userToken.isNotEmpty) {
-      // Send sessionid as Cookie header for Django session-based auth
-      headers['Cookie'] = 'sessionid=$userToken';
+      // Send sessionid (and csrftoken if available) as Cookie header for Django session-based auth
+      final csrf = await (loadCsrfToken?.call());
+      final cookieParts = <String>['sessionid=$userToken'];
+      if (csrf != null && csrf.isNotEmpty) {
+        cookieParts.add('csrftoken=$csrf');
+        headers['X-CSRFToken'] = csrf; // Must match csrftoken cookie
+      }
+      headers['Cookie'] = cookieParts.join('; ');
     }
     return headers;
   }

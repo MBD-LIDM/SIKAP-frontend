@@ -30,6 +30,7 @@ class _CasesListPageState extends State<CasesListPage> {
       session: _session,
       auth: AuthHeaderProvider(
         loadUserToken: () async => await _session.loadUserToken(),
+        loadCsrfToken: () async => await _session.loadCsrfToken(),
         loadGuestToken: () async => null,
         loadGuestId: () async => null,
       ),
@@ -44,31 +45,40 @@ class _CasesListPageState extends State<CasesListPage> {
       setState(() {
         _all = cases.map((item) {
           final status = (item['status'] ?? '').toString();
-          final createdAt = DateTime.tryParse(item['created_at']?.toString() ?? '') ?? DateTime.now();
-          
+          final createdAt =
+              DateTime.tryParse(item['created_at']?.toString() ?? '') ??
+                  DateTime.now();
+
           // Extract title and category from 'type' field
           final rawTitle = (item['title'] ?? '').toString();
           final typeField = (item['type'] ?? '').toString();
           final description = (item['description'] ?? '').toString();
-          
+
           // Map type to display name
           String categoryName = '';
           if (typeField.isNotEmpty) {
             final t = typeField.toLowerCase();
-            if (t.contains('fisik')) categoryName = 'Secara fisik';
-            else if (t.contains('verbal')) categoryName = 'Secara verbal';
-            else if (t.contains('cyber')) categoryName = 'Cyberbullying';
-            else if (t.contains('sosial') || t.contains('pengucilan')) categoryName = 'Pengucilan';
-            else if (t.contains('lainnya') || t.contains('other')) categoryName = 'Lainnya';
-            else categoryName = typeField;
+            if (t.contains('fisik'))
+              categoryName = 'Secara fisik';
+            else if (t.contains('verbal'))
+              categoryName = 'Secara verbal';
+            else if (t.contains('cyber'))
+              categoryName = 'Cyberbullying';
+            else if (t.contains('sosial') || t.contains('pengucilan'))
+              categoryName = 'Pengucilan';
+            else if (t.contains('lainnya') || t.contains('other'))
+              categoryName = 'Lainnya';
+            else
+              categoryName = typeField;
           }
-          
+
           final title = rawTitle.isNotEmpty
               ? rawTitle
               : (categoryName.isNotEmpty
                   ? categoryName
                   : (description.isNotEmpty
-                      ? description.substring(0, description.length.clamp(0, 60))
+                      ? description.substring(
+                          0, description.length.clamp(0, 60))
                       : 'Laporan Bullying'));
 
           return _CaseItem(
@@ -91,8 +101,11 @@ class _CasesListPageState extends State<CasesListPage> {
   }
 
   List<_CaseItem> get _filteredSorted {
-    List<_CaseItem> list = _all.where((c) => _filter == 'Semua' || c.status == _filter).toList();
-    list.sort((a, b) => _sort == 'Terbaru' ? b.createdAt.compareTo(a.createdAt) : a.createdAt.compareTo(b.createdAt));
+    List<_CaseItem> list =
+        _all.where((c) => _filter == 'Semua' || c.status == _filter).toList();
+    list.sort((a, b) => _sort == 'Terbaru'
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
     return list;
   }
 
@@ -121,9 +134,17 @@ class _CasesListPageState extends State<CasesListPage> {
                 // Filter & Sort Row
                 Row(
                   children: [
-                    Expanded(child: _buildPillButton(icon: Icons.filter_list, label: 'Filter', onTap: _showFilterDialog)),
+                    Expanded(
+                        child: _buildPillButton(
+                            icon: Icons.filter_list,
+                            label: 'Filter',
+                            onTap: _showFilterDialog)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildPillButton(icon: Icons.sort, label: 'Urutkan', onTap: _showSortDialog)),
+                    Expanded(
+                        child: _buildPillButton(
+                            icon: Icons.sort,
+                            label: 'Urutkan',
+                            onTap: _showSortDialog)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -146,7 +167,10 @@ class _CasesListPageState extends State<CasesListPage> {
     );
   }
 
-  Widget _buildPillButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildPillButton(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -155,7 +179,10 @@ class _CasesListPageState extends State<CasesListPage> {
           color: Colors.white.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
           ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -164,7 +191,9 @@ class _CasesListPageState extends State<CasesListPage> {
           children: [
             Icon(icon, color: const Color(0xFF7F55B1)),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -237,7 +266,11 @@ class _CasesListPageState extends State<CasesListPage> {
 }
 
 class _CaseItem {
-  _CaseItem({required this.reportId, required this.status, required this.title, required this.createdAt});
+  _CaseItem(
+      {required this.reportId,
+      required this.status,
+      required this.title,
+      required this.createdAt});
   final dynamic reportId; // Can be int or string
   final String status;
   final String title;
@@ -269,7 +302,10 @@ class _CaseCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Padding(
@@ -280,17 +316,29 @@ class _CaseCard extends StatelessWidget {
             // Status Chip
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Text(item.status, style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 12)),
+              decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text(item.status,
+                  style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12)),
             ),
             const SizedBox(height: 8),
-            Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black87)),
+            Text(item.title,
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87)),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.edit_calendar, size: 18, color: Colors.black45),
+                const Icon(Icons.edit_calendar,
+                    size: 18, color: Colors.black45),
                 const SizedBox(width: 8),
-                Text(_formatDate(item.createdAt), style: const TextStyle(color: Colors.black45)),
+                Text(_formatDate(item.createdAt),
+                    style: const TextStyle(color: Colors.black45)),
               ],
             ),
           ],
@@ -301,7 +349,9 @@ class _CaseCard extends StatelessWidget {
     if (item.reportId != null) {
       return GestureDetector(
         onTap: () {
-          final reportId = item.reportId is int ? item.reportId : int.tryParse(item.reportId.toString());
+          final reportId = item.reportId is int
+              ? item.reportId
+              : int.tryParse(item.reportId.toString());
           if (reportId != null) {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -321,6 +371,3 @@ class _CaseCard extends StatelessWidget {
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
 }
-
-
-
