@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
@@ -23,6 +24,8 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
   bool _uploading = false;
   late final VentingRepository _repo;
   late final AudioRecorder _recorder;
+  double _currentLevel = 0.0;
+  StreamSubscription<Amplitude>? _amplitudeSub;
 
   @override
   void initState() {
@@ -41,7 +44,9 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       backgroundColor: const Color(0xFFFFE7CE),
       body: Container(
         decoration: const BoxDecoration(
@@ -76,55 +81,10 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
-                      // Instruction Text
-                      const Text(
-                        'Tekan ikon di bawah untuk menghentikan rekaman.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 60),
-                      // Recording Button - Centered
-                      Center(
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(60),
-                              onTap:
-                                  _uploading ? null : _showStopRecordingDialog,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 40,
-                                  height: 40,
-                                  child: SvgPicture.asset(
-                                    'assets/icons/speak-ai-fill.svg',
-                                    fit: BoxFit.contain,
-                                    allowDrawingOutsideViewBox: true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 40),
+                      // Waveform - Centered (custom, static bars)
+                      Center(child: _buildWaveform()),
+                      const SizedBox(height: 40),
                       // Bottom Section - Copyright
                       const Padding(
                         padding: EdgeInsets.only(bottom: 20),
@@ -164,8 +124,50 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
                           size: 28,
                         ),
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          Navigator.maybePop(context);
                         },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Bottom Stop Button
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _uploading ? null : _showStopRecordingDialog,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF7F55B1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          elevation: 4,
+                        ),
+                        icon: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: SvgPicture.asset(
+                            'assets/icons/speak-ai-fill.svg',
+                            fit: BoxFit.contain,
+                            allowDrawingOutsideViewBox: true,
+                          ),
+                        ),
+                        label: const Text(
+                          'Hentikan Rekaman',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -189,6 +191,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -293,6 +296,16 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
       );
       // ignore: avoid_print
       print('[DEBUG] Recording started');
+
+      // Subscribe amplitude for waveform
+      _amplitudeSub = _recorder
+          .onAmplitudeChanged(const Duration(milliseconds: 80))
+          .listen((amp) {
+        final norm = _normalizeAmplitude(amp.current);
+        setState(() {
+          _currentLevel = (_currentLevel * 0.7) + (norm * 0.3);
+        });
+      });
     } catch (e) {
       // ignore: avoid_print
       print('[DEBUG] Failed to start recording: $e');
@@ -301,6 +314,7 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
 
   Future<String?> _stopRecording() async {
     try {
+      await _amplitudeSub?.cancel();
       final path = await _recorder.stop();
       // ignore: avoid_print
       print('[DEBUG] Recording stopped: $path');
@@ -310,5 +324,85 @@ class _MoodCheckRecordingPageState extends State<MoodCheckRecordingPage> {
       print('[DEBUG] Failed to stop recording: $e');
       return null;
     }
+  }
+
+  @override
+  void dispose() {
+    _amplitudeSub?.cancel();
+    try {
+      unawaited(_recorder.stop());
+    } catch (_) {}
+    super.dispose();
+  }
+
+  Future<bool> _onWillPop() async {
+    await _stopRecordingSilently();
+    return true;
+  }
+
+  Future<void> _stopRecordingSilently() async {
+    try {
+      await _amplitudeSub?.cancel();
+      await _recorder.stop();
+    } catch (_) {}
+  }
+
+  // Build a static-position waveform that adapts to available width to avoid overflow
+  Widget _buildWaveform() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.maxWidth;
+        const double barWidth = 6.0;
+        const double barSpacing = 3.0;
+        final double perBar = barWidth + barSpacing;
+        int barCount = (maxWidth / perBar).floor();
+        if (barCount < 8) barCount = 8; // keep minimum density
+        if (barCount > 80) barCount = 80; // cap for perf
+
+        final double value = _currentLevel.clamp(0.02, 1.0);
+        final double barHeight = 20 + (value * 140);
+
+        return SizedBox(
+          width: double.infinity,
+          height: 180,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List.generate(barCount, (i) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: barSpacing / 2),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeOut,
+                  width: barWidth,
+                  height: barHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+
+  double _normalizeAmplitude(double amplitude) {
+    if (!amplitude.isFinite) return 0.0;
+    if (amplitude <= 0) {
+      final normalized = (amplitude + 60.0) / 60.0; // map -60..0 dB -> 0..1
+      return normalized.clamp(0.0, 1.0);
+    }
+    final normalized = amplitude / 16000.0; // linear heuristic
+    return normalized.clamp(0.0, 1.0);
   }
 }
