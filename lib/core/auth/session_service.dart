@@ -84,6 +84,17 @@ class SessionService {
     String? userName,
     int? schoolId,
   }) async {
+    print('[SESSION] Saving user auth - userId: $userId, role: $role, userName: $userName, schoolId: $schoolId');
+    final maskedToken = token.length > 20 
+        ? '${token.substring(0, 10)}...${token.substring(token.length - 4)}'
+        : '***';
+    print('[SESSION] Saving user auth - token: $maskedToken');
+    
+    if (schoolId == null) {
+      print('[SESSION] ⚠️ WARNING: schoolId is NULL when saving teacher session!');
+      print('[SESSION] ⚠️ This may cause cross-school data access issues!');
+    }
+    
     await Future.wait([
       _s.write(key: _kUserToken, value: token),
       if (userId != null) _s.write(key: _kUserId, value: userId.toString()),
@@ -91,6 +102,10 @@ class SessionService {
       if (userName != null) _s.write(key: _kUserName, value: userName),
       if (schoolId != null) _s.write(key: _kUserSchoolId, value: schoolId.toString()),
     ]);
+    
+    // Verify what was saved
+    final savedSchoolId = await loadUserSchoolId();
+    print('[SESSION] ✅ User auth saved - verified school_id: $savedSchoolId');
   }
 
   Future<String?> loadUserToken() => _s.read(key: _kUserToken);
@@ -132,10 +147,14 @@ class SessionService {
     String? grade,
     String? deviceId,
   }) async {
-    if (schoolId != null)
+    if (schoolId != null) {
+      print('[SESSION] Saving profile - school_id: $schoolId');
       await _s.write(key: _kSchoolId, value: schoolId.toString());
-    if (schoolCode != null)
+    }
+    if (schoolCode != null) {
+      print('[SESSION] Saving profile - school_code: $schoolCode');
       await _s.write(key: _kSchoolCode, value: schoolCode);
+    }
     if (gradeId != null)
       await _s.write(key: _kGradeId, value: gradeId.toString());
     if (grade != null) await _s.write(key: _kGrade, value: grade);

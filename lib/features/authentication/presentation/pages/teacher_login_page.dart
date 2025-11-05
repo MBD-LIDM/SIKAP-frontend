@@ -44,6 +44,8 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
         'password': _passwordController.text.trim(),
       };
 
+      print('[TEACHER_LOGIN] Starting login for username: ${payload['username']}');
+
       final response = await _api.post<Map<String, dynamic>>(
         '/api/accounts/user/login/',
         payload,
@@ -59,34 +61,73 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
       if (response.data is Map<String, dynamic>) {
         final userData = Map<String, dynamic>.from(response.data);
         
+        print('[TEACHER_LOGIN] Login response received');
+        print('[TEACHER_LOGIN] Response keys: ${userData.keys.toList()}');
+        
         // Extract fields
         final userId = userData['user_id'];
         final roleName = userData['role_name']?.toString();
         final fullName = userData['full_name']?.toString();
         final schoolId = userData['school_id'];
 
+        print('[TEACHER_LOGIN] User ID: $userId');
+        print('[TEACHER_LOGIN] Role: $roleName');
+        print('[TEACHER_LOGIN] Full Name: $fullName');
+        print('[TEACHER_LOGIN] School ID: $schoolId');
+        
+        // CRITICAL: Validate school_id
+        if (schoolId == null) {
+          print('[TEACHER_LOGIN] ❌ CRITICAL ERROR: school_id is NULL in login response!');
+          print('[TEACHER_LOGIN] ❌ This teacher cannot be associated with any school!');
+          throw ApiException(
+            message: 'User tidak terasosiasi dengan sekolah. Silakan hubungi administrator.',
+            code: 400,
+          );
+        }
+
         // Extract sessionid from Set-Cookie header
         final setCookieHeader = response.headers?['set-cookie'];
         String? sessionId;
         
         if (setCookieHeader != null) {
+          print('[TEACHER_LOGIN] Set-Cookie header found');
           // Parse: "sessionid=abc123; Path=/; HttpOnly"
           final sessionIdMatch = RegExp(r'sessionid=([^;]+)').firstMatch(setCookieHeader);
           sessionId = sessionIdMatch?.group(1);
+        } else {
+          print('[TEACHER_LOGIN] ⚠️ WARNING: Set-Cookie header not found in response');
+          print('[TEACHER_LOGIN] Available headers: ${response.headers?.keys.toList()}');
         }
         
         if (sessionId == null || sessionId.isEmpty) {
+          print('[TEACHER_LOGIN] ❌ ERROR: Session ID not found in response');
           throw ApiException(message: 'Session ID tidak ditemukan di response', code: 500);
         }
 
+        final maskedSessionId = sessionId.length > 20 
+            ? '${sessionId.substring(0, 10)}...${sessionId.substring(sessionId.length - 4)}'
+            : '***';
+        print('[TEACHER_LOGIN] Session ID extracted: $maskedSessionId');
+
         // Save sessionid as token for Android cookie management
+        final schoolIdInt = schoolId is num 
+            ? schoolId.toInt() 
+            : int.tryParse(schoolId.toString());
+            
         await _session.saveUserAuth(
           token: sessionId,
           userId: userId is num ? userId.toInt() : int.tryParse(userId?.toString() ?? ''),
           role: roleName,
           userName: fullName,
-          schoolId: schoolId is num ? schoolId.toInt() : int.tryParse(schoolId?.toString() ?? ''),
+          schoolId: schoolIdInt,
         );
+
+        // Verify what was saved
+        final savedSchoolId = await _session.loadUserSchoolId();
+        final savedUserId = await _session.loadUserId();
+        final savedToken = await _session.loadUserToken();
+        print('[TEACHER_LOGIN] ✅ Session saved successfully');
+        print('[TEACHER_LOGIN] Verified - userId: $savedUserId, schoolId: $savedSchoolId, token present: ${savedToken != null && savedToken.isNotEmpty}');
 
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -97,11 +138,13 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
         throw ApiException(message: 'Response data tidak valid', code: 500);
       }
     } on ApiException catch (e) {
+      print('[TEACHER_LOGIN] ❌ Login failed: ${e.message} (code: ${e.code})');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login gagal: ${e.message}'), backgroundColor: Colors.red),
       );
     } catch (e) {
+      print('[TEACHER_LOGIN] ❌ Unexpected error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),

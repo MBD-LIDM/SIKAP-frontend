@@ -58,6 +58,12 @@ class _LoginPageState extends State<LoginPage> {
       final schoolCode = _kodeSekolahController.text.trim(); // ex: "SMATS"
       final gradeStr = _selectedKelas!.trim(); // "10" | "11" | "12"
 
+      print('[STUDENT_LOGIN] Starting login process');
+      print('[STUDENT_LOGIN] Selected school_code: $schoolCode');
+      print('[STUDENT_LOGIN] Selected grade: $gradeStr');
+      print('[STUDENT_LOGIN] Device ID: $deviceId');
+      print('[STUDENT_LOGIN] Current profile before save - schoolId: ${prof.schoolId}, schoolCode: ${prof.schoolCode}');
+
       // 2) Simpan profil (opsional tapi berguna untuk layar lain)
       await session.saveProfile(
         schoolCode: schoolCode,
@@ -65,6 +71,9 @@ class _LoginPageState extends State<LoginPage> {
             gradeStr, // tetap string; konversi ke int dilakukan di ensureGuestAuthenticated
         deviceId: deviceId,
       );
+      
+      final profileAfterSave = await session.loadProfile();
+      print('[STUDENT_LOGIN] Profile after save - schoolId: ${profileAfterSave.schoolId}, schoolCode: ${profileAfterSave.schoolCode}');
 
       // 3) Quick-login sesuai kontrak BE:
       //    Request: {"school_code": "SMATS", "grade": 10, "device_id": "<uuid>"}
@@ -73,6 +82,12 @@ class _LoginPageState extends State<LoginPage> {
         gradeStr: gradeStr, // akan di-parse ke int di helper
         deviceId: deviceId,
       );
+      
+      // Verify final state
+      final finalProfile = await session.loadProfile();
+      final finalGuestId = await session.loadGuestId();
+      print('[STUDENT_LOGIN] ✅ Login complete');
+      print('[STUDENT_LOGIN] Final state - guestId: $finalGuestId, schoolId: ${finalProfile.schoolId}, schoolCode: ${finalProfile.schoolCode}');
 
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -90,6 +105,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
+      print('[STUDENT_LOGIN] ❌ Error during login: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),

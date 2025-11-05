@@ -45,6 +45,9 @@ Future<void> _quickLogin() async {
     throw ApiException(message: "Kode sekolah wajib diisi", code: 400);
   }
 
+  print('[GUEST_AUTH] Starting quick login with school_code: $scode');
+  print('[GUEST_AUTH] Current profile - schoolId: ${profile.schoolId}, grade: ${profile.grade}, deviceId: ${profile.deviceId}');
+
   final gradeStr = (profile.grade ?? '').trim();
   final grade = int.tryParse(gradeStr);
   if (grade == null) {
@@ -65,6 +68,8 @@ Future<void> _quickLogin() async {
     "device_id": normalizedDevice,
   };
 
+  print('[GUEST_AUTH] Sending quick-login request with payload: $payload');
+
   final response = await ApiClient().post<Map<String, dynamic>>(
     "/api/accounts/student/quick-login/",
     payload,
@@ -82,12 +87,34 @@ Future<void> _quickLogin() async {
       ? Map<String, dynamic>.from(root['data'] as Map)
       : Map<String, dynamic>.from(root as Map);
 
+  print('[GUEST_AUTH] Quick-login response received');
+  print('[GUEST_AUTH] Response data keys: ${data.keys.toList()}');
+  
+  // CRITICAL: Check if school_id is in the response
+  final schoolIdFromResponse = data['school_id'];
+  if (schoolIdFromResponse != null) {
+    print('[GUEST_AUTH] ✅ school_id found in response: $schoolIdFromResponse');
+    // Save school_id to profile if provided
+    final schoolId = schoolIdFromResponse is num 
+        ? schoolIdFromResponse.toInt() 
+        : int.tryParse(schoolIdFromResponse.toString());
+    if (schoolId != null) {
+      await _sessionService.saveProfile(schoolId: schoolId, schoolCode: scode);
+      print('[GUEST_AUTH] ✅ Saved school_id $schoolId to profile');
+    }
+  } else {
+    print('[GUEST_AUTH] ⚠️ WARNING: school_id NOT found in quick-login response!');
+    print('[GUEST_AUTH] ⚠️ Backend may be using school_code from token only');
+  }
+
   final rawId = data['guest_id'];
   final guestId =
       (rawId is num) ? rawId.toInt() : int.tryParse(rawId?.toString() ?? '');
   if (guestId == null) {
     throw ApiException(message: "guest_id tidak ditemukan/invalid", code: 500);
   }
+
+  print('[GUEST_AUTH] Guest ID from response: $guestId');
 
   // Prefer token dari body jika ada, fallback ke header (x-guest-token/x-token)
   final tokenFromBody = (data['token'] ?? data['guest_token'])?.toString();
@@ -102,11 +129,23 @@ Future<void> _quickLogin() async {
     final existingToken = await _sessionService.loadGuestToken();
     if (existingToken != null && existingToken.isNotEmpty) {
       await _sessionService.saveGuestAuth(token: existingToken, guestId: guestId);
+      print('[GUEST_AUTH] Using existing token for guest_id $guestId');
     } else {
       await _sessionService.saveGuest(guestId: guestId, token: null);
+      print('[GUEST_AUTH] No token provided, saved guest_id only');
     }
     return;
   }
 
+  final maskedToken = token.length > 20 
+      ? '${token.substring(0, 10)}...${token.substring(token.length - 4)}'
+      : '***';
+  print('[GUEST_AUTH] Token received: $maskedToken');
+
   await _sessionService.saveGuestAuth(token: token, guestId: guestId);
+  
+  // Verify what was saved
+  final savedProfile = await _sessionService.loadProfile();
+  final savedGuestId = await _sessionService.loadGuestId();
+  print('[GUEST_AUTH] ✅ Session saved - guest_id: $savedGuestId, school_id: ${savedProfile.schoolId}, school_code: ${savedProfile.schoolCode}');
 }

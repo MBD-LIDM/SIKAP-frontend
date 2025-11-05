@@ -68,8 +68,13 @@ class BullyingRepository {
     Map<String, dynamic> data, {
     bool asGuest = true,
   }) async {
+    print('[BULLYING_REPO] createBullyingReport called, asGuest: $asGuest');
+    
     if (!asGuest) {
       final headers = await auth.buildHeaders(asGuest: false);
+      final teacherSchoolId = await session.loadUserSchoolId();
+      print('[BULLYING_REPO] Submitting as staff/teacher with school_id: $teacherSchoolId');
+      
       final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/bullying/report/',
         _sanitizeCreatePayload(data),
@@ -77,14 +82,32 @@ class BullyingRepository {
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      return BullyingCreateResponse.fromJson(resp.data);
+      
+      final responseData = BullyingCreateResponse.fromJson(resp.data);
+      print('[BULLYING_REPO] Report created - report_id: ${responseData.data?.reportId}');
+      return responseData;
     }
 
+    // Guest submission - track school info
     await gate.ensure();
+    
+    final guestId = await session.loadGuestId();
+    final profile = await session.loadProfile();
+    print('[BULLYING_REPO] Submitting as guest');
+    print('[BULLYING_REPO] Guest ID: $guestId');
+    print('[BULLYING_REPO] Profile - schoolId: ${profile.schoolId}, schoolCode: ${profile.schoolCode}, grade: ${profile.grade}');
+    
+    if (profile.schoolId == null) {
+      print('[BULLYING_REPO] ⚠️ WARNING: school_id is NULL in guest profile!');
+      print('[BULLYING_REPO] ⚠️ Backend may not be able to associate report with correct school!');
+    }
+    
     return withGuestAuthRetry(() async {
       final payload = _sanitizeCreatePayload(data);
 
       final headers = await auth.guestHeaders();
+      print('[BULLYING_REPO] Request headers keys: ${headers.keys.toList()}');
+      
       final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/bullying/report/',
         payload,
@@ -92,7 +115,24 @@ class BullyingRepository {
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      return BullyingCreateResponse.fromJson(resp.data);
+      
+      final responseData = BullyingCreateResponse.fromJson(resp.data);
+      final reportId = responseData.data?.reportId;
+      print('[BULLYING_REPO] ✅ Report created successfully');
+      print('[BULLYING_REPO] Report ID: $reportId');
+      print('[BULLYING_REPO] Response data: ${resp.data}');
+      
+      // Check if response includes school_id
+      if (resp.data is Map) {
+        final responseMap = resp.data as Map<String, dynamic>;
+        if (responseMap.containsKey('school_id')) {
+          print('[BULLYING_REPO] Response includes school_id: ${responseMap['school_id']}');
+        } else {
+          print('[BULLYING_REPO] ⚠️ Response does not include school_id - backend may use token/session');
+        }
+      }
+      
+      return responseData;
     }, gate);
   }
 
