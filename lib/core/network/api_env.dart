@@ -6,7 +6,7 @@ class ApiEnv {
 
   // NOTE: tanpa trailing slash agar tidak jadi double // saat join endpoint
   static const Map<String, String> _baseUrls = {
-    'production': 'https://sikap-backend-production.up.railway.app',
+    'production': 'https://sikap-backend-dev.up.railway.app',
     'staging': 'https://sikap-backend-dev.up.railway.app',
     'development': 'http://127.0.0.1:8000',
   };
