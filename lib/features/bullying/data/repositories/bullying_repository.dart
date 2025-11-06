@@ -84,7 +84,7 @@ class BullyingRepository {
       );
       
       final responseData = BullyingCreateResponse.fromJson(resp.data);
-      print('[BULLYING_REPO] Report created - report_id: ${responseData.data?.reportId}');
+      print('[BULLYING_REPO] Report created - report_id: ${responseData.reportId}');
       return responseData;
     }
 
@@ -117,7 +117,7 @@ class BullyingRepository {
       );
       
       final responseData = BullyingCreateResponse.fromJson(resp.data);
-      final reportId = responseData.data?.reportId;
+      final reportId = responseData.reportId;
       print('[BULLYING_REPO] ✅ Report created successfully');
       print('[BULLYING_REPO] Report ID: $reportId');
       print('[BULLYING_REPO] Response data: ${resp.data}');
