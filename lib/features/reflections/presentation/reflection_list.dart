@@ -166,7 +166,8 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
     try {
       final session = SessionService();
       final api = ApiClient();
-      
+      int? staffSchoolId;
+
       // Check if user is staff (counselor/teacher) or guest (student)
       final isStaff = await session.isStaffLoggedIn();
       print('[REFLECTION_LIST] Loading reflections - isStaff: $isStaff');
@@ -196,18 +197,20 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
         if (schoolId == null) {
           print('[REFLECTION_LIST] ⚠️ WARNING: Staff schoolId is NULL!');
         }
+        staffSchoolId = schoolId;
       } else {
         final guestId = await session.loadGuestId();
         print('[REFLECTION_LIST] Guest context - guestId: $guestId');
       }
       
-      final repo = ScenarioRepository(apiClient: api, auth: auth);
+      final repo = ScenarioRepository(apiClient: api, auth: auth, session: session);
       print('[REFLECTION_LIST] Fetching reflections for scenarioId: ${widget.scenarioId}');
 
       List<dynamic> data;
       if (isStaff) {
         data = await repo.getSchoolReflections(
           scenarioId: widget.scenarioId?.toString(),
+          staffSchoolId: staffSchoolId,
         );
       } else {
         data = await repo.getMyReflections(asGuest: true);

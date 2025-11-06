@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 
@@ -14,12 +16,15 @@ class ScenarioRepository {
     this.assetPath = 'assets/data/scenarios_data.json',
     ApiClient? apiClient,
     AuthHeaderProvider? auth,
+    SessionService? session,
   })  : _apiClient = apiClient ?? ApiClient(),
-        _auth = auth ?? AuthHeaderProvider();
+        _auth = auth ?? AuthHeaderProvider(),
+        _session = session ?? SessionService();
 
   final String assetPath;
   final ApiClient _apiClient;
   final AuthHeaderProvider _auth;
+  final SessionService _session;
 
   Future<List<ScenarioItem>> loadScenarios() async {
     final jsonString = await rootBundle.loadString(assetPath);
@@ -125,6 +130,7 @@ class ScenarioRepository {
     String? scenarioId,
     DateTime? createdAtGte,
     DateTime? createdAtLte,
+    int? staffSchoolId,
   }) async {
     print('[SCENARIO_REPO] getSchoolReflections() called');
     print('[SCENARIO_REPO] Parameters - scenarioId: $scenarioId, createdAtGte: $createdAtGte, createdAtLte: $createdAtLte');
@@ -192,33 +198,114 @@ class ScenarioRepository {
     // - [{...}, {...}] (plain list)
     // - {data: [...]} (enveloped list)
     final raw = resp.data;
-    List<dynamic> reflectionList = [];
-    
-    if (raw is Map<String, dynamic>) {
-      if (raw['results'] is List) {
-        reflectionList = List<dynamic>.from(raw['results'] as List);
-        print('[SCENARIO_REPO] Parsed ${reflectionList.length} reflections from results array (paginated)');
-      } else if (raw['data'] is List) {
-        reflectionList = List<dynamic>.from(raw['data'] as List);
-        print('[SCENARIO_REPO] Parsed ${reflectionList.length} reflections from data field (enveloped)');
-      } else {
-        print('[SCENARIO_REPO] ⚠️ Response is Map but no results/data array found');
-        print('[SCENARIO_REPO] Response keys: ${raw.keys.toList()}');
-      }
-    } else if (raw is List) {
-      reflectionList = List<dynamic>.from(raw);
-      print('[SCENARIO_REPO] Parsed ${reflectionList.length} reflections from direct array');
-    } else {
-      print('[SCENARIO_REPO] ⚠️ Unexpected response structure - returning empty list');
-      print('[SCENARIO_REPO] Raw response data: $raw');
-    }
-    
+    final reflectionList = _normalizeReflectionList(raw);
+
     if (reflectionList.isNotEmpty && reflectionList.first is Map) {
       final firstItem = reflectionList.first as Map;
       print('[SCENARIO_REPO] First reflection item keys: ${firstItem.keys.toList()}');
     }
-    
-    print('[SCENARIO_REPO] Returning ${reflectionList.length} reflection(s)');
-    return reflectionList;
+
+    if (staffSchoolId == null) {
+      return reflectionList;
+    }
+
+    final sanitized = <dynamic>[];
+    var blockedCount = 0;
+
+    for (final entry in reflectionList) {
+      final schoolId = _extractSchoolIdFromReflection(entry);
+      if (schoolId == null || schoolId == staffSchoolId) {
+        sanitized.add(entry);
+      } else {
+        blockedCount += 1;
+      }
+    }
+
+    if (blockedCount > 0) {
+      debugPrint('[SCENARIO_REPO] Blocked $blockedCount cross-school reflection(s)');
+      await _recordCrossSchoolReflections(
+        path: path,
+        expectedSchoolId: staffSchoolId,
+        blockedCount: blockedCount,
+      );
+    }
+
+    print('[SCENARIO_REPO] Returning ${sanitized.length} reflection(s)');
+    return sanitized;
+  }
+
+  List<dynamic> _normalizeReflectionList(dynamic raw) {
+    if (raw is List) {
+      return List<dynamic>.from(raw);
+    }
+    if (raw is Map<String, dynamic>) {
+      final results = raw['results'];
+      if (results is List) {
+        return List<dynamic>.from(results);
+      }
+      final data = raw['data'];
+      if (data is List) {
+        return List<dynamic>.from(data);
+      }
+      debugPrint('[SCENARIO_REPO] Unexpected reflection map keys: ${raw.keys.toList()}');
+    } else {
+      debugPrint('[SCENARIO_REPO] Unexpected reflection payload shape: $raw');
+    }
+    return const [];
+  }
+
+  int? _extractSchoolIdFromReflection(dynamic entry) {
+    if (entry is! Map) return null;
+    final Map<dynamic, dynamic> map = entry;
+    for (final key in [
+      'school_id',
+      'guest_school_id',
+      'teacher_school_id',
+      'counselor_school_id',
+    ]) {
+      final candidate = _parseInt(map[key]);
+      if (candidate != null) {
+        return candidate;
+      }
+    }
+
+    final guest = map['guest'];
+    if (guest is Map) {
+      for (final key in ['school_id', 'school']) {
+        final nested = _parseInt(guest[key]);
+        if (nested != null) {
+          return nested;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Future<void> _recordCrossSchoolReflections({
+    required String path,
+    required int expectedSchoolId,
+    required int blockedCount,
+  }) async {
+    try {
+      await _session.saveLastAuthLog(
+        method: 'GET',
+        url: path,
+        headers: {
+          'warning': 'blocked_cross_school_reflections',
+          'expected_school_id': expectedSchoolId.toString(),
+          'blocked_count': blockedCount.toString(),
+        },
+      );
+    } catch (e) {
+      debugPrint('[SCENARIO_REPO] Failed to persist isolation alert: $e');
+    }
   }
 }
