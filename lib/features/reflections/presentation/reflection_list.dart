@@ -203,9 +203,24 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
       
       final repo = ScenarioRepository(apiClient: api, auth: auth);
       print('[REFLECTION_LIST] Fetching reflections for scenarioId: ${widget.scenarioId}');
-      
-      final data = await repo.getSchoolReflections(
-          scenarioId: widget.scenarioId?.toString());
+
+      List<dynamic> data;
+      if (isStaff) {
+        data = await repo.getSchoolReflections(
+          scenarioId: widget.scenarioId?.toString(),
+        );
+      } else {
+        data = await repo.getMyReflections(asGuest: true);
+        if (widget.scenarioId != null) {
+          data = data.where((item) {
+            if (item is Map && item['scenario_id'] != null) {
+              final sid = item['scenario_id'];
+              return sid.toString() == widget.scenarioId.toString();
+            }
+            return false;
+          }).toList();
+        }
+      }
       
       print('[REFLECTION_LIST] Received ${data.length} reflection(s) from API');
       

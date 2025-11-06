@@ -20,7 +20,16 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
   }
 
   Future<void> _confirm(String action) async {
-    final verb = action == 'tolak' ? 'menolak' : 'memproses';
+    final verb = () {
+      switch (action) {
+        case 'tolak':
+          return 'menolak';
+        case 'selesai':
+          return 'menyelesaikan';
+        default:
+          return 'memproses';
+      }
+    }();
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -47,10 +56,20 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
   @override
   Widget build(BuildContext context) {
     final bool isReject = widget.action == 'tolak';
-    final String labelText = isReject ? 'Pesan penolakan' : 'Pesan pemrosesan';
-    final String hintText = isReject
-        ? 'Tulis alasan penolakan atau instruksi lanjutan...'
-        : 'Tulis pesan pemrosesan atau langkah tindak lanjut...';
+    final bool isComplete = widget.action == 'selesai';
+    final String labelText;
+    final String hintText;
+
+    if (isReject) {
+      labelText = 'Pesan penolakan';
+      hintText = 'Tulis alasan penolakan atau instruksi lanjutan...';
+    } else if (isComplete) {
+      labelText = 'Catatan penyelesaian';
+      hintText = 'Tuliskan ringkasan tindakan yang telah diambil...';
+    } else {
+      labelText = 'Pesan pemrosesan';
+      hintText = 'Tulis pesan pemrosesan atau langkah tindak lanjut...';
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF7F55B1),
       appBar: AppBar(
@@ -103,9 +122,9 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                        onPressed: () => _confirm('proses'),
-                        child: const Text('Proses'),
+                        style: ElevatedButton.styleFrom(backgroundColor: isComplete ? const Color(0xFF2E7D32) : Colors.green, foregroundColor: Colors.white),
+                        onPressed: () => _confirm(isComplete ? 'selesai' : 'proses'),
+                        child: Text(isComplete ? 'Selesai' : 'Proses'),
                       ),
                     ),
                 ],

@@ -99,6 +99,8 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
         return const Color(0xFFFF9800);
       case 'Ditolak':
         return const Color(0xFFD32F2F);
+      case 'Selesai':
+        return const Color(0xFF2E7D32);
       default:
         return Colors.grey;
     }
@@ -311,8 +313,6 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                               children: evidences.map((e) {
                                 final idx = evidences.indexOf(e);
                                 final attachment = _attachments[idx];
-                                final fileUrl =
-                                    attachment['file_url']?.toString() ?? '';
                                 final kind =
                                     attachment['kind']?.toString() ?? '';
 
@@ -401,6 +401,29 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                         },
                         child: const Text('Proses',
                             style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CaseConfirmationPage(
+                                  caseTitle: title, action: 'selesai'),
+                            ),
+                          );
+                          if (!context.mounted) return;
+                          if (result != null) {
+                            await _handleStatusUpdate('Selesai');
+                            Navigator.of(context).pop(result);
+                          }
+                        },
+                        child: const Text('Selesai'),
                       ),
                     ),
                   ],

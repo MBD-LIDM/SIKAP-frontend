@@ -250,7 +250,7 @@ class _CasesListPageState extends State<CasesListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ...['Semua', 'Baru', 'Diproses', 'Ditolak'].map(
+                      ...['Semua', 'Baru', 'Diproses', 'Selesai', 'Ditolak'].map(
                     (s) => RadioListTile<String>(
                       title: Text(s),
                       value: s,
@@ -377,6 +377,8 @@ class _CaseCard extends StatelessWidget {
         return const Color(0xFF2196F3);
       case 'Diproses':
         return const Color(0xFFFF9800);
+      case 'Selesai':
+        return const Color(0xFF2E7D32);
       case 'Ditolak':
         return const Color(0xFFD32F2F);
       default:

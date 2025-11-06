@@ -78,12 +78,26 @@ class ScenarioRepository {
   // Get reflections submitted by current user/guest (requires auth headers).
   Future<List<dynamic>> getMyReflections({bool asGuest = true}) async {
     final headers = await _auth.buildHeaders(asGuest: asGuest);
-    final resp = await _apiClient.get<List<dynamic>>(
+    final resp = await _apiClient.get<dynamic>(
       '/api/wellbeing/scenarios/reflections/my/',
       headers: headers,
-      transform: (raw) => raw as List<dynamic>,
+      transform: (raw) => raw,
+      expectEnvelope: false,
     );
-    return resp.data;
+
+    final raw = resp.data;
+    if (raw is Map<String, dynamic>) {
+      if (raw['results'] is List) {
+        return List<dynamic>.from(raw['results'] as List);
+      }
+      if (raw['data'] is List) {
+        return List<dynamic>.from(raw['data'] as List);
+      }
+    } else if (raw is List) {
+      return List<dynamic>.from(raw);
+    }
+
+    return [];
   }
 
   // Get reflections history for a given guest id (teacher/staff may use this
@@ -106,7 +120,7 @@ class ScenarioRepository {
 
   // For teacher/staff: list reflections within the school with optional filters.
   // Accepts optional scenarioId and optional date range (use UTC ISO strings).
-  // Follows pattern: /api/wellbeing/scenarios/reflections/teacher/list/ (like screenings)
+  // Backend endpoint: /api/wellbeing/scenarios/reflections/school/
   Future<List<dynamic>> getSchoolReflections({
     String? scenarioId,
     DateTime? createdAtGte,
@@ -128,7 +142,7 @@ class ScenarioRepository {
     }
     
     // Build query string
-    String path = '/api/wellbeing/scenarios/reflections/teacher/list/';
+    String path = '/api/wellbeing/scenarios/reflections/school/';
     if (queryParams.isNotEmpty) {
       final query = queryParams.entries
           .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
