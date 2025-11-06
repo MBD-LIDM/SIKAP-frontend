@@ -4,6 +4,7 @@ import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/network/multipart_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Simple DTO for counselor contact returned by the backend.
 class CounselorContact {
@@ -146,6 +147,54 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
     }
   }
 
+  // Normalize Indonesian WhatsApp number to wa.me format (digits, intl format)
+  // Rules:
+  // - Remove spaces, dashes, parentheses
+  // - If starts with '+' remove it
+  // - If starts with '0', replace leading 0 with country code '62'
+  // - If starts with '62' keep as is; if starts with '8', prefix '62'
+  // - Return digits only, starting with '62'
+  String _prepareWaDigits(String raw) {
+    var s = raw.trim();
+    // Keep digits and '+' first
+    s = s.replaceAll(RegExp(r'[^0-9+]+'), '');
+    if (s.startsWith('+')) s = s.substring(1);
+    if (s.startsWith('0')) {
+      s = '62' + s.substring(1);
+    } else if (s.startsWith('62')) {
+      // ok
+    } else if (s.startsWith('8')) {
+      s = '62' + s;
+    }
+    // Ensure digits only
+    s = s.replaceAll(RegExp(r'[^0-9]'), '');
+    return s;
+  }
+
+  Future<void> _openWhatsApp(String rawNumber) async {
+    final digits = _prepareWaDigits(rawNumber);
+    if (digits.isEmpty || !digits.startsWith('62')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor WhatsApp tidak valid')),
+      );
+      return;
+    }
+    final uri = Uri.parse('https://wa.me/$digits');
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) {
+        // Fallback to in-app browser
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuka WhatsApp: $e')),
+      );
+    }
+  }
+
   void _showComingSoon(BuildContext context) {
     showDialog(
       context: context,
@@ -214,7 +263,8 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
                                       'Konselor Sekolah', // role not provided by endpoint
                                   schedule: c.schedule,
                                   avatarAsset: 'assets/icons/sikap_icon.jpg',
-                                  onChatTap: () => _showComingSoon(context),
+                                  onChatTap: () =>
+                                      _openWhatsApp(c.whatsappNumber),
                                 ),
                               ))
                           .toList(),
