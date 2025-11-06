@@ -7,6 +7,7 @@ import 'package:sikap/core/auth/ensure_guest_auth.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/features/cases/presentation/pages/case_list_page.dart';
 
 class BullyingReportsListPage extends StatefulWidget {
   const BullyingReportsListPage({super.key});
@@ -29,6 +30,10 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
   void initState() {
     super.initState();
     _session = SessionService();
+
+    // If a staff user (Guru/Kepsek/Konselor) is logged in, redirect to staff cases view
+    _redirectIfStaff();
+
     repo = BullyingRepository(
       apiClient: ApiClient(),
       session: _session,
@@ -40,6 +45,21 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
       gate: guestAuthGateInstance(),
     );
     _loadReports();
+  }
+
+  Future<void> _redirectIfStaff() async {
+    // Check staff session and move to CasesListPage to avoid empty guest list for staff
+    final isStaff = await _session.isStaffLoggedIn();
+    if (isStaff && mounted) {
+      // Replace current page so back does not return here
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CasesListPage()),
+        );
+      });
+    }
   }
 
   Future<void> _loadReports() async {
@@ -282,9 +302,11 @@ class _ReportItem {
   final DateTime? teacherCommentDate;
 
   factory _ReportItem.fromJson(Map<String, dynamic> json) {
-    String category =
-        (json['incident_type_name'] ?? json['incident_type'] ?? json['type'] ?? '')
-            .toString();
+    String category = (json['incident_type_name'] ??
+            json['incident_type'] ??
+            json['type'] ??
+            '')
+        .toString();
     if (category.isEmpty) {
       final dynamic t = json['incident_type_id'] ?? json['incident_type'];
       int? id;
@@ -293,11 +315,20 @@ class _ReportItem {
       if (id != null) category = _mapIncidentTypeIdToName(id);
     } else {
       final lower = category.toLowerCase();
-      if (lower.contains('fisik') || lower.contains('physical')) category = 'Secara fisik';
-      else if (lower.contains('verbal')) category = 'Secara verbal';
-      else if (lower.contains('cyber')) category = 'Cyberbullying';
-      else if (lower.contains('sosial') || lower.contains('social') || lower.contains('pengucilan')) category = 'Pengucilan';
-      else if (lower.contains('lain') || lower.contains('other') || lower.contains('seksual') || lower.contains('sexual')) category = 'Lainnya';
+      if (lower.contains('fisik') || lower.contains('physical'))
+        category = 'Secara fisik';
+      else if (lower.contains('verbal'))
+        category = 'Secara verbal';
+      else if (lower.contains('cyber'))
+        category = 'Cyberbullying';
+      else if (lower.contains('sosial') ||
+          lower.contains('social') ||
+          lower.contains('pengucilan'))
+        category = 'Pengucilan';
+      else if (lower.contains('lain') ||
+          lower.contains('other') ||
+          lower.contains('seksual') ||
+          lower.contains('sexual')) category = 'Lainnya';
     }
     if (category.isEmpty) {
       // Try mapping from id or numeric type
