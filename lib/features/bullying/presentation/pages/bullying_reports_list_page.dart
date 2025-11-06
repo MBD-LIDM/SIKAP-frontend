@@ -48,6 +48,13 @@ class _BullyingReportsListPageState extends State<BullyingReportsListPage> {
   }
 
   Future<void> _redirectIfStaff() async {
+    // Check if user is guest first - if guest, do NOT redirect
+    final guestToken = await _session.loadGuestToken();
+    if (guestToken != null && guestToken.isNotEmpty) {
+      // User is guest, do not redirect
+      return;
+    }
+    
     // Check staff session and move to CasesListPage to avoid empty guest list for staff
     final isStaff = await _session.isStaffLoggedIn();
     if (isStaff && mounted) {
