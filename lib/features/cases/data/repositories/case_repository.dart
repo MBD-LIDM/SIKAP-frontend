@@ -1,5 +1,6 @@
 // lib/features/cases/data/repositories/case_repository.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/api_exception.dart';
@@ -24,20 +25,15 @@ class CaseRepository {
     DateTime? createdAfter,
     DateTime? createdBefore,
   }) async {
-    print('[CASE_REPO] getCases() called');
-    
-    // Verify teacher's school_id
     final teacherSchoolId = await session.loadUserSchoolId();
-    final teacherUserId = await session.loadUserId();
-    print('[CASE_REPO] Teacher context - userId: $teacherUserId, schoolId: $teacherSchoolId');
-    
     if (teacherSchoolId == null) {
-      print('[CASE_REPO] ⚠️ CRITICAL WARNING: Teacher school_id is NULL!');
-      print('[CASE_REPO] ⚠️ Backend may return cases from ALL schools or fail!');
+      throw ApiException(
+        message: 'Akun tidak terhubung dengan sekolah. Silakan login ulang.',
+        code: 409,
+      );
     }
-    
+
     final headers = await auth.buildHeaders(asGuest: false);
-    print('[CASE_REPO] Request headers keys: ${headers.keys.toList()}');
 
     // Build query params
     final queryParams = <String, String>{};
@@ -60,85 +56,39 @@ class CaseRepository {
       path = '$path?$query';
     }
 
-    print('[CASE_REPO] Request path: $path');
-
     final resp = await apiClient.get<dynamic>(
       path,
       headers: headers,
       transform: (raw) => raw,
       expectEnvelope: false, // Ignore envelope for cases
     );
-
-    print('[CASE_REPO] Response received');
-    print('[CASE_REPO] Response data type: ${resp.data.runtimeType}');
-    print('[CASE_REPO] Response keys: ${resp.data is Map ? (resp.data as Map).keys.toList() : "Not a Map"}');
-
-    // Parse supported shapes:
-    // - {results: [...]} (paginated)
-    // - [{...}, {...}] (plain list)
-    // - {data: [...]} (enveloped list)
     final raw = resp.data;
-    if (raw is Map<String, dynamic>) {
-      if (raw['results'] is List) {
-        final caseList =
-            List<Map<String, dynamic>>.from(raw['results'] as List);
-        print('[CASE_REPO] Parsed ${caseList.length} cases from results array');
-        
-        // CRITICAL: Check school_id in each case
-        final schoolIdsInCases = <int>{};
-        for (var i = 0; i < caseList.length; i++) {
-          final caseData = caseList[i];
-          final caseSchoolId = caseData['school_id'];
-          final reportId = caseData['report_id'] ?? caseData['id'];
-          
-          if (caseSchoolId != null) {
-            final schoolId = caseSchoolId is num 
-                ? caseSchoolId.toInt() 
-                : int.tryParse(caseSchoolId.toString());
-            if (schoolId != null) {
-              schoolIdsInCases.add(schoolId);
-              if (schoolId != teacherSchoolId) {
-                print('[CASE_REPO] ❌ CRITICAL: Case #$i (report_id: $reportId) has school_id: $schoolId');
-                print('[CASE_REPO] ❌ But teacher school_id is: $teacherSchoolId');
-                print('[CASE_REPO] ❌ THIS IS A CROSS-SCHOOL DATA LEAK!');
-              } else {
-                print('[CASE_REPO] ✅ Case #$i (report_id: $reportId) - school_id matches: $schoolId');
-              }
-            }
-          } else {
-            print('[CASE_REPO] ⚠️ Case #$i (report_id: $reportId) - school_id is NULL in response');
-          }
-        }
-        
-        if (schoolIdsInCases.length > 1) {
-          print('[CASE_REPO] ❌ CRITICAL: Found cases from MULTIPLE schools: $schoolIdsInCases');
-          print('[CASE_REPO] ❌ Backend filtering is NOT working correctly!');
-        } else if (schoolIdsInCases.isNotEmpty && schoolIdsInCases.first != teacherSchoolId) {
-          print('[CASE_REPO] ❌ CRITICAL: All cases are from wrong school!');
-          print('[CASE_REPO] ❌ Cases school_id: ${schoolIdsInCases.first}, Teacher school_id: $teacherSchoolId');
-        } else if (schoolIdsInCases.isEmpty) {
-          print('[CASE_REPO] ⚠️ WARNING: No school_id found in any case - cannot verify filtering');
-        } else {
-          print('[CASE_REPO] ✅ All cases are from correct school: ${schoolIdsInCases.first}');
-        }
-        
-        print('[CASE_REPO] Returning ${caseList.length} cases');
-        return caseList;
+    final caseList = _normalizeCaseList(raw);
+
+    final sanitized = <Map<String, dynamic>>[];
+    final blockedReportIds = <dynamic>[];
+
+    for (final caseData in caseList) {
+      final schoolId = _parseInt(caseData['school_id']);
+      if (schoolId == null || schoolId == teacherSchoolId) {
+        sanitized.add(caseData);
+      } else {
+        blockedReportIds.add(caseData['report_id'] ?? caseData['id']);
       }
-      if (raw['data'] is List) {
-        final caseList = List<Map<String, dynamic>>.from(raw['data'] as List);
-        print('[CASE_REPO] Parsed ${caseList.length} cases from data field');
-        return caseList;
-      }
-    } else if (raw is List) {
-      final caseList = List<Map<String, dynamic>>.from(raw);
-      print('[CASE_REPO] Parsed ${caseList.length} cases from direct array');
-      return caseList;
     }
 
-    print('[CASE_REPO] Response structure unexpected - returning empty list');
-    print('[CASE_REPO] Raw response data: ${resp.data}');
-    return [];
+    if (blockedReportIds.isNotEmpty) {
+      debugPrint(
+        '[CASE_REPO] Blocked ${blockedReportIds.length} cross-school case(s): $blockedReportIds',
+      );
+      await _recordCrossSchoolAlert(
+        path: path,
+        blockedIds: blockedReportIds,
+        expectedSchoolId: teacherSchoolId,
+      );
+    }
+
+    return sanitized;
   }
 
   /// GET /api/bullying/cases/{report_id}/
@@ -205,5 +155,60 @@ class CaseRepository {
       transform: (raw) => raw as Map<String, dynamic>,
       expectEnvelope: false, // Ignore envelope for cases
     );
+  }
+
+  List<Map<String, dynamic>> _normalizeCaseList(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (raw is Map<String, dynamic>) {
+      final results = raw['results'];
+      if (results is List) {
+        return results
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      final data = raw['data'];
+      if (data is List) {
+        return data
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    debugPrint('[CASE_REPO] Unexpected cases payload shape: $raw');
+    return const [];
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  Future<void> _recordCrossSchoolAlert({
+    required String path,
+    required List<dynamic> blockedIds,
+    required int expectedSchoolId,
+  }) async {
+    try {
+      await session.saveLastAuthLog(
+        method: 'GET',
+        url: path,
+        headers: {
+          'warning': 'blocked_cross_school_cases',
+          'expected_school_id': expectedSchoolId.toString(),
+          'blocked_report_ids': blockedIds.map((e) => '$e').join(','),
+          'blocked_count': blockedIds.length.toString(),
+        },
+      );
+    } catch (e) {
+      debugPrint('[CASE_REPO] Failed to persist isolation alert: $e');
+    }
   }
 }

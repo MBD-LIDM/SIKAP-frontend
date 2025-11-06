@@ -122,7 +122,7 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: isComplete ? const Color(0xFF2E7D32) : Colors.green, foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7F55B1), foregroundColor: Colors.white),
                         onPressed: () => _confirm(isComplete ? 'selesai' : 'proses'),
                         child: Text(isComplete ? 'Selesai' : 'Proses'),
                       ),

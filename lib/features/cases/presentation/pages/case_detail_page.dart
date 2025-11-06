@@ -380,52 +380,46 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                         child: const Text('Tolak'),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFB678FF),
-                            foregroundColor: Colors.white),
-                        onPressed: () async {
-                          final result = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => CaseConfirmationPage(
-                                  caseTitle: title, action: 'proses'),
-                            ),
-                          );
-                          if (!context.mounted) return;
-                          if (result != null) {
-                            await _handleStatusUpdate('Diproses');
-                            Navigator.of(context).pop(result);
-                          }
-                        },
-                        child: const Text('Proses',
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
-                          foregroundColor: Colors.white,
+                    if (status != 'Diproses') ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFB678FF),
+                              foregroundColor: Colors.white),
+                          onPressed: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CaseConfirmationPage(
+                                    caseTitle: title, action: 'proses'),
+                              ),
+                            );
+                            if (!context.mounted) return;
+                            if (result != null) {
+                              await _handleStatusUpdate('Diproses');
+                              Navigator.of(context).pop(result);
+                            }
+                          },
+                          child: const Text('Proses',
+                              style: TextStyle(color: Colors.white)),
                         ),
-                        onPressed: () async {
-                          final result = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => CaseConfirmationPage(
-                                  caseTitle: title, action: 'selesai'),
-                            ),
-                          );
-                          if (!context.mounted) return;
-                          if (result != null) {
-                            await _handleStatusUpdate('Selesai');
-                            Navigator.of(context).pop(result);
-                          }
-                        },
-                        child: const Text('Selesai'),
                       ),
-                    ),
+                    ],
+                    if (status == 'Diproses') ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFB678FF),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            await _handleStatusUpdate('Selesai');
+                          },
+                          child: const Text('Selesai'),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
