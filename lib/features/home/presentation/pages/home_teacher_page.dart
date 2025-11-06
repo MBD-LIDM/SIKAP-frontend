@@ -3,8 +3,10 @@ import '../../../../core/theme/app_theme.dart';
 import '../widgets/feature_button_placeholder.dart';
 import '../../../cases/presentation/pages/case_list_page.dart';
 import '../../../reflections/presentation/reflection_scenario.dart';
+import 'package:sikap/features/reflections/presentation/reflection_list.dart';
 import '../../../dashboard/presentation/dashboard_global.dart';
 import '../../../authentication/presentation/pages/login_page.dart';
+import 'package:sikap/core/auth/session_service.dart';
 
 class HomeTeacherPage extends StatefulWidget {
   const HomeTeacherPage({super.key});
@@ -14,8 +16,24 @@ class HomeTeacherPage extends StatefulWidget {
 }
 
 class _HomeTeacherPageState extends State<HomeTeacherPage> {
+  final SessionService _session = SessionService();
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final r = await _session.loadUserRole();
+    if (!mounted) return;
+    setState(() => _role = r);
+  }
   @override
   Widget build(BuildContext context) {
+    final isCounselor = (_role?.toLowerCase() == 'counselor');
+    final isPrincipal = (_role?.toLowerCase() == 'principal');
     return Scaffold(
       backgroundColor: const Color(0xFFFFE7CE),
       body: Container(
@@ -53,52 +71,66 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
                   // Buttons Section
                   Column(
                     children: [
-                      // Dashboard Bullying Button - placeholder style
-                      FeatureButtonPlaceholder(
-                        title: 'Dasbor Bullying',
-                        subtitle: 'Insight laporan bullying sekolah',
-                        icon: Icons.analytics,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const DashboardGlobalPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Lihat Kasus Button - gunakan placeholder style
-                      FeatureButtonPlaceholder(
-                        title: 'Lihat Kasus',
-                        subtitle: 'Tinjau dan kelola laporan siswa',
-                        icon: Icons.folder_open,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CasesListPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Lihat Refleksi Siswa Button - placeholder style
-                      FeatureButtonPlaceholder(
-                        title: 'Lihat Refleksi Siswa',
-                        subtitle: 'Pantau refleksi dan kemajuan emosi',
-                        icon: Icons.insights,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ReflectionScenarioPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Logout Button
+                      if (!isCounselor && !isPrincipal || isPrincipal) ...[
+                        FeatureButtonPlaceholder(
+                          title: 'Dasbor Bullying',
+                          subtitle: 'Insight laporan bullying sekolah',
+                          icon: Icons.analytics,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const DashboardGlobalPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (!isPrincipal) ...[
+                        FeatureButtonPlaceholder(
+                          title: 'Lihat Kasus',
+                          subtitle: 'Tinjau dan kelola laporan siswa',
+                          icon: Icons.folder_open,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CasesListPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        FeatureButtonPlaceholder(
+                          title: 'Lihat Refleksi Siswa',
+                          subtitle: 'Pantau refleksi dan kemajuan emosi',
+                          icon: Icons.insights,
+                          onTap: () {
+                            if (isCounselor) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ReflectionListPage(
+                                    scenarioTitle: 'Refleksi Siswa',
+                                    scenarioDescription: 'Riwayat refleksi siswa di sekolah Anda',
+                                    question: 'Daftar Refleksi',
+                                    scenarioId: null,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ReflectionScenarioPage(),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       FeatureButtonPlaceholder(
                         title: 'Log Out',
                         subtitle: '',

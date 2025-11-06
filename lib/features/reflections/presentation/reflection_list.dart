@@ -156,9 +156,7 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.scenarioId != null) {
-      _loadRemote();
-    }
+    _loadRemote();
   }
 
   Future<void> _loadRemote() async {
