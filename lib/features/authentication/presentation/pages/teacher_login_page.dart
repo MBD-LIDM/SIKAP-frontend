@@ -28,7 +28,8 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
   }
 
   Future<void> _submitLogin() async {
-    if (_usernameController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+    if (_usernameController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Username dan password wajib diisi')),
@@ -44,8 +45,6 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
         'password': _passwordController.text.trim(),
       };
 
-      print('[TEACHER_LOGIN] Starting login for username: ${payload['username']}');
-
       final response = await _api.post<Map<String, dynamic>>(
         '/api/accounts/user/login/',
         payload,
@@ -60,74 +59,48 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
       // Parse direct response: {user_id, full_name, username, role_name, school_id, whatsapp_number}
       if (response.data is Map<String, dynamic>) {
         final userData = Map<String, dynamic>.from(response.data);
-        
-        print('[TEACHER_LOGIN] Login response received');
-        print('[TEACHER_LOGIN] Response keys: ${userData.keys.toList()}');
-        
+
         // Extract fields
         final userId = userData['user_id'];
         final roleName = userData['role_name']?.toString();
         final fullName = userData['full_name']?.toString();
         final schoolId = userData['school_id'];
 
-        print('[TEACHER_LOGIN] User ID: $userId');
-        print('[TEACHER_LOGIN] Role: $roleName');
-        print('[TEACHER_LOGIN] Full Name: $fullName');
-        print('[TEACHER_LOGIN] School ID: $schoolId');
-        
-        // CRITICAL: Validate school_id
-        if (schoolId == null) {
-          print('[TEACHER_LOGIN] ❌ CRITICAL ERROR: school_id is NULL in login response!');
-          print('[TEACHER_LOGIN] ❌ This teacher cannot be associated with any school!');
-          throw ApiException(
-            message: 'User tidak terasosiasi dengan sekolah. Silakan hubungi administrator.',
-            code: 400,
-          );
-        }
-
-        // Extract sessionid from Set-Cookie header
+        // Extract sessionid and csrftoken from Set-Cookie header
         final setCookieHeader = response.headers?['set-cookie'];
         String? sessionId;
-        
+        String? csrfToken;
+
         if (setCookieHeader != null) {
-          print('[TEACHER_LOGIN] Set-Cookie header found');
           // Parse: "sessionid=abc123; Path=/; HttpOnly"
-          final sessionIdMatch = RegExp(r'sessionid=([^;]+)').firstMatch(setCookieHeader);
+          final sessionIdMatch =
+              RegExp(r'sessionid=([^;]+)').firstMatch(setCookieHeader);
           sessionId = sessionIdMatch?.group(1);
-        } else {
-          print('[TEACHER_LOGIN] ⚠️ WARNING: Set-Cookie header not found in response');
-          print('[TEACHER_LOGIN] Available headers: ${response.headers?.keys.toList()}');
-        }
-        
-        if (sessionId == null || sessionId.isEmpty) {
-          print('[TEACHER_LOGIN] ❌ ERROR: Session ID not found in response');
-          throw ApiException(message: 'Session ID tidak ditemukan di response', code: 500);
+          final csrfMatch =
+              RegExp(r'csrftoken=([^;]+)').firstMatch(setCookieHeader);
+          csrfToken = csrfMatch?.group(1);
         }
 
-        final maskedSessionId = sessionId.length > 20 
-            ? '${sessionId.substring(0, 10)}...${sessionId.substring(sessionId.length - 4)}'
-            : '***';
-        print('[TEACHER_LOGIN] Session ID extracted: $maskedSessionId');
+        if (sessionId == null || sessionId.isEmpty) {
+          throw ApiException(
+              message: 'Session ID tidak ditemukan di response', code: 500);
+        }
 
         // Save sessionid as token for Android cookie management
-        final schoolIdInt = schoolId is num 
-            ? schoolId.toInt() 
-            : int.tryParse(schoolId.toString());
-            
         await _session.saveUserAuth(
           token: sessionId,
-          userId: userId is num ? userId.toInt() : int.tryParse(userId?.toString() ?? ''),
+          userId: userId is num
+              ? userId.toInt()
+              : int.tryParse(userId?.toString() ?? ''),
           role: roleName,
           userName: fullName,
-          schoolId: schoolIdInt,
+          schoolId: schoolId is num
+              ? schoolId.toInt()
+              : int.tryParse(schoolId?.toString() ?? ''),
         );
-
-        // Verify what was saved
-        final savedSchoolId = await _session.loadUserSchoolId();
-        final savedUserId = await _session.loadUserId();
-        final savedToken = await _session.loadUserToken();
-        print('[TEACHER_LOGIN] ✅ Session saved successfully');
-        print('[TEACHER_LOGIN] Verified - userId: $savedUserId, schoolId: $savedSchoolId, token present: ${savedToken != null && savedToken.isNotEmpty}');
+        if (csrfToken != null && csrfToken.isNotEmpty) {
+          await _session.saveCsrfToken(csrfToken);
+        }
 
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -138,13 +111,13 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
         throw ApiException(message: 'Response data tidak valid', code: 500);
       }
     } on ApiException catch (e) {
-      print('[TEACHER_LOGIN] ❌ Login failed: ${e.message} (code: ${e.code})');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal: ${e.message}'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Login gagal: ${e.message}'),
+            backgroundColor: Colors.red),
       );
     } catch (e) {
-      print('[TEACHER_LOGIN] ❌ Unexpected error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -165,7 +138,8 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                 child: Column(
                   children: [
                     // Logo
@@ -200,13 +174,32 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Keterangan role aktif
-                    Text(
-                      'Anda sedang login sebagai guru/kepala sekolah',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w400,
+                    // Keterangan role aktif (kotak mencolok)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          const Icon(Icons.person_outline,
+                              color: Color(0xFF0066CC)),
+                          Text(
+                            'Anda sedang login sebagai guru/kepala sekolah',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: const Color(0xFF0066CC),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -227,18 +220,27 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
                         ),
-                        child: Text(
-                          'Login sebagai Siswa',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.person_outline),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Klik untuk login sebagai Siswa',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.roboto(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),                    
+                    ),
                     const SizedBox(height: 24),
                     // Form fields
                     Padding(
@@ -246,7 +248,6 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          
                           // Username
                           Text(
                             'Username',
@@ -327,7 +328,9 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                                       height: 24,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0066CC)),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Color(0xFF0066CC)),
                                       ),
                                     )
                                   : Text(
@@ -365,5 +368,3 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
     );
   }
 }
-
-

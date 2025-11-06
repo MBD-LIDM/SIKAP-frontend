@@ -34,6 +34,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       session: _session,
       auth: AuthHeaderProvider(
         loadUserToken: () async => await _session.loadUserToken(),
+        loadCsrfToken: () async => await _session.loadCsrfToken(),
         loadGuestToken: () async => null,
         loadGuestId: () async => null,
       ),
@@ -45,10 +46,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     try {
       // Load case detail
       final detail = await _repo.getCaseDetail(widget.reportId);
-      
+
       // Load attachments
       final attachments = await _repo.getCaseAttachments(widget.reportId);
-      
+
       setState(() {
         _data = detail;
         _attachments = attachments;
@@ -71,17 +72,21 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     try {
       await _repo.updateCaseStatus(widget.reportId, newStatus);
       if (!mounted) return;
-      
+
       // Reload detail
       await _loadDetail();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status berhasil diupdate'), backgroundColor: Colors.green),
+        const SnackBar(
+            content: Text('Status berhasil diupdate'),
+            backgroundColor: Colors.green),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal update status: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Gagal update status: $e'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -118,7 +123,8 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     if (n.contains('fisik')) return Icons.pan_tool;
     if (n.contains('verbal')) return Icons.record_voice_over;
     if (n.contains('cyber')) return Icons.computer;
-    if (n.contains('sosial') || n.contains('pengucilan')) return Icons.group_off;
+    if (n.contains('sosial') || n.contains('pengucilan'))
+      return Icons.group_off;
     return Icons.more_horiz;
   }
 
@@ -151,26 +157,34 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     final typeField = (_data!['type'] ?? '').toString(); // Use 'type' field
     final description = (_data!['description'] ?? '').toString();
     final status = (_data!['status'] ?? '').toString();
-    final createdAt = DateTime.tryParse(_data!['created_at']?.toString() ?? '') ?? DateTime.now();
-    
+    final createdAt =
+        DateTime.tryParse(_data!['created_at']?.toString() ?? '') ??
+            DateTime.now();
+
     // Map type to display name
     String categoryName = '-';
     if (typeField.isNotEmpty) {
       final t = typeField.toLowerCase();
-      if (t.contains('fisik')) categoryName = 'Secara fisik';
-      else if (t.contains('verbal')) categoryName = 'Secara verbal';
-      else if (t.contains('cyber')) categoryName = 'Cyberbullying';
-      else if (t.contains('sosial') || t.contains('pengucilan')) categoryName = 'Pengucilan';
-      else if (t.contains('lainnya') || t.contains('other')) categoryName = 'Lainnya';
-      else categoryName = typeField; // fallback to raw value
+      if (t.contains('fisik'))
+        categoryName = 'Secara fisik';
+      else if (t.contains('verbal'))
+        categoryName = 'Secara verbal';
+      else if (t.contains('cyber'))
+        categoryName = 'Cyberbullying';
+      else if (t.contains('sosial') || t.contains('pengucilan'))
+        categoryName = 'Pengucilan';
+      else if (t.contains('lainnya') || t.contains('other'))
+        categoryName = 'Lainnya';
+      else
+        categoryName = typeField; // fallback to raw value
     }
-    
+
     final title = rawTitle.isNotEmpty
         ? rawTitle
         : (categoryName != '-' ? categoryName : 'Laporan Bullying');
-    
+
     final category = categoryName;
-    
+
     print('[DEBUG] Attachments: ${_attachments.length} items');
     print('[DEBUG] Attachments data: $_attachments');
     final evidences = _attachments.map((a) {
@@ -199,7 +213,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4)),
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4)),
                         ],
                       ),
                       padding: const EdgeInsets.all(16),
@@ -208,90 +225,131 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                         children: [
                           // Status
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(color: _getStatusColor(status).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                            child: Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.w700, fontSize: 12)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                                color: _getStatusColor(status)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20)),
+                            child: Text(status,
+                                style: TextStyle(
+                                    color: _getStatusColor(status),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12)),
                           ),
                           const SizedBox(height: 8),
                           // Title
-                          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black87)),
+                          Text(title,
+                              style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black87)),
                           const SizedBox(height: 12),
                           // Created at
                           Row(
                             children: [
-                              const Icon(Icons.edit_calendar, size: 18, color: Colors.black45),
+                              const Icon(Icons.edit_calendar,
+                                  size: 18, color: Colors.black45),
                               const SizedBox(width: 8),
-                              Text(_formatDate(createdAt), style: const TextStyle(color: Colors.black45)),
+                              Text(_formatDate(createdAt),
+                                  style:
+                                      const TextStyle(color: Colors.black45)),
                             ],
                           ),
                           const Divider(height: 32),
                           // Category
-                          const Text('Kategori Bullying', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
+                          const Text('Kategori Bullying',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87)),
                           const SizedBox(height: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFE4B5),
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1)),
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1)),
                               ],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(_iconForCategory(category), color: const Color(0xFF7F55B1)),
+                                Icon(_iconForCategory(category),
+                                    color: const Color(0xFF7F55B1)),
                                 const SizedBox(width: 8),
-                                Text(category, style: const TextStyle(color: Colors.black87)),
+                                Text(category,
+                                    style:
+                                        const TextStyle(color: Colors.black87)),
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
                           // Description
-                          const Text('Penjelasan', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
+                          const Text('Penjelasan',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87)),
                           const SizedBox(height: 8),
                           Text(description.isEmpty ? '-' : description),
                           const SizedBox(height: 16),
                           // Evidences
-                          const Text('Bukti', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87)),
+                          const Text('Bukti',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87)),
                           const SizedBox(height: 8),
                           if (evidences.isEmpty)
-                            const Text('-', style: TextStyle(color: Colors.black54))
+                            const Text('-',
+                                style: TextStyle(color: Colors.black54))
                           else
                             Column(
-                              children: evidences
-                                  .map((e) {
-                                    final idx = evidences.indexOf(e);
-                                    final attachment = _attachments[idx];
-                                    final fileUrl = attachment['file_url']?.toString() ?? '';
-                                    final kind = attachment['kind']?.toString() ?? '';
-                                    
-                                    // Dynamic icon based on kind
-                                    IconData fileIcon = Icons.insert_drive_file;
-                                    if (kind == 'image') {
-                                      fileIcon = Icons.image;
-                                    } else if (kind == 'pdf') {
-                                      fileIcon = Icons.picture_as_pdf;
-                                    }
-                                    
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [
-                                          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                              children: evidences.map((e) {
+                                final idx = evidences.indexOf(e);
+                                final attachment = _attachments[idx];
+                                final fileUrl =
+                                    attachment['file_url']?.toString() ?? '';
+                                final kind =
+                                    attachment['kind']?.toString() ?? '';
+
+                                // Dynamic icon based on kind
+                                IconData fileIcon = Icons.insert_drive_file;
+                                if (kind == 'image') {
+                                  fileIcon = Icons.image;
+                                } else if (kind == 'pdf') {
+                                  fileIcon = Icons.picture_as_pdf;
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 14),
+                                    decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.05),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2)),
                                         ]),
-                                        child: Row(
-                                          children: [
-                                            Icon(fileIcon, color: const Color(0xFF7F55B1)),
-                                            const SizedBox(width: 8),
-                                            Expanded(child: Text(e)),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  })
-                                  .toList(),
+                                    child: Row(
+                                      children: [
+                                        Icon(fileIcon,
+                                            color: const Color(0xFF7F55B1)),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(e)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           const SizedBox(height: 8),
                         ],
@@ -303,11 +361,14 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
+                        style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white)),
                         onPressed: () async {
                           final result = await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => CaseConfirmationPage(caseTitle: title, action: 'tolak'),
+                              builder: (_) => CaseConfirmationPage(
+                                  caseTitle: title, action: 'tolak'),
                             ),
                           );
                           if (!context.mounted) return;
@@ -322,11 +383,14 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB678FF), foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFB678FF),
+                            foregroundColor: Colors.white),
                         onPressed: () async {
                           final result = await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => CaseConfirmationPage(caseTitle: title, action: 'proses'),
+                              builder: (_) => CaseConfirmationPage(
+                                  caseTitle: title, action: 'proses'),
                             ),
                           );
                           if (!context.mounted) return;
@@ -335,7 +399,8 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                             Navigator.of(context).pop(result);
                           }
                         },
-                        child: const Text('Proses', style: TextStyle(color: Colors.white)),
+                        child: const Text('Proses',
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
@@ -348,4 +413,3 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     );
   }
 }
-

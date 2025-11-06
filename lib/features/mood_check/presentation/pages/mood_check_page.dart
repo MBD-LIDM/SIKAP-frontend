@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'mood_check_recording_page.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MoodCheckPage extends StatefulWidget {
   const MoodCheckPage({super.key});
@@ -77,13 +78,33 @@ class _MoodCheckPageState extends State<MoodCheckPage> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MoodCheckRecordingPage(),
-                              ),
-                            );
+                          onPressed: () async {
+                            final status = await Permission.microphone.request();
+                            if (status.isGranted) {
+                              // Lanjut ke halaman rekaman
+                              if (!mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MoodCheckRecordingPage(),
+                                ),
+                              );
+                            } else if (status.isPermanentlyDenied) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Izin mikrofon ditolak permanen. Buka Pengaturan untuk mengaktifkan.'),
+                                ),
+                              );
+                              await openAppSettings();
+                            } else {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Izin mikrofon diperlukan untuk mulai merekam.'),
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

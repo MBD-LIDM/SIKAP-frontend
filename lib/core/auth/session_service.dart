@@ -26,13 +26,15 @@ class SessionService {
   static const _kGradeId = 'grade_id';
   static const _kGrade = 'grade_str';
   static const _kDeviceId = 'device_id';
-  
+
   // User (staff) auth keys
   static const _kUserToken = 'user_token';
   static const _kUserId = 'user_id';
   static const _kUserRole = 'user_role';
   static const _kUserName = 'user_name';
   static const _kUserSchoolId = 'user_school_id';
+  // CSRF token for staff session (from csrftoken cookie)
+  static const _kCsrfToken = 'csrf_token';
 
   final FlutterSecureStorage _s = const FlutterSecureStorage();
 
@@ -100,7 +102,8 @@ class SessionService {
       if (userId != null) _s.write(key: _kUserId, value: userId.toString()),
       if (role != null) _s.write(key: _kUserRole, value: role),
       if (userName != null) _s.write(key: _kUserName, value: userName),
-      if (schoolId != null) _s.write(key: _kUserSchoolId, value: schoolId.toString()),
+      if (schoolId != null)
+        _s.write(key: _kUserSchoolId, value: schoolId.toString()),
     ]);
     
     // Verify what was saved
@@ -131,6 +134,7 @@ class SessionService {
       _s.delete(key: _kUserRole),
       _s.delete(key: _kUserName),
       _s.delete(key: _kUserSchoolId),
+      _s.delete(key: _kCsrfToken),
     ]);
   }
 
@@ -138,6 +142,13 @@ class SessionService {
     final token = await loadUserToken();
     return token != null && token.isNotEmpty;
   }
+
+  // ===== CSRF token (for Django session-auth APIs) =====
+  Future<void> saveCsrfToken(String token) async {
+    await _s.write(key: _kCsrfToken, value: token);
+  }
+
+  Future<String?> loadCsrfToken() => _s.read(key: _kCsrfToken);
 
   // ===== Profile (school/grade/device) =====
   Future<void> saveProfile({

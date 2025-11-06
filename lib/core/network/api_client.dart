@@ -150,6 +150,9 @@ class ApiClient {
     final base = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      // Help Django/CSRf referer checks when using session auth from mobile clients
+      'Origin': ApiEnv.baseUrl,
+      'Referer': ApiEnv.baseUrl,
     };
 
     final finalHeaders = {...base, if (headers != null) ...headers};
@@ -174,6 +177,8 @@ class ApiClient {
     final base = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      'Origin': ApiEnv.baseUrl,
+      'Referer': ApiEnv.baseUrl,
     };
     final finalHeaders = {...base, if (headers != null) ...headers};
     final encodedBody = body is String ? body : jsonEncode(body);
@@ -196,6 +201,8 @@ class ApiClient {
     final base = {
       'Accept': 'application/json',
       // Note: jangan set Content-Type pada DELETE untuk hindari preflight CORS
+      'Origin': ApiEnv.baseUrl,
+      'Referer': ApiEnv.baseUrl,
     };
     final finalHeaders = {...base, if (headers != null) ...headers};
     _logReq('DELETE', uri, finalHeaders);

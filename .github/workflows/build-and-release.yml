@@ -68,6 +68,9 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Rename APK to sikap.apk
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/sikap.apk        
+
       - name: Build App Bundle
         run: flutter build appbundle --release
 
@@ -75,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/sikap.apk
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -191,7 +194,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/android-apk/app-release.apk
+            artifacts/android-apk/sikap.apk
             artifacts/android-aab/app-release.aab
             artifacts/web-build/web-release.zip
         env:
