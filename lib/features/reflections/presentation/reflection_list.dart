@@ -196,6 +196,13 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
         
         if (schoolId == null) {
           print('[REFLECTION_LIST] ⚠️ WARNING: Staff schoolId is NULL!');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Akun guru tidak memiliki school_id. Hubungi admin.')),
+            );
+            setState(() => _loadingRemote = false);
+          }
+          return;
         }
         staffSchoolId = schoolId;
       } else {

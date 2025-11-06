@@ -107,20 +107,46 @@ class ScenarioRepository {
 
   // Get reflections history for a given guest id (teacher/staff may use this
   // to view an individual student's history). This endpoint requires staff authentication.
-  Future<List<dynamic>> getReflectionsHistory(int guestId) async {
+  Future<List<dynamic>> getReflectionsHistory(int guestId, {int? staffSchoolId}) async {
     print('[SCENARIO_REPO] getReflectionsHistory() called for guestId: $guestId');
     
     // Use staff authentication explicitly (asGuest: false)
     final headers = await _auth.buildHeaders(asGuest: false);
+    final path = '/api/wellbeing/scenarios/reflections/history/$guestId/';
     
     final resp = await _apiClient.get<List<dynamic>>(
-      '/api/wellbeing/scenarios/reflections/history/$guestId/',
+      path,
       headers: headers,
       transform: (raw) => raw as List<dynamic>,
     );
     
     print('[SCENARIO_REPO] getReflectionsHistory response - status: ${resp.status}, count: ${resp.data.length}');
-    return resp.data;
+    
+    final list = _normalizeReflectionList(resp.data);
+    if (staffSchoolId == null) {
+      debugPrint('[SCENARIO_REPO] Staff schoolId is NULL, returning empty list for safety');
+      return const [];
+    }
+    
+    final sanitized = <dynamic>[];
+    var blockedCount = 0;
+    for (final entry in list) {
+      final sid = _extractSchoolIdFromReflection(entry);
+      if (sid == null || sid == staffSchoolId) {
+        sanitized.add(entry);
+      } else {
+        blockedCount += 1;
+      }
+    }
+    if (blockedCount > 0) {
+      await _recordCrossSchoolReflections(
+        path: path,
+        expectedSchoolId: staffSchoolId,
+        blockedCount: blockedCount,
+      );
+    }
+    print('[SCENARIO_REPO] Returning ${sanitized.length} reflection(s) after school filter');
+    return sanitized;
   }
 
   // For teacher/staff: list reflections within the school with optional filters.
