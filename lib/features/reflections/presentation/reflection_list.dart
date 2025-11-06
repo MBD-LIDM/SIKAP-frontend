@@ -166,13 +166,49 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
     try {
       final session = SessionService();
       final api = ApiClient();
+      
+      // Check if user is staff (counselor/teacher) or guest (student)
+      final isStaff = await session.isStaffLoggedIn();
+      print('[REFLECTION_LIST] Loading reflections - isStaff: $isStaff');
+      
+      // Create AuthHeaderProvider with correct auth based on user type
       final auth = AuthHeaderProvider(
-          loadUserToken: () async => null,
-          loadGuestToken: () async => await session.loadGuestToken(),
-          loadGuestId: () async => await session.loadGuestId());
+        loadUserToken: isStaff 
+            ? () async => await session.loadUserToken()
+            : () async => null,
+        loadGuestToken: isStaff 
+            ? () async => null
+            : () async => await session.loadGuestToken(),
+        loadGuestId: isStaff 
+            ? () async => null
+            : () async => await session.loadGuestId(),
+        loadCsrfToken: isStaff 
+            ? () async => await session.loadCsrfToken()
+            : () async => null,
+      );
+      
+      if (isStaff) {
+        final userId = await session.loadUserId();
+        final schoolId = await session.loadUserSchoolId();
+        final role = await session.loadUserRole();
+        print('[REFLECTION_LIST] Staff context - userId: $userId, schoolId: $schoolId, role: $role');
+        
+        if (schoolId == null) {
+          print('[REFLECTION_LIST] ⚠️ WARNING: Staff schoolId is NULL!');
+        }
+      } else {
+        final guestId = await session.loadGuestId();
+        print('[REFLECTION_LIST] Guest context - guestId: $guestId');
+      }
+      
       final repo = ScenarioRepository(apiClient: api, auth: auth);
+      print('[REFLECTION_LIST] Fetching reflections for scenarioId: ${widget.scenarioId}');
+      
       final data = await repo.getSchoolReflections(
           scenarioId: widget.scenarioId?.toString());
+      
+      print('[REFLECTION_LIST] Received ${data.length} reflection(s) from API');
+      
       final List<_ReflectionItem> parsed = [];
       for (final e in data) {
         try {
@@ -194,12 +230,17 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
           // skip invalid item
         }
       }
+      
+      print('[REFLECTION_LIST] Parsed ${parsed.length} valid reflection(s)');
+      
       if (parsed.isNotEmpty) {
         setState(() => _reflections = parsed);
+      } else {
+        print('[REFLECTION_LIST] ⚠️ No reflections parsed from API response');
       }
-    } catch (e) {
-      // ignore: avoid_print
-      print('[ReflectionListPage] failed to load remote reflections: $e');
+    } catch (e, stackTrace) {
+      print('[REFLECTION_LIST] ❌ Failed to load remote reflections: $e');
+      print('[REFLECTION_LIST] Stack trace: $stackTrace');
     } finally {
       setState(() => _loadingRemote = false);
     }

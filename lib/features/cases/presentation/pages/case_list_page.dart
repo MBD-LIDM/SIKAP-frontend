@@ -4,6 +4,7 @@ import 'package:sikap/features/cases/data/repositories/case_repository.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/network/api_exception.dart';
 
 class CasesListPage extends StatefulWidget {
   const CasesListPage({super.key});
@@ -39,9 +40,13 @@ class _CasesListPageState extends State<CasesListPage> {
   }
 
   Future<void> _loadCases() async {
+    print('[CASE_LIST] _loadCases() called');
     setState(() => _isLoading = true);
     try {
+      print('[CASE_LIST] Fetching cases from repository...');
       final cases = await _repo.getCases();
+      print('[CASE_LIST] Received ${cases.length} cases from repository');
+      
       setState(() {
         _all = cases.map((item) {
           final status = (item['status'] ?? '').toString();
@@ -90,12 +95,35 @@ class _CasesListPageState extends State<CasesListPage> {
         }).toList();
         _isLoading = false;
       });
-    } catch (e) {
-      print("[DEBUG] Error loading cases: $e");
+      
+      print('[CASE_LIST] Parsed ${_all.length} case items');
+      print('[CASE_LIST] Filtered/sorted list will have ${_filteredSorted.length} items');
+    } on ApiException catch (e) {
+      print('[CASE_LIST] ❌ ApiException: ${e.message}');
+      print('[CASE_LIST] Error code: ${e.code}');
+      if (e.errors != null) {
+        print('[CASE_LIST] Error details: ${e.errors}');
+      }
       setState(() => _isLoading = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading cases: $e')),
+        SnackBar(
+          content: Text('Error loading cases: ${e.message}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e, stackTrace) {
+      print('[CASE_LIST] ❌ Unexpected error: $e');
+      print('[CASE_LIST] Stack trace: $stackTrace');
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading cases: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
@@ -151,13 +179,18 @@ class _CasesListPageState extends State<CasesListPage> {
                 Expanded(
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          itemCount: _filteredSorted.length,
-                          itemBuilder: (context, index) {
-                            final item = _filteredSorted[index];
-                            return _CaseCard(item: item);
-                          },
-                        ),
+                      : _filteredSorted.isEmpty
+                          ? _buildEmptyState()
+                          : RefreshIndicator(
+                              onRefresh: _loadCases,
+                              child: ListView.builder(
+                                itemCount: _filteredSorted.length,
+                                itemBuilder: (context, index) {
+                                  final item = _filteredSorted[index];
+                                  return _CaseCard(item: item);
+                                },
+                              ),
+                            ),
                 ),
               ],
             ),
@@ -261,6 +294,63 @@ class _CasesListPageState extends State<CasesListPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return RefreshIndicator(
+      onRefresh: _loadCases,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 80),
+              Icon(
+                Icons.folder_open_outlined,
+                size: 80,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Belum ada kasus',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _filter == 'Semua'
+                    ? 'Belum ada laporan bullying yang masuk.\nLaporan akan muncul di sini setelah siswa mengirim laporan.'
+                    : 'Tidak ada kasus dengan status "${_filter}".\nCoba ubah filter atau tarik ke bawah untuk refresh.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: _loadCases,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF7F55B1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

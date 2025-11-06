@@ -45,12 +45,38 @@ class AuthHeaderProvider {
     if (userToken != null && userToken.isNotEmpty) {
       // Send sessionid (and csrftoken if available) as Cookie header for Django session-based auth
       final csrf = await (loadCsrfToken?.call());
+      
+      // Mask token for logging
+      final maskedToken = userToken.length > 20
+          ? '${userToken.substring(0, 10)}...${userToken.substring(userToken.length - 4)}'
+          : '***';
+      print('[AUTH_HEADER] Building staff headers - sessionId: $maskedToken');
+      
       final cookieParts = <String>['sessionid=$userToken'];
       if (csrf != null && csrf.isNotEmpty) {
         cookieParts.add('csrftoken=$csrf');
         headers['X-CSRFToken'] = csrf; // Must match csrftoken cookie
+        
+        // Mask CSRF for logging
+        final maskedCsrf = csrf.length > 20
+            ? '${csrf.substring(0, 8)}...${csrf.substring(csrf.length - 4)}'
+            : '***';
+        print('[AUTH_HEADER] CSRF token present: $maskedCsrf');
+      } else {
+        print('[AUTH_HEADER] ⚠️ WARNING: CSRF token is missing!');
       }
-      headers['Cookie'] = cookieParts.join('; ');
+      
+      final cookieHeader = cookieParts.join('; ');
+      headers['Cookie'] = cookieHeader;
+      
+      // Log final Cookie header format (masked)
+      final maskedCookie = cookieHeader.length > 40
+          ? '${cookieHeader.substring(0, 20)}...${cookieHeader.substring(cookieHeader.length - 15)}'
+          : '***';
+      print('[AUTH_HEADER] Cookie header format: $maskedCookie');
+    } else {
+      print('[AUTH_HEADER] ⚠️ WARNING: User token is null or empty!');
+      print('[AUTH_HEADER] ⚠️ Staff authentication will fail - no Cookie header will be sent');
     }
     return headers;
   }
