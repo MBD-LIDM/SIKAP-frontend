@@ -174,13 +174,32 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Keterangan role aktif
-                    Text(
-                      'Anda sedang login sebagai guru/kepala sekolah',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w400,
+                    // Keterangan role aktif (kotak mencolok)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          const Icon(Icons.person_outline,
+                              color: Color(0xFF0066CC)),
+                          Text(
+                            'Anda sedang login sebagai guru/kepala sekolah',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: const Color(0xFF0066CC),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -204,13 +223,21 @@ class _TeacherLoginPageState extends State<TeacherLoginPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
                         ),
-                        child: Text(
-                          'Login sebagai Siswa',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.person_outline),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Klik untuk login sebagai Siswa',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.roboto(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
