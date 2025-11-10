@@ -72,7 +72,7 @@ class ArtikelTujuhKebiasaanDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Foto: SIKAP',
+                      'Photo by Mehmet Turgut Kirkgoz from Pexels: https://www.pexels.com/photo/group-of-students-playing-on-the-ground-11445241/',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF7A6C57),
