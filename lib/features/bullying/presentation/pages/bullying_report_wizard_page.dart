@@ -776,7 +776,7 @@ class BullyingReportSuccessPage extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => const BullyingReportsListPage(),
                         ),
-                        (route) => false,
+                        (route) => route.isFirst,
                       );
                     },
                     child: const Padding(
