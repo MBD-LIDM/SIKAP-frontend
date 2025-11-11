@@ -53,9 +53,11 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
             : Map<String, dynamic>.from(raw as Map);
         // Try inline attachments if present
         List<Map<String, dynamic>> inlineAtt = [];
-        final inline = inner['attachments'] ?? inner['evidences'] ?? inner['files'];
+        final inline =
+            inner['attachments'] ?? inner['evidences'] ?? inner['files'];
         if (inline is List) {
-          inlineAtt = inline.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          inlineAtt =
+              inline.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         }
         setState(() {
           _data = inner;
@@ -68,7 +70,8 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
           final rid = int.tryParse(inner['id']?.toString() ?? widget.id);
           print("[DEBUG] Report ID for attachments: $rid");
           if (rid != null) {
-            final list = await repo.getReportAttachments(reportId: rid, asGuest: true);
+            final list =
+                await repo.getReportAttachments(reportId: rid, asGuest: true);
             print("[DEBUG] Fetched ${list.length} attachments from API");
             for (var i = 0; i < list.length; i++) {
               print("[DEBUG] Attachment $i: ${list[i]}");
@@ -155,17 +158,17 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
     final createdAt =
         DateTime.tryParse(_data!['created_at'] ?? '') ?? DateTime.now();
     final category = categoryName;
-    final description = (
-          _data!['description'] ??
-          _data!['desc'] ??
-          _data!['report_description'] ??
-          _data!['details'] ??
-          _data!['content'] ??
-          ''
-        )
+    final description = (_data!['description'] ??
+            _data!['desc'] ??
+            _data!['report_description'] ??
+            _data!['details'] ??
+            _data!['content'] ??
+            '')
         .toString();
     final evidences = _attachments.isNotEmpty
-        ? _attachments.map((a) => _filenameFromUrl(a['file_url']?.toString() ?? '')).toList()
+        ? _attachments
+            .map((a) => _filenameFromUrl(a['file_url']?.toString() ?? ''))
+            .toList()
         : List<String>.from(_data!['evidences'] ?? []);
     final teacherComment = _data!['teacher_comment'];
     final teacherCommentDate = _data!['teacher_comment_date'] != null
@@ -289,63 +292,78 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
                                 style: TextStyle(color: Colors.black54))
                           else
                             Column(
-                              children: evidences
-                                  .asMap()
-                                  .entries
-                                  .map((entry) {
-                                    final idx = entry.key;
-                                    final fileName = entry.value;
-                                    final attachment = _attachments.isNotEmpty && idx < _attachments.length 
-                                        ? _attachments[idx] 
-                                        : null;
-                                    final fileUrl = attachment?['file_url']?.toString() ?? '';
-                                    final kind = attachment?['kind']?.toString() ?? '';
-                                    
-                                    // Debug logging
-                                    print('[BullyingDetail] Attachment #$idx:');
-                                    print('[BullyingDetail]   fileName: $fileName');
-                                    print('[BullyingDetail]   fileUrl: $fileUrl');
-                                    print('[BullyingDetail]   kind: $kind');
-                                    print('[BullyingDetail]   attachment data: $attachment');
-                                    
-                                    // Dynamic icon based on kind
-                                    IconData fileIcon = Icons.insert_drive_file;
-                                    if (kind == 'image') {
-                                      fileIcon = Icons.image;
-                                    } else if (kind == 'pdf') {
-                                      fileIcon = Icons.picture_as_pdf;
-                                    }
-                                    
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 14),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(
-                                                          alpha: 0.05),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 2)),
-                                            ]),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                                fileIcon,
-                                                color: const Color(0xFF7F55B1)),
+                              children: evidences.asMap().entries.map((entry) {
+                                final idx = entry.key;
+                                final fileName = entry.value;
+                                final attachment = _attachments.isNotEmpty &&
+                                        idx < _attachments.length
+                                    ? _attachments[idx]
+                                    : null;
+                                final fileUrl =
+                                    attachment?['file_url']?.toString() ?? '';
+                                final kind =
+                                    attachment?['kind']?.toString() ?? '';
+
+                                // Debug logging
+                                print('[BullyingDetail] Attachment #$idx:');
+                                print('[BullyingDetail]   fileName: $fileName');
+                                print('[BullyingDetail]   fileUrl: $fileUrl');
+                                print('[BullyingDetail]   kind: $kind');
+                                print(
+                                    '[BullyingDetail]   attachment data: $attachment');
+
+                                // Dynamic icon based on kind
+                                IconData fileIcon = Icons.insert_drive_file;
+                                if (kind == 'image') {
+                                  fileIcon = Icons.image;
+                                } else if (kind == 'pdf') {
+                                  fileIcon = Icons.picture_as_pdf;
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (kind == 'image' &&
+                                          fileUrl.isNotEmpty) {
+                                        _showImagePreview(
+                                            context, fileUrl, fileName);
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 14),
+                                      decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2)),
+                                          ]),
+                                      child: Row(
+                                        children: [
+                                          Icon(fileIcon,
+                                              color: const Color(0xFF7F55B1)),
+                                          const SizedBox(width: 8),
+                                          Expanded(child: Text(fileName)),
+                                          if (kind == 'image') ...[
                                             const SizedBox(width: 8),
-                                            Expanded(child: Text(fileName)),
+                                            const Icon(
+                                              Icons.visibility,
+                                              color: Color(0xFF7F55B1),
+                                              size: 20,
+                                            ),
                                           ],
-                                        ),
+                                        ],
                                       ),
-                                    );
-                                  })
-                                  .toList(),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           const SizedBox(height: 8),
                           // Teacher Comment (optional)
@@ -446,7 +464,9 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
     if (k.contains('fisik') || k.contains('physical')) return 'Secara fisik';
     if (k.contains('verbal')) return 'Secara verbal';
     if (k.contains('cyber')) return 'Cyberbullying';
-    if (k.contains('sosial') || k.contains('social') || k.contains('pengucilan')) return 'Pengucilan';
+    if (k.contains('sosial') ||
+        k.contains('social') ||
+        k.contains('pengucilan')) return 'Pengucilan';
     if (k.contains('seksual') || k.contains('sexual')) return 'Lainnya';
     if (k.contains('lain') || k.contains('other')) return 'Lainnya';
     return '';
@@ -463,7 +483,9 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
     if (n.contains('cyber')) {
       return Icons.computer;
     }
-    if (n.contains('sosial') || n.contains('pengucilan') || n.contains('social')) {
+    if (n.contains('sosial') ||
+        n.contains('pengucilan') ||
+        n.contains('social')) {
       return Icons.group_off;
     }
     return Icons.more_horiz;
@@ -476,5 +498,123 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
       if (segs.isNotEmpty) return segs.last;
     } catch (_) {}
     return url;
+  }
+
+  void _showImagePreview(
+      BuildContext context, String imageUrl, String fileName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with filename
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF7F55B1),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.image, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Image
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.error,
+                                        color: Colors.red, size: 48),
+                                    SizedBox(height: 8),
+                                    Text('Gagal memuat gambar'),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Show file location
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.link,
+                                  size: 16, color: Colors.black54),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Lokasi file: $imageUrl',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
