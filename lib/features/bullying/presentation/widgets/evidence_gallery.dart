@@ -24,11 +24,6 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
   List<Attachment> _items = const [];
   int _reloadTick = 0;
 
-  String _withCb(String url) {
-    final sep = url.contains('?') ? '&' : '?';
-    return '$url${sep}cb=$_reloadTick';
-  }
-
   @override
   void initState() {
     super.initState();
@@ -71,6 +66,8 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
   }
 
   void _openUrl(String url) {
+    // ignore: avoid_print
+    print('[EvidenceGallery] Opening URL: $url');
     final uri = Uri.parse(url);
     launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -106,7 +103,7 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    _withCb(att.fileUrl),
+                    att.fileUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stack) {
                       // Signed URL mungkin expired → refresh daftar
