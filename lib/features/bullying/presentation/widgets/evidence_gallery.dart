@@ -22,6 +22,12 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
 
   bool _loading = false;
   List<Attachment> _items = const [];
+  int _reloadTick = 0;
+
+  String _withCb(String url) {
+    final sep = url.contains('?') ? '&' : '?';
+    return '$url${sep}cb=$_reloadTick';
+  }
 
   @override
   void initState() {
@@ -54,6 +60,11 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
       );
       if (!mounted) return;
       setState(() => _items = items);
+      if (items.isNotEmpty) {
+        final host = Uri.tryParse(items.first.fileUrl)?.host ?? '-';
+        // ignore: avoid_print
+        print('[EvidenceGallery] reportId=${widget.reportId} items=${items.length} firstHost=$host');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -95,10 +106,11 @@ class _EvidenceGalleryState extends State<EvidenceGallery> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    att.fileUrl,
+                    _withCb(att.fileUrl),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stack) {
                       // Signed URL mungkin expired → refresh daftar
+                      if (mounted) setState(() => _reloadTick++);
                       _load();
                       return Container(
                         color: Colors.grey.shade200,
