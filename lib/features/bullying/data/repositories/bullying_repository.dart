@@ -16,6 +16,7 @@ import '../models/bullying_create_response.dart';
 import '../models/bullying_detail_response.dart';
 import '../models/bullying_list_response.dart';
 import '../models/bullying_model.dart';
+import '../models/attachment_model.dart';
 
 class BullyingRepository {
   final ApiClient apiClient;
@@ -266,6 +267,15 @@ class BullyingRepository {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     }, gate);
+  }
+
+  /// Wrapper typed untuk daftar lampiran.
+  Future<List<Attachment>> getReportAttachmentsTyped({
+    required int reportId,
+    bool asGuest = true,
+  }) async {
+    final raw = await getReportAttachments(reportId: reportId, asGuest: asGuest);
+    return raw.map((e) => Attachment.fromJson(e)).toList();
   }
 
   Map<String, dynamic> _sanitizeCreatePayload(Map<String, dynamic> input) {
