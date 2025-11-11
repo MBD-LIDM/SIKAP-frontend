@@ -4,6 +4,7 @@ import 'package:sikap/features/cases/data/repositories/case_repository.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/features/bullying/presentation/widgets/evidence_gallery.dart';
 
 class CaseDetailPage extends StatefulWidget {
   const CaseDetailPage({
@@ -111,15 +112,6 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
 
-  String _filenameFromUrl(String url) {
-    if (url.isEmpty) return '-';
-    try {
-      final segs = Uri.parse(url).pathSegments;
-      if (segs.isNotEmpty) return segs.last;
-    } catch (_) {}
-    return url;
-  }
-
   IconData _iconForCategory(String name) {
     final n = name.toLowerCase();
     if (n.contains('fisik')) return Icons.pan_tool;
@@ -189,11 +181,6 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
 
     print('[DEBUG] Attachments: ${_attachments.length} items');
     print('[DEBUG] Attachments data: $_attachments');
-    final evidences = _attachments.map((a) {
-      final fileUrl = a['file_url']?.toString() ?? '';
-      print('[DEBUG] Processing attachment: $fileUrl');
-      return _filenameFromUrl(fileUrl);
-    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -305,52 +292,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                                   fontWeight: FontWeight.w700,
                                   color: Colors.black87)),
                           const SizedBox(height: 8),
-                          if (evidences.isEmpty)
-                            const Text('-',
-                                style: TextStyle(color: Colors.black54))
-                          else
-                            Column(
-                              children: evidences.map((e) {
-                                final idx = evidences.indexOf(e);
-                                final attachment = _attachments[idx];
-                                final kind =
-                                    attachment['kind']?.toString() ?? '';
-
-                                // Dynamic icon based on kind
-                                IconData fileIcon = Icons.insert_drive_file;
-                                if (kind == 'image') {
-                                  fileIcon = Icons.image;
-                                } else if (kind == 'pdf') {
-                                  fileIcon = Icons.picture_as_pdf;
-                                }
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 14),
-                                    decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                              color: Colors.black
-                                                  .withValues(alpha: 0.05),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2)),
-                                        ]),
-                                    child: Row(
-                                      children: [
-                                        Icon(fileIcon,
-                                            color: const Color(0xFF7F55B1)),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: Text(e)),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
+                          EvidenceGallery(reportId: widget.reportId, asGuest: false),
                           const SizedBox(height: 8),
                         ],
                       ),
