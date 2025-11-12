@@ -69,9 +69,9 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
     }
   }
 
-  Future<void> _handleStatusUpdate(String newStatus) async {
+  Future<void> _handleStatusUpdate(String newStatus, {String? comment}) async {
     try {
-      await _repo.updateCaseStatus(widget.reportId, newStatus);
+      await _repo.updateCaseStatus(widget.reportId, newStatus, comment: comment);
       if (!mounted) return;
 
       // Reload detail
@@ -315,7 +315,10 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                           );
                           if (!context.mounted) return;
                           if (result != null) {
-                            await _handleStatusUpdate('Ditolak');
+                            final message = (result is Map && result['message'] is String)
+                                ? (result['message'] as String)
+                                : '';
+                            await _handleStatusUpdate('Ditolak', comment: message);
                             Navigator.of(context).pop(result);
                           }
                         },
@@ -356,7 +359,20 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
                             foregroundColor: Colors.white,
                           ),
                           onPressed: () async {
-                            await _handleStatusUpdate('Selesai');
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CaseConfirmationPage(
+                                    caseTitle: title, action: 'selesai'),
+                              ),
+                            );
+                            if (!context.mounted) return;
+                            if (result != null) {
+                              final message = (result is Map && result['message'] is String)
+                                  ? (result['message'] as String)
+                                  : '';
+                              await _handleStatusUpdate('Selesai', comment: message);
+                              Navigator.of(context).pop(result);
+                            }
                           },
                           child: const Text('Selesai'),
                         ),

@@ -143,10 +143,26 @@ class CaseRepository {
 
   /// PATCH /api/bullying/cases/{report_id}/status/
   /// Update status handling laporan
-  Future<void> updateCaseStatus(int reportId, String status) async {
+  /// For 'Ditolak' or 'Selesai', a non-empty [comment] is required.
+  Future<void> updateCaseStatus(int reportId, String status, {String? comment}) async {
     final headers = await auth.buildHeaders(asGuest: false);
 
-    final payload = {'status': status};
+    // Enforce comment for Ditolak/Selesai
+    final needsComment = status == 'Ditolak' || status == 'Selesai';
+    if (needsComment) {
+      final c = (comment ?? '').trim();
+      if (c.isEmpty) {
+        throw ApiException(
+          code: 400,
+          message: 'Komentar wajib diisi untuk status $status.',
+        );
+      }
+    }
+
+    final payload = <String, dynamic>{
+      'status': status,
+      if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+    };
 
     await apiClient.patch<Map<String, dynamic>>(
       '/api/bullying/cases/$reportId/status/',
