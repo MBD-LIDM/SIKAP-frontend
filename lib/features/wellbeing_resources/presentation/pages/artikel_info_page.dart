@@ -4,6 +4,7 @@ import 'artikel_kecemasan_detail_page.dart';
 import 'artikel_teman_detail_page.dart';
 import 'artikel_berani_bicara_detail_page.dart';
 import 'artikel_bantuan_profesional_detail_page.dart';
+import 'artikel_7_kebiasaan_detail_page.dart';
 
 class ArtikelInfoPage extends StatefulWidget {
   const ArtikelInfoPage({super.key});
@@ -235,6 +236,21 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                       },
                     );
 
+                    addItem(
+                      title: 'Penerapan 7 Kebiasaan Anak Indonesia Hebat dalam Meningkatkan Kesehatan Mental Siswa',
+                      category: 'Kesehatan Mental dan Kesejahteraan',
+                      date: 'Diposting pada 10 November 2025',
+                      illustration: _buildHabitsIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelTujuhKebiasaanDetailPage(),
+                          ),
+                        );
+                      },
+                    );
+
                     if (items.isNotEmpty) {
                       items.removeLast();
                     }
@@ -345,6 +361,22 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
   }
 
   
+
+  Widget _buildHabitsIllustration() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.indigo.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.task_alt,
+        size: 40,
+        color: Colors.indigo,
+      ),
+    );
+  }
 
   Widget _buildAnxietyIllustration() {
     return Container(
