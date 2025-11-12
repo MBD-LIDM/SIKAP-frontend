@@ -344,7 +344,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         _stepTitle('Apakah kamu punya bukti yang bisa dibagikan?'),
         const SizedBox(height: 8),
         const Text(
-            'Bukti dapat berupa gambar (jpg/jpeg/png/gif/webp) dan PDF. Maks 10 file, ≤ 20MB/file.',
+            'Bukti dapat berupa foto (jpg/jpeg/png). Maks 10 file, ≤ 20MB/file.',
             style: TextStyle(color: Colors.white70)),
         const SizedBox(height: 12),
         ...evidences.map((e) => Padding(
@@ -374,7 +374,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
               allowMultiple: true,
               withData: true,
               type: FileType.custom,
-              allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+              allowedExtensions: ['jpg', 'jpeg', 'png'],
             );
             if (result == null) return;
             final picked = <PlatformFile>[];
