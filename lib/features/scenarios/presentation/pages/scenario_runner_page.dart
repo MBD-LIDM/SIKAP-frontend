@@ -5,6 +5,8 @@ import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/features/scenarios/data/scenario_repository.dart';
 import '../../../scenarios/domain/models/scenario_models.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:lottie/lottie.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class ScenarioRunnerPage extends StatefulWidget {
   const ScenarioRunnerPage({super.key, required this.item});
@@ -20,16 +22,19 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
   bool _showFeedback = false;
   final TextEditingController _reflectionController = TextEditingController();
   bool _submitting = false;
+  AudioPlayer? _audioPlayer;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = 0;
+    _audioPlayer = AudioPlayer();
   }
 
   @override
   void dispose() {
     _reflectionController.dispose();
+    _audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -93,10 +98,13 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
               return _OptionTile(
                 text: opt.answer,
                 onTap: () {
+                  final bool isCorrect =
+                      opt.nextStage != stage.stageNumber; // next => benar
                   setState(() {
                     _lastSelection = opt;
                     _showFeedback = true;
                   });
+                  _playFeedback(isCorrect);
                 },
               );
             },
@@ -107,15 +115,35 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
     );
   }
 
+  Future<void> _playFeedback(bool isCorrect) async {
+    try {
+      await _audioPlayer?.stop();
+      final source = AssetSource(
+          isCorrect ? 'audio/correct.mp3' : 'audio/wrong.mp3');
+      await _audioPlayer?.play(source);
+    } catch (_) {}
+  }
+
   Widget _buildFeedback(ScenarioStage stage) {
     final String imagePath =
         'assets/images/scenario_illustration/${stage.illustrationFile}';
     final bool hasNext = _lastSelection != null &&
         _lastSelection!.nextStage != stage.stageNumber;
+    final bool isCorrect = _lastSelection != null &&
+        _lastSelection!.nextStage != stage.stageNumber;
+    final String lottiePath = isCorrect
+        ? 'assets/animation/correct.json'
+        : 'assets/animation/wrong.json';
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 140,
+            width: double.infinity,
+            child: Lottie.asset(lottiePath, repeat: true),
+          ),
           const SizedBox(height: 8),
           Text('Pilihan jawabanmu adalah',
               style: AppTheme.headingMedium
@@ -137,51 +165,28 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
           ),
           const SizedBox(height: 12),
           if (hasNext)
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF7F55B1),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _showFeedback =
-                            false; // kembali ke pertanyaan yang sama
-                      });
-                    },
-                    child: Text('Coba Lagi', style: AppTheme.buttonTextPurple),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7F55B1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7F55B1),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      if (_lastSelection == null) return;
-                      final nextIdx = widget.item.stages.indexWhere(
-                          (s) => s.stageNumber == _lastSelection!.nextStage);
-                      setState(() {
-                        _currentIndex = nextIdx >= 0 ? nextIdx : _currentIndex;
-                        _showFeedback = false;
-                      });
-                    },
-                    child: Text('Skenario Berikutnya  →',
-                        style:
-                            AppTheme.buttonText.copyWith(color: Colors.white)),
-                  ),
-                ),
-              ],
+                onPressed: () {
+                  if (_lastSelection == null) return;
+                  final nextIdx = widget.item.stages.indexWhere(
+                      (s) => s.stageNumber == _lastSelection!.nextStage);
+                  setState(() {
+                    _currentIndex = nextIdx >= 0 ? nextIdx : _currentIndex;
+                    _showFeedback = false;
+                  });
+                },
+                child: Text('Skenario Berikutnya  →',
+                    style: AppTheme.buttonText.copyWith(color: Colors.white)),
+              ),
             )
           else
             SizedBox(
