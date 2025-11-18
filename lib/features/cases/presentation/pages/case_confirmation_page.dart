@@ -45,6 +45,13 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
     );
     if (!mounted) return;
     if (result == true) {
+      final requiresComment = action == 'tolak' || action == 'selesai';
+      if (requiresComment && _messageController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Komentar wajib diisi.')),
+        );
+        return;
+      }
       // Di sini nantinya bisa dipanggil API. Untuk sekarang, hanya kembali.
       Navigator.of(context).pop({
         'action': action,

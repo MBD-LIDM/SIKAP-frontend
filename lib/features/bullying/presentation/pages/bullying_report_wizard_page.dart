@@ -9,6 +9,7 @@ import 'package:sikap/core/auth/ensure_guest_auth.dart';
 import 'package:sikap/core/network/api_exception.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:sikap/core/media/image_storage_service.dart';
 import 'package:sikap/core/network/multipart_client.dart';
 
 class BullyingReportWizardPage extends StatefulWidget {
@@ -23,18 +24,17 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   static const int totalSteps = 4;
   int currentStep = 1;
 
-  // form state
   String? selectedCategory; // step 1
   final TextEditingController descriptionController =
       TextEditingController(); // step 2
   final List<PlatformFile> evidences = []; // step 3: picked files
-  bool anonymous = false; // step 4
   bool confirmTruth = false; // step 4
 
   final SessionService _session = SessionService();
   final ApiClient _api = ApiClient();
   late final AuthHeaderProvider _auth;
   late final BullyingRepository _repo;
+  IImageStorageService? _storage;
 
   @override
   void initState() {
@@ -50,6 +50,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       auth: _auth,
       gate: guestAuthGateInstance(),
     );
+    _storage = buildImageStorageServiceOrNull(apiClient: _api, auth: _auth);
   }
 
   @override
@@ -94,6 +95,108 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
       // Jika di step pertama, kembali ke halaman sebelumnya
       Navigator.of(context).pop();
     }
+  }
+
+  Future<_EvidenceUploadOutcome> _uploadEvidenceWithSigned(int reportId) async {
+    final storage = _storage;
+    if (storage == null) {
+      return const _EvidenceUploadOutcome(successCount: 0, failed: []);
+    }
+    final failed = <String>[];
+    final metas = <UploadedAttachmentMeta>[];
+
+    for (final file in evidences) {
+      final name = file.name;
+      final mime = inferMime(name);
+      final size = file.size;
+      List<int>? bytes = file.bytes;
+      if (bytes == null && file.path != null) {
+        try {
+          bytes = await readFileBytes(file.path!);
+        } catch (_) {
+          bytes = null;
+        }
+      }
+      if (bytes == null) {
+        failed.add(name);
+        continue;
+      }
+
+      try {
+        final info = await storage.requestSignedUpload(
+          reportId: reportId,
+          originalName: name,
+          mimeType: mime,
+          sizeBytes: size,
+        );
+        await storage.putBytes(info: info, bytes: bytes, mimeType: mime);
+        metas.add(UploadedAttachmentMeta(
+          key: info.key,
+          mimeType: mime,
+          originalName: name,
+          sizeBytes: size,
+        ));
+      } catch (_) {
+        failed.add(name);
+      }
+    }
+
+    if (metas.isEmpty) {
+      return _EvidenceUploadOutcome(successCount: 0, failed: failed);
+    }
+
+    try {
+      await storage.registerReportAttachments(
+        reportId: reportId,
+        attachments: metas,
+        asGuest: true,
+      );
+      return _EvidenceUploadOutcome(
+        successCount: metas.length,
+        failed: failed,
+      );
+    } catch (_) {
+      failed.addAll(metas.map((meta) => meta.originalName));
+      return _EvidenceUploadOutcome(successCount: 0, failed: failed);
+    }
+  }
+
+  Future<_EvidenceUploadOutcome> _uploadEvidenceLegacy(int reportId) async {
+    if (evidences.isEmpty) {
+      return const _EvidenceUploadOutcome(successCount: 0, failed: []);
+    }
+    final failed = <String>[];
+    int success = 0;
+    final files = await _toMultipartFiles(
+      evidences,
+      fieldName: evidences.length == 1 ? 'file' : 'files',
+    );
+    if (files.isEmpty) {
+      return const _EvidenceUploadOutcome(successCount: 0, failed: []);
+    }
+
+    for (int i = 0; i < files.length; i += 10) {
+      final int end = (i + 10) > files.length ? files.length : (i + 10);
+      final chunk = files.sublist(i, end);
+      try {
+        await _repo.uploadAttachments(
+            reportId: reportId, files: chunk, asGuest: true);
+        success += chunk.length;
+      } catch (_) {
+        for (int j = i; j < end; j++) {
+          try {
+            await _repo.uploadAttachments(
+                reportId: reportId, files: [files[j]], asGuest: true);
+            success += 1;
+          } catch (_) {
+            if (j < evidences.length) {
+              failed.add(evidences[j].name);
+            }
+          }
+        }
+      }
+    }
+    return _EvidenceUploadOutcome(successCount: success, failed: failed);
   }
 
   Widget _header() {
@@ -246,7 +349,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         'key': 'fisik',
         'title': 'Secara fisik',
         'description': 'misalnya mendorong, memukul',
-        'icon': Icons.pan_tool, // Fist icon
+        'icon': Icons.pan_tool,
       },
       {
         'key': 'verbal',
@@ -384,7 +487,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
               if (sz > 20 * 1024 * 1024) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Melebihi 20MB: ${f.name}')), 
+                    SnackBar(content: Text('Melebihi 20MB: ${f.name}')),
                   );
                 }
                 continue;
@@ -397,7 +500,8 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
               if (evidences.length > 10) {
                 evidences.removeRange(10, evidences.length); // limit 10
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Maksimal 10 file per laporan.')), 
+                  const SnackBar(
+                      content: Text('Maksimal 10 file per laporan.')),
                 );
               }
             });
@@ -413,6 +517,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   }
 
   Widget _step4() {
+    final selectedTypeName = selectedCategory ?? '-';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -425,7 +530,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Kategori Bullying: ${selectedCategory ?? '-'}'),
+              Text('Kategori Bullying: $selectedTypeName'),
               const SizedBox(height: 8),
               const Text('Penjelasan:'),
               Text(descriptionController.text.isEmpty
@@ -580,75 +685,132 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                     ? () {
                                         if (currentStep == 1 &&
                                             selectedCategory == null) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'Pilih jenis bullying terlebih dahulu.'),
+                                            ),
+                                          );
                                           return;
                                         }
                                         next();
                                       }
                                     : (confirmTruth
                                         ? () async {
-                                            final id = _mapCategoryToId(selectedCategory);
-                                            if (id == null) return;
+                                            final incidentTypeId =
+                                                _mapCategoryToId(
+                                                    selectedCategory);
+                                            if (incidentTypeId == null) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      'Pilih jenis bullying terlebih dahulu.'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final description =
+                                                descriptionController.text
+                                                    .trim();
+                                            if (description.length < 10) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      'Deskripsi minimal 10 karakter.'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final navigator =
+                                                Navigator.of(context);
+                                            final scaffoldMessenger =
+                                                ScaffoldMessenger.of(context);
                                             final data = {
-                                              'incident_type_id': id,
-                                              'description': descriptionController.text,
-                                              'confirm_truth': true,
+                                              'incident_type_id':
+                                                  incidentTypeId,
+                                              'description': description,
+                                              'confirm_truth': confirmTruth,
                                             };
                                             try {
                                               await ensureGuestAuthenticated();
-                                            final result = await _repo.createBullyingReport(data, asGuest: true);
+                                              final result = await _repo
+                                                  .createBullyingReport(data,
+                                                      asGuest: true);
                                               if (!mounted) return;
                                               if (result.success) {
                                                 // Upload attachments if any
                                                 final rid = result.reportId;
-                                                if (rid != null && evidences.isNotEmpty) {
-                                                  final failed = <String>[];
-                                                  // For single file, backend expects field name 'file'
-                                                  final files = await _toMultipartFiles(
-                                                    evidences,
-                                                    fieldName: evidences.length == 1 ? 'file' : 'files',
-                                                  );
-                                                  // chunk by 10 to respect backend limit per request
-                                                  for (int i = 0; i < files.length; i += 10) {
-                                                    final int end = (i + 10) > files.length ? files.length : (i + 10);
-                                                    final chunk = files.sublist(i, end);
-                                                    try {
-                                                      await _repo.uploadAttachments(reportId: rid, files: chunk, asGuest: true);
-                                                    } catch (_) {
-                                                      // If batch fails, try per-file to salvage successes
-                                                      for (int j = i; j < end; j++) {
-                                                        try {
-                                                          await _repo.uploadAttachments(reportId: rid, files: [files[j]], asGuest: true);
-                                                        } catch (_) {
-                                                          failed.add(evidences[j].name);
-                                                        }
+                                                if (rid != null &&
+                                                    evidences.isNotEmpty) {
+                                                  _EvidenceUploadOutcome
+                                                      outcome =
+                                                      const _EvidenceUploadOutcome(
+                                                          successCount: 0,
+                                                          failed: []);
+                                                  try {
+                                                    if (_storage != null) {
+                                                      outcome =
+                                                          await _uploadEvidenceWithSigned(
+                                                              rid);
+                                                      if (outcome.successCount ==
+                                                              0 &&
+                                                          outcome.failed
+                                                              .isNotEmpty) {
+                                                        outcome =
+                                                            await _uploadEvidenceLegacy(
+                                                                rid);
                                                       }
+                                                    } else {
+                                                      outcome =
+                                                          await _uploadEvidenceLegacy(
+                                                              rid);
                                                     }
+                                                  } catch (_) {
+                                                    outcome =
+                                                        await _uploadEvidenceLegacy(
+                                                            rid);
                                                   }
-                                                  if (failed.isNotEmpty) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text('Sebagian bukti gagal: ${failed.join(', ')}')),
+                                                  if (!mounted) return;
+                                                  if (outcome
+                                                      .failed.isNotEmpty) {
+                                                    scaffoldMessenger
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                          content: Text(
+                                                              'Sebagian bukti gagal: ${outcome.failed.join(', ')}')),
                                                     );
                                                   }
                                                 }
-                                                Navigator.of(context).pushReplacement(
+                                                if (!mounted) return;
+                                                navigator.pushReplacement(
                                                   MaterialPageRoute(
-                                                    builder: (_) => const BullyingReportSuccessPage(),
+                                                    builder: (_) =>
+                                                        const BullyingReportSuccessPage(),
                                                   ),
                                                 );
                                               } else {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(content: Text('Gagal mengirim: ${result.message}')),
+                                                if (!mounted) return;
+                                                scaffoldMessenger.showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Gagal mengirim: ${result.message}')),
                                                 );
                                               }
                                             } on ApiException catch (e) {
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Gagal: ${e.code ?? ''} ${e.message}')),
+                                              scaffoldMessenger.showSnackBar(
+                                                SnackBar(
+                                                    content: Text(
+                                                        'Gagal: ${e.code ?? ''} ${e.message}')),
                                               );
                                             } catch (e) {
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text('Error: $e')),
+                                              scaffoldMessenger.showSnackBar(
+                                                SnackBar(
+                                                    content: Text('Error: $e')),
                                               );
                                             }
                                           }
@@ -691,13 +853,25 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   }
 }
 
-Future<List<http.MultipartFile>> _toMultipartFiles(List<PlatformFile> picked, {required String fieldName}) async {
+class _EvidenceUploadOutcome {
+  final int successCount;
+  final List<String> failed;
+
+  const _EvidenceUploadOutcome({
+    required this.successCount,
+    required this.failed,
+  });
+}
+
+Future<List<http.MultipartFile>> _toMultipartFiles(List<PlatformFile> picked,
+    {required String fieldName}) async {
   final out = <http.MultipartFile>[];
   for (final f in picked) {
     bool added = false;
     if (f.path != null) {
       try {
-        out.add(await MultipartClient.fromPath(fieldName, f.path!, filename: f.name));
+        out.add(await MultipartClient.fromPath(fieldName, f.path!,
+            filename: f.name));
         added = true;
       } catch (_) {
         // fall back to bytes below
@@ -705,7 +879,8 @@ Future<List<http.MultipartFile>> _toMultipartFiles(List<PlatformFile> picked, {r
     }
     if (!added && f.bytes != null) {
       try {
-        out.add(MultipartClient.fromBytes(fieldName, f.bytes!, filename: f.name));
+        out.add(
+            MultipartClient.fromBytes(fieldName, f.bytes!, filename: f.name));
         added = true;
       } catch (_) {}
     }

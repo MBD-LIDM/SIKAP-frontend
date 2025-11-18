@@ -20,18 +20,28 @@ Future<void> ensureGuestAuthenticated({
   String? deviceId,
   bool forceRefresh = false,
 }) async {
-  if (schoolCode != null ||
-      gradeStr != null ||
-      deviceId != null ||
-      forceRefresh) {
+  final normalizedSchoolCode = schoolCode?.trim();
+  final normalizedGrade = gradeStr?.trim();
+  final normalizedDeviceId = deviceId?.trim();
+
+  final hasProfileInput = normalizedSchoolCode != null ||
+      normalizedGrade != null ||
+      normalizedDeviceId != null;
+
+  if (hasProfileInput) {
     await _sessionService.saveProfile(
-      schoolCode: schoolCode,
-      grade: gradeStr,
-      deviceId: deviceId,
+      schoolCode: normalizedSchoolCode,
+      grade: normalizedGrade,
+      deviceId: normalizedDeviceId,
     );
-    if (forceRefresh) {
-      await _sessionService.clearGuest();
-    }
+  }
+
+  final shouldResetSession =
+      forceRefresh || normalizedSchoolCode != null || normalizedGrade != null;
+  if (shouldResetSession) {
+    print(
+        '[GUEST_AUTH] Clearing cached guest session before re-login (force=$forceRefresh, schoolCodeProvided=${normalizedSchoolCode != null}, gradeProvided=${normalizedGrade != null})');
+    await _sessionService.clearGuest();
   }
 
   await _guestAuthGate.ensure();

@@ -16,6 +16,7 @@ import '../models/bullying_create_response.dart';
 import '../models/bullying_detail_response.dart';
 import '../models/bullying_list_response.dart';
 import '../models/bullying_model.dart';
+import '../models/attachment_model.dart';
 
 class BullyingRepository {
   final ApiClient apiClient;
@@ -38,27 +39,29 @@ class BullyingRepository {
   /// Guest-allowed. Kembalikan list map sederhana (id, type_name, dst).
   Future<List<Map<String, dynamic>>> getIncidentTypes(
       {bool asGuest = true}) async {
-    if (!asGuest) {
-      final headers = await auth.buildHeaders(asGuest: false);
-      final resp = await apiClient.get<List<dynamic>>(
+    Future<List<Map<String, dynamic>>> fetch(
+        Map<String, String> headers) async {
+      final resp = await apiClient.get<dynamic>(
         '/api/bullying/incident-types/',
         headers: headers,
-        transform: (raw) => raw as List<dynamic>,
         expectEnvelope: false,
       );
-      return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      final list = _extractIncidentTypeList(resp.data);
+      return list
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+
+    if (!asGuest) {
+      final headers = await auth.buildHeaders(asGuest: false);
+      return fetch(headers);
     }
 
     await gate.ensure();
     return withGuestAuthRetry(() async {
       final headers = await auth.guestHeaders();
-      final resp = await apiClient.get<List<dynamic>>(
-        '/api/bullying/incident-types/',
-        headers: headers,
-        transform: (raw) => raw as List<dynamic>,
-        expectEnvelope: false,
-      );
-      return resp.data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return fetch(headers);
     }, gate);
   }
 
@@ -69,12 +72,13 @@ class BullyingRepository {
     bool asGuest = true,
   }) async {
     print('[BULLYING_REPO] createBullyingReport called, asGuest: $asGuest');
-    
+
     if (!asGuest) {
       final headers = await auth.buildHeaders(asGuest: false);
       final teacherSchoolId = await session.loadUserSchoolId();
-      print('[BULLYING_REPO] Submitting as staff/teacher with school_id: $teacherSchoolId');
-      
+      print(
+          '[BULLYING_REPO] Submitting as staff/teacher with school_id: $teacherSchoolId');
+
       final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/bullying/report/',
         _sanitizeCreatePayload(data),
@@ -82,32 +86,35 @@ class BullyingRepository {
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      
+
       final responseData = BullyingCreateResponse.fromJson(resp.data);
-      print('[BULLYING_REPO] Report created - report_id: ${responseData.reportId}');
+      print(
+          '[BULLYING_REPO] Report created - report_id: ${responseData.reportId}');
       return responseData;
     }
 
     // Guest submission - track school info
     await gate.ensure();
-    
+
     final guestId = await session.loadGuestId();
     final profile = await session.loadProfile();
     print('[BULLYING_REPO] Submitting as guest');
     print('[BULLYING_REPO] Guest ID: $guestId');
-    print('[BULLYING_REPO] Profile - schoolId: ${profile.schoolId}, schoolCode: ${profile.schoolCode}, grade: ${profile.grade}');
-    
+    print(
+        '[BULLYING_REPO] Profile - schoolId: ${profile.schoolId}, schoolCode: ${profile.schoolCode}, grade: ${profile.grade}');
+
     if (profile.schoolId == null) {
       print('[BULLYING_REPO] ⚠️ WARNING: school_id is NULL in guest profile!');
-      print('[BULLYING_REPO] ⚠️ Backend may not be able to associate report with correct school!');
+      print(
+          '[BULLYING_REPO] ⚠️ Backend may not be able to associate report with correct school!');
     }
-    
+
     return withGuestAuthRetry(() async {
       final payload = _sanitizeCreatePayload(data);
 
       final headers = await auth.guestHeaders();
       print('[BULLYING_REPO] Request headers keys: ${headers.keys.toList()}');
-      
+
       final resp = await apiClient.post<Map<String, dynamic>>(
         '/api/bullying/report/',
         payload,
@@ -115,25 +122,62 @@ class BullyingRepository {
         transform: (raw) => raw as Map<String, dynamic>,
         expectEnvelope: false,
       );
-      
+
       final responseData = BullyingCreateResponse.fromJson(resp.data);
       final reportId = responseData.reportId;
       print('[BULLYING_REPO] ✅ Report created successfully');
       print('[BULLYING_REPO] Report ID: $reportId');
       print('[BULLYING_REPO] Response data: ${resp.data}');
-      
+
       // Check if response includes school_id
       if (resp.data is Map) {
         final responseMap = resp.data as Map<String, dynamic>;
         if (responseMap.containsKey('school_id')) {
-          print('[BULLYING_REPO] Response includes school_id: ${responseMap['school_id']}');
+          print(
+              '[BULLYING_REPO] Response includes school_id: ${responseMap['school_id']}');
         } else {
-          print('[BULLYING_REPO] ⚠️ Response does not include school_id - backend may use token/session');
+          print(
+              '[BULLYING_REPO] ⚠️ Response does not include school_id - backend may use token/session');
         }
       }
-      
+
       return responseData;
     }, gate);
+  }
+
+  List<dynamic> _extractIncidentTypeList(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) return raw;
+    if (raw is Map) {
+      final results = raw['results'];
+      if (results is List) return results;
+      if (results is Map) {
+        final nested = _extractIncidentTypeList(results);
+        if (nested.isNotEmpty) return nested;
+      }
+
+      final data = raw['data'];
+      if (data is List) return data;
+      if (data is Map) {
+        final nested = _extractIncidentTypeList(data);
+        if (nested.isNotEmpty) return nested;
+      }
+
+      // Some backends return dictionary with numeric/string keys
+      final values = raw.values.toList();
+      if (values.isNotEmpty) {
+        final flattened = <dynamic>[];
+        for (final value in values) {
+          if (value is List) {
+            flattened.addAll(value);
+          } else if (value is Map) {
+            flattened.add(value);
+          }
+        }
+        if (flattened.isNotEmpty) return flattened;
+      }
+    }
+    return const [];
   }
 
   /// POST /api/bullying/report/{report_id}/attachments/
@@ -194,7 +238,8 @@ class BullyingRepository {
         String message = 'Upload gagal';
         Map<String, dynamic>? errors;
         if (body is Map) {
-          if (body['message'] is String && (body['message'] as String).isNotEmpty) {
+          if (body['message'] is String &&
+              (body['message'] as String).isNotEmpty) {
             message = body['message'];
           }
           if (body['errors'] is Map<String, dynamic>) {
@@ -266,6 +311,16 @@ class BullyingRepository {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     }, gate);
+  }
+
+  /// Wrapper typed untuk daftar lampiran.
+  Future<List<Attachment>> getReportAttachmentsTyped({
+    required int reportId,
+    bool asGuest = true,
+  }) async {
+    final raw =
+        await getReportAttachments(reportId: reportId, asGuest: asGuest);
+    return raw.map((e) => Attachment.fromJson(e)).toList();
   }
 
   Map<String, dynamic> _sanitizeCreatePayload(Map<String, dynamic> input) {

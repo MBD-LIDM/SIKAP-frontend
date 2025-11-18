@@ -5,7 +5,8 @@ import 'package:sikap/core/network/auth_header_provider.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/auth/ensure_guest_auth.dart'; // <— penting
 import 'package:sikap/core/network/api_exception.dart';
-import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart' show BullyingReportSuccessPage;
+import 'package:sikap/features/bullying/presentation/pages/bullying_report_wizard_page.dart'
+    show BullyingReportSuccessPage;
 
 class BullyingFormPage extends StatefulWidget {
   final String? bullyingId; // null for create, not null for edit
@@ -36,6 +37,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
   // UI state
   // severity removed (not used)
   bool _isLoading = false;
+  bool _confirmTruth = false;
 
   // Data incident types dari server: [{id, name, slug}]
   List<Map<String, dynamic>> _incidentTypes = [];
@@ -45,10 +47,9 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
   void initState() {
     super.initState();
     _auth = AuthHeaderProvider(
-      loadUserToken: () async => null, // guest-only flow
-      loadGuestToken: () async => await _session.loadGuestToken(),
-      loadGuestId: () async => await _session.loadGuestId(),
-    );
+        loadUserToken: () async => null, // guest-only flow
+        loadGuestToken: () async => await _session.loadGuestToken(),
+        loadGuestId: () async => await _session.loadGuestId());
     _repo = BullyingRepository(
       apiClient: _api,
       session: _session,
@@ -188,10 +189,22 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
       return;
     }
 
+    if (!_confirmTruth) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text("Centang pernyataan bahwa informasi laporan ini benar."),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final payload = <String, dynamic>{
       "incident_type_id": _incidentTypeId, // integer id
       "description": _descriptionController.text.trim(), // >= 10 chars
-      "confirm_truth": true,
+      "confirm_truth": _confirmTruth,
     };
 
     // title dihapus dari payload
@@ -255,7 +268,7 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = !_isLoading && _incidentTypeId != null;
+    final canSubmit = !_isLoading && _incidentTypeId != null && _confirmTruth;
 
     return Scaffold(
       appBar: AppBar(
@@ -318,6 +331,22 @@ class _BullyingFormPageState extends State<BullyingFormPage> {
                   const SizedBox(height: 16),
 
                   // severity dihapus
+                  CheckboxListTile(
+                    value: _confirmTruth,
+                    onChanged: _isLoading
+                        ? null
+                        : (value) =>
+                            setState(() => _confirmTruth = value ?? false),
+                    title: const Text(
+                      'Saya menyatakan bahwa informasi ini adalah kejadian yang benar-benar terjadi.',
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: const Color(0xFF7F55B1),
+                    checkColor: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: canSubmit ? _submitForm : null,

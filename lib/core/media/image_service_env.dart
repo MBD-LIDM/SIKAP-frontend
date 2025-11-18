@@ -9,7 +9,7 @@
 class ImageServiceEnv {
   static const bool useRailway = bool.fromEnvironment(
     'USE_RAILWAY_IMAGE_SERVICE',
-    defaultValue: false,
+    defaultValue: true,
   );
 
   /// Base URL of the deployed railway-image-service (no trailing slash).

@@ -3,6 +3,7 @@ import 'package:sikap/core/theme/app_theme.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/network/multipart_client.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Simple DTO for counselor contact returned by the backend.
@@ -194,8 +195,16 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
     }
   }
 
-  Future<void> _callPhone(String number) async {
-    final uri = Uri(scheme: 'tel', path: number);
+  Future<void> _callPhone(String rawNumber) async {
+    final sanitized = rawNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (sanitized.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor telepon tidak valid')),
+      );
+      return;
+    }
+    final uri = Uri(scheme: 'tel', path: sanitized);
     try {
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok) {
