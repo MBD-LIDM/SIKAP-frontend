@@ -271,12 +271,31 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
                     ),
 
                   const SizedBox(height: 24),
+                  const _SectionTitle('Kota Depok'),
+                  const SizedBox(height: 12),
+                  _CityServiceCard(
+                    title: 'UPTD PPA',
+                    subtitle:
+                        'Pelaporan Kekerasan pada Perempuan & Anak',
+                    phone: '08111186598',
+                    onCallTap: () => _callPhone('08111186598'),
+                  ),
+                  const SizedBox(height: 12),
+                  _CityServiceCard(
+                    title: 'PUSPAGA',
+                    subtitle:
+                        'Konseling & Konsultasi Permasalahan Keluarga',
+                    phone: '081394458266',
+                    onCallTap: () => _callPhone('081394458266'),
+                  ),
+
+                  const SizedBox(height: 24),
                   const _SectionTitle('Layanan Nasional'),
                   const SizedBox(height: 12),
 
                   _NationalServiceCard(
                     title: 'Sahabat Perempuan\ndan Anak (SAPA)',
-                    onCallTap: () => _showComingSoon(context),
+                    onCallTap: () => _callPhone('129'),
                   ),
 
                   const SizedBox(height: 40),
@@ -390,6 +409,80 @@ class _CounselorCard extends StatelessWidget {
                       elevation: 0,
                     ),
                   ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CityServiceCard extends StatelessWidget {
+  const _CityServiceCard({
+    required this.title,
+    required this.subtitle,
+    required this.phone,
+    required this.onCallTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final String phone;
+  final VoidCallback onCallTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CircleAvatar(
+            radius: 28,
+            backgroundColor: Color(0xFFFFE0CC),
+            child: Icon(Icons.phone, color: Color(0xFF7F55B1)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF7F55B1),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: onCallTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFDBB6),
+                    foregroundColor: const Color(0xFF7F55B1),
+                    elevation: 0,
+                  ),
+                  child: Text('Telepon $phone'),
                 ),
               ],
             ),

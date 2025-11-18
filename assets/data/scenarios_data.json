@@ -1,7 +1,7 @@
 [
     {
       "jenjang": "SD",
-      "skenario": "Kasus Hilangnya Kotak Pensil & Ejekan",
+      "skenario": "Hilangnya Kotak Pensil Teman",
       "scenario_id": 101,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai tindakan berani yang aman. Selain itu, kamu juga akan mengidentifikasi bullying sederhana. Kamu akan tahu cara tepat meminta bantuan orang dewasa.",
       "tahapan": [
@@ -76,7 +76,7 @@
     },
     {
       "jenjang": "SD",
-      "skenario": "Merasa Sedih Karena Gagal Gambar",
+      "skenario": "Merasa Gagal dalam Menggambar",
       "scenario_id": 102,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai cara mengelola perasaan frustrasi. Selain itu, kamu juga akan mencari bantuan saat kesulitan belajar. Kamu akan fokus pada proses usaha, bukan hanya hasil akhir.",
       "tahapan": [
@@ -226,9 +226,9 @@
     },
     {
       "jenjang": "SMP",
-      "skenario": "Dikeluarkan dari Grup WA & Rumor",
+      "skenario": "Dikeluarkan dari Grup WA & Menyebarnya Rumor",
       "scenario_id": 104,
-      "pelajaran_srl": "Di sini, kamu akan belajar mengenai mengendalikan emosi saat krisis daring. Selain itu, kamu juga akan memilih strategi pelaporan yang efektif. Kamu akan melindungi diri dari cyberbullying yang meluas.",
+      "pelajaran_srl": "Di sini, kamu akan belajar mengenai mengendalikan emosi saat terjadi konflik di ruang daring. Selain itu, kamu juga akan memilih strategi pelaporan yang efektif. Kamu akan melindungi diri dari cyberbullying yang meluas.",
       "tahapan": [
         {
           "tahap_ke": 1,
@@ -247,6 +247,12 @@
               "jawaban": "Letakkan HP-mu jauh-jauh, tarik napas, dan cari aktivitas lain untuk menenangkan diri.",
               "umpan_balik": "HEBAT! Mengatur emosi adalah langkah pertama yang paling dewasa. Kamu berhasil mengendalikan impuls untuk menyerang balik.",
               "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "C",
+              "jawaban": "Mengabaikan screenshot itu dan mematikan HP. Berpura-pura tidak terjadi apa-apa dan berharap besok mereka akan memasukkanmu kembali ke grup.",
+              "umpan_balik": "Mengabaikan masalah mungkin terasa menenangkan sesaat, tetapi rasa sakit hati yang kamu rasakan tidak akan hilang. Masalah ini nyata dan perlu diselesaikan, bukan ditunggu hingga hilang sendiri. Kamu perlu strategi yang tepat.",
+              "lanjut_ke_tahap": 1
             }
           ]
         },
@@ -301,13 +307,13 @@
     },
     {
       "jenjang": "SMP",
-      "skenario": "Tekanan Cepat Menyelesaikan Tugas Kelompok",
+      "skenario": "Tekanan Waktu dalam Menyelesaikan Tugas Kelompok",
       "scenario_id": 105,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai komunikasi asertif. Selain itu, kamu juga akan menyusun perencanaan kerja yang realistis. Kamu akan menyelesaikan konflik akademik dengan kepala dingin.",
       "tahapan": [
         {
           "tahap_ke": 1,
-          "narasi": "Tugas proyek kelompokmu harus dikumpulkan besok, tetapi anggota kelompokmu (Reno dan Sarah) terlihat santai. Kamu merasa sangat cemas karena takut nilaimu turun. Reno marah saat kamu mengingatkan.",
+          "narasi": "Tugas proyek kelompokmu harus dikumpulkan besok, tetapi anggota kelompokmu, Reno dan Sarah, terlihat santai. Kamu merasa sangat cemas karena takut nilaimu turun. Reno marah saat kamu mengingatkan.",
           "pertanyaan": "Perasaan apa yang paling kuat kamu rasakan saat ini?",
           "ilustrasi_file": "smp_2_1.png",
           "pilihan": [
@@ -451,7 +457,7 @@
     },
     {
       "jenjang": "SMA",
-      "skenario": "Perselisihan Posting Medsos & Cancel Culture",
+      "skenario": "Perselisihan dalam Posting Medsos & Cancel Culture",
       "scenario_id": 107,
       "pelajaran_srl": "Di sini, kamu akan belajar mengenai berpikir kritis saat krisis daring. Selain itu, kamu juga akan melindungi diri dari tekanan groupthink. Kamu akan menerapkan strategi manajemen krisis media sosial.",
       "tahapan": [
@@ -472,6 +478,12 @@
               "jawaban": "Berhenti membaca komentar, sembunyikan posting-an itu, dan fokus memverifikasi fakta di balik perselisihan.",
               "umpan_balik": "HEBAT! Kamu mengendalikan dopamine hit media sosial. Mengumpulkan fakta dan menenangkan diri adalah langkah forethought yang cerdas sebelum bertindak.",
               "lanjut_ke_tahap": 2
+            },
+            {
+              "id": "C",
+              "jawaban": "Langsung unfollow atau block Maya dan pura-pura tidak kenal dia. Ini bukan urusanku dan aku tidak mau ikut terseret masalah.",
+              "umpan_balik": "Kamu mungkin merasa aman untuk saat ini, tetapi kamu baru saja meninggalkan temanmu saat ia paling butuh dukungan. Menghindar dari masalah tidak menyelesaikannya, dan ini bisa merusak kepercayaan. Coba pikirkan posisi yang lebih berani dan etis.",
+              "lanjut_ke_tahap": 1
             }
           ]
         },
