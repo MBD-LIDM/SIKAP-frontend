@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: clarity_flutter
-      sha256: "3e85da9aa2ccb4c1922ba2ecaeea8e82c198182839f1b3427c77338033b94ded"
+      sha256: c7fdf53dfd869ce9fda13b6078ecdc946477037fac98932022e91fd34c008737
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.6.0"
   cli_util:
     dependency: transitive
     description:
