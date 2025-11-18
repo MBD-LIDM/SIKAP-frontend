@@ -21,6 +21,8 @@ dependencies:
   flutter_secure_storage_web: ^1.2.1
   url_launcher: ^6.3.1
   permission_handler: ^11.3.1
+  lottie: ^3.1.2
+  audioplayers: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +39,8 @@ flutter:
     - assets/data/
     - assets/images/scenario_illustration/
     - assets/images/article_images/
+    - assets/animation/
+    - assets/audio/
 
 flutter_launcher_icons:
   image_path: "assets/icons/sikap_icon.jpg"
