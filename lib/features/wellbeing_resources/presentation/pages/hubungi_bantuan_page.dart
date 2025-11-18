@@ -195,6 +195,29 @@ class _HubungiBantuanPageState extends State<HubungiBantuanPage> {
     }
   }
 
+  Future<void> _callPhone(String rawNumber) async {
+    final sanitized = rawNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (sanitized.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor telepon tidak valid')),
+      );
+      return;
+    }
+    final uri = Uri(scheme: 'tel', path: sanitized);
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal melakukan panggilan: $e')),
+      );
+    }
+  }
+
   void _showComingSoon(BuildContext context) {
     showDialog(
       context: context,
