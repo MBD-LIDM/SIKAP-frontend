@@ -10,10 +10,14 @@ class SignedUploadInfo {
   final String key; // blob key/path inside image service
   final Uri uploadUrl; // signed PUT URL
   final DateTime expiresAt;
+  final Map<String, String> headers;
+  final String? fileUrl;
   SignedUploadInfo({
     required this.key,
     required this.uploadUrl,
     required this.expiresAt,
+    this.headers = const {},
+    this.fileUrl,
   });
 }
 
@@ -60,9 +64,9 @@ abstract class IImageStorageService {
   });
 }
 
-/// Production implementation depending on backend helper endpoints.
+/// Production implementation for presigned Supabase upload flow.
 /// Backend must expose:
-///   POST /api/media/sign-upload/ -> {key, upload_url, expires_at}
+///   POST /api/bullying/report/{id}/attachments/presign/ -> {key, upload_url, headers, expires_at}
 ///   POST /api/bullying/report/{id}/attachments/register/ -> persist list
 class ImageStorageService implements IImageStorageService {
   final ApiClient apiClient;
@@ -76,30 +80,47 @@ class ImageStorageService implements IImageStorageService {
     required String mimeType,
     int? sizeBytes,
   }) async {
-    final payload = {
-      'report_id': reportId,
+    final payload = <String, dynamic>{
       'filename': originalName,
       'mime': mimeType,
       if (sizeBytes != null) 'size': sizeBytes,
     };
-    // Choose appropriate headers (guest or staff). For now always guest; caller decides.
     final headers = await auth.guestHeaders();
     final resp = await apiClient.post<Map<String, dynamic>>(
-      '/api/media/sign-upload/',
+      '/api/bullying/report/$reportId/attachments/presign/',
       payload,
       headers: headers,
       transform: (raw) => raw as Map<String, dynamic>,
       expectEnvelope: false,
     );
     final data = resp.data;
-    if (data['key'] == null || data['upload_url'] == null) {
+    final uploadUrl = data['upload_url'] as String?;
+    final blobKey = data['key'] as String?;
+    if (uploadUrl == null || blobKey == null) {
       throw ApiException(message: 'Signed upload response invalid');
     }
+    DateTime expiresAt = DateTime.now().add(const Duration(minutes: 5));
+    final expiresRaw = data['expires_at'];
+    if (expiresRaw is String) {
+      final parsed = DateTime.tryParse(expiresRaw);
+      if (parsed != null) expiresAt = parsed.toUtc();
+    }
+    final headersMap = <String, String>{};
+    final dynamicHead = data['headers'];
+    if (dynamicHead is Map) {
+      dynamicHead.forEach((headerKey, value) {
+        if (headerKey is String && value != null) {
+          headersMap[headerKey] = value.toString();
+        }
+      });
+    }
+
     return SignedUploadInfo(
-      key: data['key'] as String,
-      uploadUrl: Uri.parse(data['upload_url'] as String),
-      expiresAt: DateTime.tryParse(data['expires_at'] ?? '') ??
-          DateTime.now().add(const Duration(minutes: 5)),
+      key: blobKey,
+      uploadUrl: Uri.parse(uploadUrl),
+      expiresAt: expiresAt,
+      headers: headersMap,
+      fileUrl: data['file_url'] as String?,
     );
   }
 
@@ -109,14 +130,13 @@ class ImageStorageService implements IImageStorageService {
     required List<int> bytes,
     required String mimeType,
   }) async {
-    // Direct PUT to signed URL (image service). No secret keys exposed.
-    final r = await http.put(
-      info.uploadUrl,
-      headers: {
-        'Content-Type': mimeType,
-      },
-      body: bytes,
-    );
+    final uploadHeaders = info.headers.isNotEmpty
+        ? Map<String, String>.from(info.headers)
+        : {
+            'Content-Type': mimeType,
+          };
+    final r =
+        await http.put(info.uploadUrl, headers: uploadHeaders, body: bytes);
     if (r.statusCode < 200 || r.statusCode >= 300) {
       throw ApiException(code: r.statusCode, message: 'PUT blob gagal');
     }

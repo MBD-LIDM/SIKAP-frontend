@@ -166,10 +166,16 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
             _data!['content'] ??
             '')
         .toString();
-    final teacherComment = _data!['teacher_comment'];
-    final teacherCommentDate = _data!['teacher_comment_date'] != null
-        ? DateTime.tryParse(_data!['teacher_comment_date'])
-        : null;
+    final rawTeacherComment = _data!['teacher_comment'];
+    final String? teacherComment =
+        (rawTeacherComment is String && rawTeacherComment.trim().isNotEmpty)
+            ? rawTeacherComment.trim()
+            : null;
+    DateTime? teacherCommentDate;
+    final rawCommentDate = _data!['teacher_comment_date'];
+    if (rawCommentDate is String && rawCommentDate.trim().isNotEmpty) {
+      teacherCommentDate = DateTime.tryParse(rawCommentDate.trim());
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -292,52 +298,50 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
                               return const Text('-',
                                   style: TextStyle(color: Colors.black54));
                             }
-                            return EvidenceGallery(reportId: rid, asGuest: true);
+                            return EvidenceGallery(
+                                reportId: rid, asGuest: true);
                           }),
                           const SizedBox(height: 8),
                           // Teacher Comment (optional)
-                          if (teacherComment != null) ...[
-                            const Divider(height: 32),
-                            const Text('Komentar Guru',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black87)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(Icons.edit_calendar,
-                                    size: 18, color: Colors.black45),
-                                const SizedBox(width: 8),
-                                Text(
-                                  teacherCommentDate != null
-                                      ? _formatDate(teacherCommentDate)
-                                      : '-',
-                                  style: const TextStyle(color: Colors.black45),
-                                ),
+                          const Divider(height: 32),
+                          const Text('Komentar Guru',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.edit_calendar,
+                                  size: 18, color: Colors.black45),
+                              const SizedBox(width: 8),
+                              Text(
+                                teacherCommentDate != null
+                                    ? _formatDate(teacherCommentDate)
+                                    : '-',
+                                style: const TextStyle(color: Colors.black45),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6D7FF),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2)),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE6D7FF),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2)),
-                                ],
-                              ),
-                              child: Text(
-                                teacherComment!,
-                                style: const TextStyle(color: Colors.black87),
-                              ),
+                            child: Text(
+                              teacherComment ?? 'Belum ada komentar dari guru.',
+                              style: const TextStyle(color: Colors.black87),
                             ),
-                            const SizedBox(height: 8),
-                          ],
+                          ),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -419,5 +423,4 @@ class _BullyingDetailPageState extends State<BullyingDetailPage> {
     }
     return Icons.more_horiz;
   }
-
 }

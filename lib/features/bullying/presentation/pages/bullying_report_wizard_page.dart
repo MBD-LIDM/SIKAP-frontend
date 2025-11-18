@@ -24,12 +24,10 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   static const int totalSteps = 4;
   int currentStep = 1;
 
-  // form state
   String? selectedCategory; // step 1
   final TextEditingController descriptionController =
       TextEditingController(); // step 2
   final List<PlatformFile> evidences = []; // step 3: picked files
-  bool anonymous = false; // step 4
   bool confirmTruth = false; // step 4
 
   final SessionService _session = SessionService();
@@ -351,7 +349,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
         'key': 'fisik',
         'title': 'Secara fisik',
         'description': 'misalnya mendorong, memukul',
-        'icon': Icons.pan_tool, // Fist icon
+        'icon': Icons.pan_tool,
       },
       {
         'key': 'verbal',
@@ -519,6 +517,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   }
 
   Widget _step4() {
+    final selectedTypeName = selectedCategory ?? '-';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -531,7 +530,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Kategori Bullying: ${selectedCategory ?? '-'}'),
+              Text('Kategori Bullying: $selectedTypeName'),
               const SizedBox(height: 8),
               const Text('Penjelasan:'),
               Text(descriptionController.text.isEmpty
@@ -686,19 +685,54 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                     ? () {
                                         if (currentStep == 1 &&
                                             selectedCategory == null) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'Pilih jenis bullying terlebih dahulu.'),
+                                            ),
+                                          );
                                           return;
                                         }
                                         next();
                                       }
                                     : (confirmTruth
                                         ? () async {
-                                            final id = _mapCategoryToId(selectedCategory);
-                                            if (id == null) return;
+                                            final incidentTypeId =
+                                                _mapCategoryToId(
+                                                    selectedCategory);
+                                            if (incidentTypeId == null) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      'Pilih jenis bullying terlebih dahulu.'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final description =
+                                                descriptionController.text
+                                                    .trim();
+                                            if (description.length < 10) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      'Deskripsi minimal 10 karakter.'),
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final navigator =
+                                                Navigator.of(context);
+                                            final scaffoldMessenger =
+                                                ScaffoldMessenger.of(context);
                                             final data = {
-                                              'incident_type_id': id,
-                                              'description':
-                                                  descriptionController.text,
-                                              'confirm_truth': true,
+                                              'incident_type_id':
+                                                  incidentTypeId,
+                                              'description': description,
+                                              'confirm_truth': confirmTruth,
                                             };
                                             try {
                                               await ensureGuestAuthenticated();
@@ -742,8 +776,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                                   if (!mounted) return;
                                                   if (outcome
                                                       .failed.isNotEmpty) {
-                                                    ScaffoldMessenger.of(
-                                                            context)
+                                                    scaffoldMessenger
                                                         .showSnackBar(
                                                       SnackBar(
                                                           content: Text(
@@ -751,16 +784,16 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                                     );
                                                   }
                                                 }
-                                                Navigator.of(context)
-                                                    .pushReplacement(
+                                                if (!mounted) return;
+                                                navigator.pushReplacement(
                                                   MaterialPageRoute(
                                                     builder: (_) =>
                                                         const BullyingReportSuccessPage(),
                                                   ),
                                                 );
                                               } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
+                                                if (!mounted) return;
+                                                scaffoldMessenger.showSnackBar(
                                                   SnackBar(
                                                       content: Text(
                                                           'Gagal mengirim: ${result.message}')),
@@ -768,16 +801,14 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                               }
                                             } on ApiException catch (e) {
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              scaffoldMessenger.showSnackBar(
                                                 SnackBar(
                                                     content: Text(
                                                         'Gagal: ${e.code ?? ''} ${e.message}')),
                                               );
                                             } catch (e) {
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              scaffoldMessenger.showSnackBar(
                                                 SnackBar(
                                                     content: Text('Error: $e')),
                                               );
