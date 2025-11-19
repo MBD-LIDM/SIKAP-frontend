@@ -3,6 +3,7 @@ import '../../../scenarios/data/scenario_repository.dart';
 import '../../../scenarios/domain/models/scenario_models.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'scenario_intro_item_page.dart';
+import '../../../../core/auth/session_service.dart';
 
 class ScenarioCatalogPage extends StatefulWidget {
   const ScenarioCatalogPage({super.key});
@@ -18,7 +19,29 @@ class _ScenarioCatalogPageState extends State<ScenarioCatalogPage> {
   @override
   void initState() {
     super.initState();
-    _future = _repo.loadByLevel();
+    _future = _loadFilteredByUserLevel();
+  }
+
+  String _gradeToLevel(String? gradeStr) {
+    final g = int.tryParse((gradeStr ?? '').trim());
+    if (g == null) return 'SD';
+    if (g <= 6) return 'SD';
+    if (g <= 9) return 'SMP';
+    return 'SMA';
+  }
+
+  Future<Map<String, List<ScenarioItem>>> _loadFilteredByUserLevel() async {
+    final grouped = await _repo.loadByLevel();
+    final session = SessionService();
+    final profile = await session.loadProfile();
+    final level = _gradeToLevel(profile.grade);
+
+    final Map<String, List<ScenarioItem>> filtered = {};
+    final selected = grouped[level] ?? const <ScenarioItem>[];
+    if (selected.isNotEmpty) {
+      filtered[level] = selected;
+    }
+    return filtered;
   }
 
   @override
@@ -26,9 +49,9 @@ class _ScenarioCatalogPageState extends State<ScenarioCatalogPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFE7CE),
       appBar: AppBar(
-        title: const Text('Skenario Intervensi'),
+        title: const Text('Skenario Intervensi', style: TextStyle(color: Color(0xFF7F55B1))),
         backgroundColor: const Color(0xFFFFE7CE),
-        foregroundColor: const Color(0xFF7F55B1),
+        iconTheme: const IconThemeData(color: Color(0xFF7F55B1)),
       ),
       body: Container(
         color: const Color(0xFFFFE7CE),
