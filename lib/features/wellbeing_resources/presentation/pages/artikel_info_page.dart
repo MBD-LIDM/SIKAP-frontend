@@ -5,6 +5,7 @@ import 'artikel_teman_detail_page.dart';
 import 'artikel_berani_bicara_detail_page.dart';
 import 'artikel_bantuan_profesional_detail_page.dart';
 import 'artikel_7_kebiasaan_detail_page.dart';
+import 'artikel_mindfulness_detail_page.dart';
 
 class ArtikelInfoPage extends StatefulWidget {
   const ArtikelInfoPage({super.key});
@@ -192,6 +193,21 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
                     );
 
                     addItem(
+                      title: 'Pikiran Tenang, Belajar Lancar. Begini Manfaat Mindfulness untuk Pelajar',
+                      category: 'Kesehatan Mental dan Kesejahteraan',
+                      date: 'Diposting pada 17 November 2025',
+                      illustration: _buildMindfulnessIllustration(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ArtikelMindfulnessDetailPage(),
+                          ),
+                        );
+                      },
+                    );
+
+                    addItem(
                       title: 'Menjadi Teman yang Baik: Bagaimana Dukungan Antar Teman Bisa Menjaga Kesehatan Mental',
                       category: 'Kesehatan Mental dan Kesejahteraan',
                       date: 'Diposting pada 10 Agustus 2025',
@@ -361,6 +377,22 @@ class _ArtikelInfoPageState extends State<ArtikelInfoPage> {
   }
 
   
+
+  Widget _buildMindfulnessIllustration() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.teal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.spa,
+        size: 40,
+        color: Colors.teal,
+      ),
+    );
+  }
 
   Widget _buildHabitsIllustration() {
     return Container(

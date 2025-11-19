@@ -25,6 +25,8 @@ class ReflectionListPage extends StatefulWidget {
 
 class _ReflectionListPageState extends State<ReflectionListPage> {
   String _sort = 'Terbaru';
+  String _scenarioFilterValue = 'all'; // 'all' or scenario_id as string
+  Map<int, String> _scenarioIdToTitle = {}; // {101: 'Hilangnya Kotak Pensil Teman', ...}
 
   // Placeholder data. Will be replaced by API data when scenarioId is provided.
   List<_ReflectionItem> _reflections = [
@@ -54,6 +56,7 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF7F55B1),
       appBar: AppBar(
         title: const Text('Daftar Refleksi Siswa'),
         backgroundColor: const Color(0xFF7F55B1),
@@ -64,79 +67,151 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.scenarioTitle,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 8),
-                        Text(
-                            'Deskripsi Skenario: ${widget.scenarioDescription}',
-                            style: const TextStyle(color: Colors.white70)),
-                        const SizedBox(height: 8),
-                        Text('Pertanyaan yang diberikan: ${widget.question}',
-                            style: const TextStyle(color: Colors.white70)),
-                      ],
+              SingleChildScrollView(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.scenarioTitle,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          Text(
+                              'Deskripsi Skenario: ${widget.scenarioDescription}',
+                              style: const TextStyle(color: Colors.white70)),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 44,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.08),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2)),
-                                ]),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _sort,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'Terbaru', child: Text('Terbaru')),
-                                  DropdownMenuItem(
-                                      value: 'Terlama', child: Text('Terlama')),
-                                ],
-                                onChanged: (v) =>
-                                    setState(() => _sort = v ?? 'Terbaru'),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 44,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color:
+                                            Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2)),
+                                  ]),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _scenarioFilterValue,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  items: [
+                                    const DropdownMenuItem(
+                                      value: 'all',
+                                      child: Text('Semua Skenario',
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1),
+                                    ),
+                                    ..._scenarioIdToTitle.entries.map(
+                                      (e) => DropdownMenuItem(
+                                        value: e.key.toString(),
+                                        child: Text(
+                                          '${e.key} - ${e.value}',
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _scenarioFilterValue = v ?? 'all';
+                                    });
+                                    _loadRemote();
+                                  },
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView.builder(
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 44,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color:
+                                            Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2)),
+                                  ]),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _sort,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'Terbaru',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.sort, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Terbaru'),
+                                        ],
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'Terlama',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.sort, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Terlama'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (v) =>
+                                      setState(() => _sort = v ?? 'Terbaru'),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: _sortedList.length,
                       itemBuilder: (context, index) {
                         final item = _sortedList[index];
                         return _ReflectionCard(item: item);
                       },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (_loadingRemote)
                 Positioned.fill(
@@ -156,7 +231,33 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
   @override
   void initState() {
     super.initState();
+    // Preselect scenario filter if page is invoked with a specific scenarioId
+    if (widget.scenarioId != null) {
+      _scenarioFilterValue = widget.scenarioId!.toString();
+    }
+    _loadScenarioOptions();
     _loadRemote();
+  }
+
+  Future<void> _loadScenarioOptions() async {
+    try {
+      final repo = ScenarioRepository();
+      final list = await repo.loadScenarios();
+      // Map remoteId -> title
+      final map = <int, String>{};
+      for (final s in list) {
+        if (s.remoteId != null) {
+          map[s.remoteId!] = s.title;
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _scenarioIdToTitle = map;
+        });
+      }
+    } catch (_) {
+      // ignore mapping errors, filter will just show "Semua Skenario"
+    }
   }
 
   Future<void> _loadRemote() async {
@@ -209,21 +310,30 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
       }
       
       final repo = ScenarioRepository(apiClient: api, auth: auth, session: session);
-      print('[REFLECTION_LIST] Fetching reflections for scenarioId: ${widget.scenarioId}');
+      final selectedScenarioId =
+          _scenarioFilterValue != 'all' ? _scenarioFilterValue : null;
+      print('[REFLECTION_LIST] Fetching reflections for scenarioId: $selectedScenarioId');
 
       List<dynamic> data;
       if (isStaff) {
         data = await repo.getSchoolReflections(
-          scenarioId: widget.scenarioId?.toString(),
+          scenarioId: selectedScenarioId,
           staffSchoolId: staffSchoolId,
         );
       } else {
         data = await repo.getMyReflections(asGuest: true);
-        if (widget.scenarioId != null) {
+        if (selectedScenarioId != null) {
           data = data.where((item) {
             if (item is Map && item['scenario_id'] != null) {
               final sid = item['scenario_id'];
-              return sid.toString() == widget.scenarioId.toString();
+              return sid.toString() == selectedScenarioId;
+            }
+            if (item is Map && item['reflection'] is Map) {
+              final inner = item['reflection'] as Map;
+              final sid = inner['scenario_id'];
+              if (sid != null) {
+                return sid.toString() == selectedScenarioId;
+              }
             }
             return false;
           }).toList();
@@ -237,30 +347,20 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
         try {
           final Map<String, dynamic> m =
               (e is Map) ? Map<String, dynamic>.from(e) : {};
-          final created = m['created_at'] is String
-              ? DateTime.tryParse(m['created_at'] as String)
-              : null;
-          final refl = m['reflection'];
-          String text = '';
-          if (refl is String)
-            text = refl;
-          else if (refl is Map && refl['text'] is String)
-            text = refl['text'] as String;
-          else if (refl is Map) text = refl.toString();
-          if (created != null)
+
+          final created = _parseCreatedAt(m);
+          final text = _extractReflectionText(m);
+
+          if (created != null && text.isNotEmpty) {
             parsed.add(_ReflectionItem(createdAt: created, text: text));
+          }
         } catch (_) {
           // skip invalid item
         }
       }
       
       print('[REFLECTION_LIST] Parsed ${parsed.length} valid reflection(s)');
-      
-      if (parsed.isNotEmpty) {
-        setState(() => _reflections = parsed);
-      } else {
-        print('[REFLECTION_LIST] ⚠️ No reflections parsed from API response');
-      }
+      setState(() => _reflections = parsed);
     } catch (e, stackTrace) {
       print('[REFLECTION_LIST] ❌ Failed to load remote reflections: $e');
       print('[REFLECTION_LIST] Stack trace: $stackTrace');
@@ -316,7 +416,64 @@ class _ReflectionCard extends StatelessWidget {
   }
 
   static String _formatDate(DateTime dt) {
+    // Convert to local time and format like: 6 Agustus 2025 10:30
+    final local = dt.toLocal();
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
     String two(int n) => n.toString().padLeft(2, '0');
-    return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
+    final day = local.day;
+    final monthName = months[local.month - 1];
+    final year = local.year;
+    final time = '${two(local.hour)}:${two(local.minute)}';
+    return '$day $monthName $year $time';
   }
+}
+
+// --------------------------- Helpers ---------------------------
+
+DateTime? _parseCreatedAt(Map<String, dynamic> m) {
+  final candidates = [
+    m['created_at'],
+    m['createdAt'],
+    m['timestamp'],
+    // Sometimes nested under "reflection"
+    (m['reflection'] is Map) ? (m['reflection'] as Map)['timestamp'] : null,
+  ];
+  for (final v in candidates) {
+    if (v is String) {
+      final parsed = DateTime.tryParse(v);
+      if (parsed != null) return parsed;
+    }
+  }
+  return null;
+}
+
+String _extractReflectionText(Map<String, dynamic> m) {
+  // 1) Top-level keys
+  for (final key in ['jawaban', 'text', 'answer']) {
+    final v = m[key];
+    if (v is String && v.trim().isNotEmpty) return v.trim();
+  }
+  // 2) Nested under "reflection"
+  final r = m['reflection'];
+  if (r is String && r.trim().isNotEmpty) return r.trim();
+  if (r is Map) {
+    for (final key in ['jawaban', 'text', 'answer']) {
+      final v = r[key];
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    }
+  }
+  return '';
 }
