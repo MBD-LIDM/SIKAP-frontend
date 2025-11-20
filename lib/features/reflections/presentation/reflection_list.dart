@@ -208,7 +208,8 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
         print('[REFLECTION_LIST] Guest context - guestId: $guestId');
       }
       
-      final repo = ScenarioRepository(apiClient: api, auth: auth, session: session);
+      final repo =
+          ScenarioRepository(apiClient: api, auth: auth, session: session);
       print('[REFLECTION_LIST] Fetching reflections for scenarioId: ${widget.scenarioId}');
 
       List<dynamic> data;
@@ -229,37 +230,100 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
           }).toList();
         }
       }
-      
+
       print('[REFLECTION_LIST] Received ${data.length} reflection(s) from API');
-      
+
+      DateTime? _parseDate(dynamic v) {
+        if (v is DateTime) return v;
+        if (v is String) return DateTime.tryParse(v.trim());
+        return null;
+      }
+
       final List<_ReflectionItem> parsed = [];
       for (final e in data) {
         try {
           final Map<String, dynamic> m =
-              (e is Map) ? Map<String, dynamic>.from(e) : {};
-          final created = m['created_at'] is String
-              ? DateTime.tryParse(m['created_at'] as String)
-              : null;
+              (e is Map) ? Map<String, dynamic>.from(e) : <String, dynamic>{};
+          if (m.isEmpty) {
+            // ignore: avoid_print
+            print('[REFLECTION_LIST] Skipping non-map reflection item: $e');
+            continue;
+          }
+
           final refl = m['reflection'];
+
+          // 1) Cari tanggal dari beberapa kandidat field (top-level lalu di dalam reflection)
+          DateTime? created;
+          for (final key
+              in ['created_at', 'created', 'submitted_at', 'timestamp']) {
+            final v = m[key];
+            if (v != null) {
+              created = _parseDate(v);
+              if (created != null) break;
+            }
+          }
+          if (created == null && refl is Map) {
+            for (final key
+                in ['created_at', 'created', 'submitted_at', 'timestamp']) {
+              final v = refl[key];
+              if (v != null) {
+                created = _parseDate(v);
+                if (created != null) break;
+              }
+            }
+          }
+
+          // 2) Ambil teks refleksi dari beberapa kemungkinan sumber
           String text = '';
-          if (refl is String)
+          if (refl is String) {
             text = refl;
-          else if (refl is Map && refl['text'] is String)
+          } else if (refl is Map && refl['jawaban'] is String) {
+            // Bentuk umum: { jawaban, jenjang, timestamp, scenario_id, ... }
+            text = refl['jawaban'] as String;
+          } else if (refl is Map && refl['text'] is String) {
             text = refl['text'] as String;
-          else if (refl is Map) text = refl.toString();
-          if (created != null)
-            parsed.add(_ReflectionItem(createdAt: created, text: text));
-        } catch (_) {
+          } else if (m['jawaban'] is String) {
+            text = m['jawaban'] as String;
+          } else if (m['text'] is String) {
+            text = m['text'] as String;
+          } else if (m['answer'] is String) {
+            text = m['answer'] as String;
+          } else if (m['content'] is String) {
+            text = m['content'] as String;
+          }
+
+          text = text.trim();
+
+          if (created == null || text.isEmpty) {
+            // ignore: avoid_print
+            print(
+                '[REFLECTION_LIST] Skipping invalid item (date/text missing). Keys: ${m.keys.toList()}');
+            continue;
+          }
+
+          parsed.add(_ReflectionItem(createdAt: created, text: text));
+        } catch (err, st) {
+          // ignore: avoid_print
+          print(
+              '[REFLECTION_LIST] Error parsing reflection item: $err\n$st');
           // skip invalid item
         }
       }
-      
+
       print('[REFLECTION_LIST] Parsed ${parsed.length} valid reflection(s)');
-      
+
       if (parsed.isNotEmpty) {
         setState(() => _reflections = parsed);
       } else {
         print('[REFLECTION_LIST] ⚠️ No reflections parsed from API response');
+        if (mounted && data.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Format data refleksi tidak dikenali. Silakan hubungi admin.'),
+            ),
+          );
+        }
       }
     } catch (e, stackTrace) {
       print('[REFLECTION_LIST] ❌ Failed to load remote reflections: $e');
@@ -299,16 +363,45 @@ class _ReflectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Jawaban :',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item.text,
+              style: const TextStyle(
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.schedule, size: 18, color: Colors.black54),
                 const SizedBox(width: 8),
-                Text(_formatDate(item.createdAt),
-                    style: const TextStyle(color: Colors.black54)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Timestamp :',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(item.createdAt),
+                      style: const TextStyle(color: Colors.black54),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(item.text),
           ],
         ),
       ),

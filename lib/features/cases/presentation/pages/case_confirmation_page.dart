@@ -64,6 +64,7 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
   Widget build(BuildContext context) {
     final bool isReject = widget.action == 'tolak';
     final bool isComplete = widget.action == 'selesai';
+    final bool isProcess = !isReject && !isComplete;
     final String labelText;
     final String hintText;
 
@@ -95,32 +96,54 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.caseTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 12),
-                  Text(labelText),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _messageController,
-                    maxLines: 6,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      hintText: hintText,
-                      border: const OutlineInputBorder(),
+                  Text(
+                    widget.caseTitle,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  // Hanya tampilkan kolom komentar untuk aksi tolak/selesai.
+                  if (!isProcess) ...[
+                    Text(labelText),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _messageController,
+                      maxLines: 6,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    const Text(
+                      'Kasus ini akan dipindahkan ke status "Diproses". '
+                      'Anda tidak perlu menambahkan komentar.',
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (isReject)
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                        ),
                         onPressed: () => _confirm('tolak'),
                         child: const Text('Tolak'),
                       ),
@@ -129,8 +152,12 @@ class _CaseConfirmationPageState extends State<CaseConfirmationPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7F55B1), foregroundColor: Colors.white),
-                        onPressed: () => _confirm(isComplete ? 'selesai' : 'proses'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7F55B1),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () =>
+                            _confirm(isComplete ? 'selesai' : 'proses'),
                         child: Text(isComplete ? 'Selesai' : 'Proses'),
                       ),
                     ),

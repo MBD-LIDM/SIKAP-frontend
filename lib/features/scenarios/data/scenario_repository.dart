@@ -91,18 +91,17 @@ class ScenarioRepository {
     );
 
     final raw = resp.data;
-    if (raw is Map<String, dynamic>) {
-      if (raw['results'] is List) {
-        return List<dynamic>.from(raw['results'] as List);
-      }
-      if (raw['data'] is List) {
-        return List<dynamic>.from(raw['data'] as List);
-      }
-    } else if (raw is List) {
-      return List<dynamic>.from(raw);
+    final list = _normalizeReflectionList(raw);
+    if (list.isNotEmpty && list.first is Map) {
+      final first = list.first as Map;
+      debugPrint(
+        '[SCENARIO_REPO] getMyReflections first item keys: ${first.keys.toList()}',
+      );
+    } else if (list.isEmpty && raw != null) {
+      debugPrint(
+          '[SCENARIO_REPO] getMyReflections returned empty list for raw type ${raw.runtimeType}');
     }
-
-    return [];
+    return list;
   }
 
   // Get reflections history for a given guest id (teacher/staff may use this
