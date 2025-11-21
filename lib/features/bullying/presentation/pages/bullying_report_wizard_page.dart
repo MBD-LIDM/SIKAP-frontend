@@ -22,6 +22,7 @@ class BullyingReportWizardPage extends StatefulWidget {
 
 class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
   static const int totalSteps = 4;
+  static const int minDescriptionLength = 10;
   int currentStep = 1;
 
   String? selectedCategory; // step 1
@@ -694,6 +695,17 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                           );
                                           return;
                                         }
+                                        if (currentStep == 2) {
+                                          final description = descriptionController.text.trim();
+                                          if (description.length < minDescriptionLength) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Deskripsi minimal $minDescriptionLength karakter.'),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                        }
                                         next();
                                       }
                                     : (confirmTruth
@@ -714,12 +726,12 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                             final description =
                                                 descriptionController.text
                                                     .trim();
-                                            if (description.length < 10) {
+                                            if (description.length < minDescriptionLength) {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
-                                                const SnackBar(
+                                                SnackBar(
                                                   content: Text(
-                                                      'Deskripsi minimal 10 karakter.'),
+                                                      'Deskripsi minimal $minDescriptionLength karakter.'),
                                                 ),
                                               );
                                               return;
@@ -734,6 +746,13 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                               'description': description,
                                               'confirm_truth': confirmTruth,
                                             };
+                                            showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (_) => const Center(
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            );
                                             try {
                                               await ensureGuestAuthenticated();
                                               final result = await _repo
@@ -785,6 +804,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                                   }
                                                 }
                                                 if (!mounted) return;
+                                                navigator.pop();
                                                 navigator.pushReplacement(
                                                   MaterialPageRoute(
                                                     builder: (_) =>
@@ -793,6 +813,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                                 );
                                               } else {
                                                 if (!mounted) return;
+                                                Navigator.of(context, rootNavigator: true).pop();
                                                 scaffoldMessenger.showSnackBar(
                                                   SnackBar(
                                                       content: Text(
@@ -801,6 +822,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                               }
                                             } on ApiException catch (e) {
                                               if (!mounted) return;
+                                              Navigator.of(context, rootNavigator: true).pop();
                                               scaffoldMessenger.showSnackBar(
                                                 SnackBar(
                                                     content: Text(
@@ -808,6 +830,7 @@ class _BullyingReportWizardPageState extends State<BullyingReportWizardPage> {
                                               );
                                             } catch (e) {
                                               if (!mounted) return;
+                                              Navigator.of(context, rootNavigator: true).pop();
                                               scaffoldMessenger.showSnackBar(
                                                 SnackBar(
                                                     content: Text('Error: $e')),
