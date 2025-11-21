@@ -339,9 +339,15 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
           }).toList();
         }
       }
-      
+
       print('[REFLECTION_LIST] Received ${data.length} reflection(s) from API');
-      
+
+      DateTime? _parseDate(dynamic v) {
+        if (v is DateTime) return v;
+        if (v is String) return DateTime.tryParse(v.trim());
+        return null;
+      }
+
       final List<_ReflectionItem> parsed = [];
       for (final e in data) {
         try {
@@ -358,7 +364,7 @@ class _ReflectionListPageState extends State<ReflectionListPage> {
           // skip invalid item
         }
       }
-      
+
       print('[REFLECTION_LIST] Parsed ${parsed.length} valid reflection(s)');
       setState(() => _reflections = parsed);
     } catch (e, stackTrace) {
@@ -399,16 +405,45 @@ class _ReflectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Jawaban :',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item.text,
+              style: const TextStyle(
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.schedule, size: 18, color: Colors.black54),
                 const SizedBox(width: 8),
-                Text(_formatDate(item.createdAt),
-                    style: const TextStyle(color: Colors.black54)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Timestamp :',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(item.createdAt),
+                      style: const TextStyle(color: Colors.black54),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(item.text),
           ],
         ),
       ),

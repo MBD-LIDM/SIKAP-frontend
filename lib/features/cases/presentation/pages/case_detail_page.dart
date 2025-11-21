@@ -4,6 +4,9 @@ import 'package:sikap/features/cases/data/repositories/case_repository.dart';
 import 'package:sikap/core/auth/session_service.dart';
 import 'package:sikap/core/network/api_client.dart';
 import 'package:sikap/core/network/auth_header_provider.dart';
+import 'package:sikap/core/auth/ensure_guest_auth.dart';
+import 'package:sikap/core/network/api_exception.dart';
+import 'package:sikap/features/bullying/data/repositories/bullying_repository.dart';
 import 'package:sikap/features/bullying/presentation/widgets/evidence_gallery.dart';
 
 class CaseDetailPage extends StatefulWidget {
@@ -20,6 +23,7 @@ class CaseDetailPage extends StatefulWidget {
 
 class _CaseDetailPageState extends State<CaseDetailPage> {
   late final CaseRepository _repo;
+  late final BullyingRepository _bullyingRepo;
   late final SessionService _session;
   bool _isLoading = true;
   Map<String, dynamic>? _data;
@@ -30,15 +34,26 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
   void initState() {
     super.initState();
     _session = SessionService();
+
+    final apiClient = ApiClient();
+    final auth = AuthHeaderProvider(
+      loadUserToken: () async => await _session.loadUserToken(),
+      loadCsrfToken: () async => await _session.loadCsrfToken(),
+      loadGuestToken: () async => null,
+      loadGuestId: () async => null,
+    );
+
     _repo = CaseRepository(
-      apiClient: ApiClient(),
+      apiClient: apiClient,
       session: _session,
-      auth: AuthHeaderProvider(
-        loadUserToken: () async => await _session.loadUserToken(),
-        loadCsrfToken: () async => await _session.loadCsrfToken(),
-        loadGuestToken: () async => null,
-        loadGuestId: () async => null,
-      ),
+      auth: auth,
+    );
+
+    _bullyingRepo = BullyingRepository(
+      apiClient: apiClient,
+      session: _session,
+      auth: auth,
+      gate: guestAuthGateInstance(),
     );
     _loadDetail();
   }
@@ -71,17 +86,62 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
 
   Future<void> _handleStatusUpdate(String newStatus, {String? comment}) async {
     try {
-      await _repo.updateCaseStatus(widget.reportId, newStatus, comment: comment);
+      // 1) Update status kasus via endpoint cases
+      await _repo.updateCaseStatus(
+        widget.reportId,
+        newStatus,
+        comment: comment,
+      );
+
+      String? teacherCommentError;
+
+      // 2) Jika status Selesai dan ada komentar, patch teacher_comment di report
+      if (newStatus == 'Selesai') {
+        final trimmedComment = comment?.trim();
+        if (trimmedComment != null && trimmedComment.isNotEmpty) {
+          try {
+            await _bullyingRepo.updateBullyingReport(
+              widget.reportId.toString(),
+              {'teacher_comment': trimmedComment},
+              asGuest: false,
+            );
+          } on ApiException catch (e) {
+            // Anggap 401 sebagai non-fatal (misal komentar sudah tersimpan via endpoint lain)
+            if (e.code == 401 || e.statusCode == 401) {
+              // ignore: avoid_print
+              print(
+                  '[CASE_DETAIL] Non-fatal 401 when updating teacher_comment: $e');
+            } else {
+              teacherCommentError = e.toString();
+            }
+          } catch (e) {
+            teacherCommentError = e.toString();
+          }
+        }
+      }
+
       if (!mounted) return;
 
-      // Reload detail
+      // Reload detail setelah semua aksi
       await _loadDetail();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      if (teacherCommentError == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
             content: Text('Status berhasil diupdate'),
-            backgroundColor: Colors.green),
-      );
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Status berhasil diupdate, tetapi komentar guru gagal disimpan: $teacherCommentError',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

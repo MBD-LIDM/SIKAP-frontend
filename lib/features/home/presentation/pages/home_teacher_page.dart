@@ -18,6 +18,7 @@ class HomeTeacherPage extends StatefulWidget {
 class _HomeTeacherPageState extends State<HomeTeacherPage> {
   final SessionService _session = SessionService();
   String? _role;
+  bool _loadingRole = true;
 
   @override
   void initState() {
@@ -28,10 +29,35 @@ class _HomeTeacherPageState extends State<HomeTeacherPage> {
   Future<void> _loadRole() async {
     final r = await _session.loadUserRole();
     if (!mounted) return;
-    setState(() => _role = r);
+    setState(() {
+      _role = r;
+      _loadingRole = false;
+    });
   }
   @override
   Widget build(BuildContext context) {
+    if (_loadingRole) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFFE7CE),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF7F55B1), // Purple at 76%
+                Color(0xFFFFE7CE), // Soft cream at 100%
+              ],
+              stops: [0.76, 1.0],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     final isCounselor = (_role?.toLowerCase() == 'counselor');
     final isPrincipal = (_role?.toLowerCase() == 'principal');
     return Scaffold(
