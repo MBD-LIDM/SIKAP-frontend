@@ -44,9 +44,9 @@ class _ScenarioRunnerPageState extends State<ScenarioRunnerPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFE7CE),
       appBar: AppBar(
-        title: Text(widget.item.title),
+        title: Text(widget.item.title, style: const TextStyle(color: Color(0xFF7F55B1))),
         backgroundColor: const Color(0xFFFFE7CE),
-        foregroundColor: const Color(0xFF7F55B1),
+        iconTheme: const IconThemeData(color: Color(0xFF7F55B1)),
       ),
       body: Container(
         color: const Color(0xFFFFE7CE),

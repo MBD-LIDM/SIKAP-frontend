@@ -303,9 +303,8 @@ class ScenarioReflectionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Skenario Selesai 🥳'),
+        title: const Text('Skenario Selesai 🥳', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF7F55B1),
-        foregroundColor: Colors.white,
       ),
       body: Container(
         color: const Color(0xFF7F55B1),
